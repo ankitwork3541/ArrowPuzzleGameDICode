@@ -86,7 +86,8 @@ public class ArrowController : MonoBehaviour
 
         if (nextCell == null)
         {
-            Debug.Log(gameObject.name + ": grid ni bahar → EXIT karvanu");
+            Vector3 exitStep = new Vector3(dir.x, dir.y, 0f) * spacing;
+            StartExit(exitStep);
         }
         else if (gridBuilder.IsCellOccupied(nextPos))
         {
@@ -176,6 +177,54 @@ public class ArrowController : MonoBehaviour
                         isMoving = false;
                     });
             });
+    }
+
+    void StartExit(Vector3 exitStep)
+    {
+        foreach (Vector2Int pos in path)
+            gridBuilder.ClearOccupant(pos);
+
+        isMoving = true;
+        ExitStepOnce(exitStep);
+    }
+
+    void ExitStepOnce(Vector3 exitStep)
+    {
+        int n = line.positionCount;
+        Vector3[] oldWorld = new Vector3[n];
+        line.GetPositions(oldWorld);
+
+        Vector3[] newWorld = new Vector3[n];
+        for (int i = 0; i < n - 1; i++) newWorld[i] = oldWorld[i + 1];
+        newWorld[n - 1] = oldWorld[n - 1] + exitStep;
+
+        float t = 0f;
+        DOTween.To(() => t, v => t = v, 1f, stepTime)
+            .SetEase(Ease.Linear)
+            .OnUpdate(() =>
+            {
+                for (int i = 0; i < n; i++)
+                    line.SetPosition(i, Vector3.Lerp(oldWorld[i], newWorld[i], t));
+            })
+            .OnComplete(() =>
+            {
+                if (IsFullyOffScreen())
+                    Destroy(gameObject);
+                else
+                    ExitStepOnce(exitStep);
+            });
+    }
+
+    bool IsFullyOffScreen()
+    {
+        int n = line.positionCount;
+        for (int i = 0; i < n; i++)
+        {
+            Vector3 viewportPos = Camera.main.WorldToViewportPoint(line.GetPosition(i));
+            if (viewportPos.x >= 0f && viewportPos.x <= 1f && viewportPos.y >= 0f && viewportPos.y <= 1f)
+                return false;
+        }
+        return true;
     }
 
     void SetLineColor(Color c)
