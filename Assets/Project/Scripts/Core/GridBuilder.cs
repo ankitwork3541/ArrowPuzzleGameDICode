@@ -11,12 +11,8 @@ public class GridBuilder : MonoBehaviour
 
     private Dictionary<Vector2Int, GridCell> cells = new Dictionary<Vector2Int, GridCell>();
 
-    void Start()
-    {
-        BuildGrid();
-    }
-
-    void BuildGrid()
+   
+    public void BuildGrid()
     {
         for (int row = 0; row < height; row++)
         {
