@@ -148,6 +148,8 @@ public class ArrowController : MonoBehaviour
         for (int i = 0; i < n; i++)
             bumpWorld[i] = originalWorld[i] + bumpOffset;
 
+        SetLineColor(Color.red);
+
         isMoving = true;
         float t = 0f;
 
@@ -168,8 +170,23 @@ public class ArrowController : MonoBehaviour
                         for (int i = 0; i < n; i++)
                             line.SetPosition(i, Vector3.Lerp(bumpWorld[i], originalWorld[i], t2));
                     })
-                    .OnComplete(() => { isMoving = false; });
+                    .OnComplete(() =>
+                    {
+                        SetLineColor(Color.white);
+                        isMoving = false;
+                    });
             });
+    }
+
+    void SetLineColor(Color c)
+    {
+        if (line.material.HasProperty("_Color"))
+            line.material.color = c;
+        else
+        {
+            line.startColor = c;
+            line.endColor = c;
+        }
     }
 
 }
