@@ -14,4 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LevelData
   gridWidth: 5
   gridHeight: 5
-  arrows: []
+  arrows:
+  - path:
+    - {x: 0, y: 0}
+    - {x: 1, y: 0}
+    - {x: 2, y: 0}
+  - path:
+    - {x: 0, y: 0}
+    - {x: 5, y: 2}
+    - {x: 6, y: 2}

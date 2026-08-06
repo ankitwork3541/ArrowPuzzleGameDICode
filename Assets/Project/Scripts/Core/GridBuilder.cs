@@ -9,7 +9,7 @@ public class GridBuilder : MonoBehaviour
 
     public Dictionary<Vector2Int, GridCell> cells = new Dictionary<Vector2Int, GridCell>();
 
-    void Start()
+    void Awake()
     {
         for (int row = 0; row < height; row++)
         {
