@@ -53,20 +53,12 @@ public class ArrowController : MonoBehaviour
             Vector3 worldPos = grid.GridToWorld(path[i]);
             GameObject segment = Instantiate(segmentPrefab, worldPos, Quaternion.identity, transform);
             SpriteRenderer sr = segment.GetComponent<SpriteRenderer>();
+            sr.color = Color.white;
 
-            if (i == 0)
-            {
-                Vector2Int outDir = path[i + 1] - path[i];
-                sr.sprite = capSprite;
-                segment.transform.rotation = Quaternion.Euler(0, 0, AngleForDirection(outDir));
-            }
-            else if (i == path.Count - 1)
-            {
-                Vector2Int inDir = path[i] - path[i - 1];
-                sr.sprite = headSprite;
-                sr.sortingOrder = 2;
-                segment.transform.rotation = Quaternion.Euler(0, 0, AngleForDirection(inDir));
+            ApplySegmentSprite(i, sr, segment.transform);
 
+            if (i == path.Count - 1)
+            {
                 GameObject shaft = Instantiate(segmentPrefab);
                 shaft.transform.SetParent(segment.transform);
                 shaft.transform.localPosition = new Vector3(0f, -0.22f, 0f);
@@ -80,29 +72,44 @@ public class ArrowController : MonoBehaviour
 
                 Destroy(shaft.GetComponent<ArrowSegmentClick>());
             }
-            else
-            {
-                Vector2Int inDir = path[i] - path[i - 1];
-                Vector2Int outDir = path[i + 1] - path[i];
-
-                if (inDir == outDir)
-                {
-                    sr.sprite = straightSprite;
-                    segment.transform.rotation = Quaternion.Euler(0, 0, AngleForDirection(inDir));
-                }
-                else
-                {
-                    sr.sprite = cornerSprite;
-                    segment.transform.rotation = Quaternion.Euler(0, 0, AngleForCorner(-inDir, outDir));
-                }
-            }
-
-            sr.color = Color.white;
 
             ArrowSegmentClick clickScript = segment.GetComponent<ArrowSegmentClick>();
             clickScript.owner = this;
 
             segmentVisuals.Add(segment);
+        }
+    }
+
+    void ApplySegmentSprite(int i, SpriteRenderer sr, Transform segmentTransform)
+    {
+        if (i == 0)
+        {
+            Vector2Int outDir = path[i + 1] - path[i];
+            sr.sprite = capSprite;
+            segmentTransform.rotation = Quaternion.Euler(0, 0, AngleForDirection(outDir));
+        }
+        else if (i == path.Count - 1)
+        {
+            Vector2Int inDir = path[i] - path[i - 1];
+            sr.sprite = headSprite;
+            sr.sortingOrder = 2;
+            segmentTransform.rotation = Quaternion.Euler(0, 0, AngleForDirection(inDir));
+        }
+        else
+        {
+            Vector2Int inDir = path[i] - path[i - 1];
+            Vector2Int outDir = path[i + 1] - path[i];
+
+            if (inDir == outDir)
+            {
+                sr.sprite = straightSprite;
+                segmentTransform.rotation = Quaternion.Euler(0, 0, AngleForDirection(inDir));
+            }
+            else
+            {
+                sr.sprite = cornerSprite;
+                segmentTransform.rotation = Quaternion.Euler(0, 0, AngleForCorner(-inDir, outDir));
+            }
         }
     }
 
@@ -159,6 +166,9 @@ public class ArrowController : MonoBehaviour
         {
             Vector3 targetPos = grid.GridToWorld(path[i]);
             segmentVisuals[i].transform.DOMove(targetPos, 0.2f);
+
+            SpriteRenderer sr = segmentVisuals[i].GetComponent<SpriteRenderer>();
+            ApplySegmentSprite(i, sr, segmentVisuals[i].transform);
         }
     }
 
