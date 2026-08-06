@@ -56,10 +56,25 @@ If a context-compaction or new session loses the above nuance, **this section is
 - **50,000+ levels**: hybrid generation — procedural (reverse-construction technique, guarantees solvability by construction) + manual hand-crafted levels, with a solvability checker mandatory for manual ones. Not started.
 - **Object pooling**: deferred until many levels are actually being cycled through in testing.
 
+## Script Folder Structure
+
+`Assets/Project/Scripts/` has these subfolders (created before the reset, kept empty until now) — put every new script in the matching one so the project stays organized as it grows:
+
+- **`Core/`** — core gameplay logic: grid system, movement, blocking/exit logic (e.g. `GridCell.cs`, `GridBuilder.cs`). Plain data classes and MonoBehaviours that drive the actual game mechanic live here.
+- **`Data/`** — data models: `ScriptableObject` classes and `[System.Serializable]` plain classes that hold level/theme/config data (e.g. `LevelData.cs`, `ArrowPathData.cs`).
+- **`Managers/`** — manager-style MonoBehaviours that coordinate systems across the scene (e.g. a future `LevelManager`, `GameManager`) — not used yet.
+- **`UI/`** — scripts driving UI elements (hearts/lives display, hint button, score/level text) — not used yet.
+- **`Utils/`** — generic reusable helpers not tied to this game's specific mechanic — not used yet.
+
+Other relevant top-level folders: `Assets/Project/Prefabs/`, `Assets/Project/Levels/` (for saved `LevelData` assets), `Assets/Project/Sprites/`, `Assets/Project/Scenes/` (contains `Game.unity`).
+
+If a new script doesn't clearly fit one of the above, ask the user rather than guessing a new folder.
+
 ## Progress Log
 
 *(Newest at top. Update this after each completed step.)*
 
+- **2026-08-06 — Rebuild started, Grid system done, Level data model in progress.** Confirmed starting point with user: Grid system first (per `Docs/Game-Design.md` §8 order, adapted for full reset — grid/level-data now come before the LineRenderer rework since nothing exists yet). Built and hands-on-tested: `GridCell.cs` (plain data class, `Scripts/Core/`) with `Position`+`Occupant`; `GridBuilder.cs` (MonoBehaviour, `Scripts/Core/`) building a `Dictionary<Vector2Int, GridCell>` via nested loop, `OnDrawGizmos()` visualizing cells, plus `GetCell`/`IsCellOccupied`/`SetOccupant`/`ClearOccupant` helper methods — all tested via Console logs and Scene view gizmos. Matches template's `Dot.cs`/`GridManager.cs` concept (per `feedback-verify-against-template-each-step` memory — checking this every step now, not just once). Currently mid-step on `ArrowPathData.cs`/`LevelData.cs` (`Scripts/Data/`) for the level data model. Added a `Script Folder Structure` section to this file per user request, so file placement doesn't need re-asking each time.
 - **2026-08-06 — FULL RESET.** See banner at the top of this file. Deleted all of `Assets/Project`'s scripts/prefabs/levels/sprites (kept empty folder structure) after a long rendering-architecture debugging saga (condensed history below) ended with the user wanting to rebuild everything from scratch, step by step, to actually learn it. Next actual step: start rebuilding, beginning with whatever the user wants to tackle first per `Docs/Game-Design.md` (grid, then movement, then rendering, etc. — ask, don't assume the order).
 
 <details>
