@@ -50,7 +50,7 @@ public class GridBuilder : MonoBehaviour
 
     public void SetOccupant(Vector2Int pos, GameObject occupant)
     {
-        GridCell cell = GetCell(pos);
+        GridCell cell = GetCell((pos));
         if (cell != null)
             cell.Occupant = occupant;
     }
