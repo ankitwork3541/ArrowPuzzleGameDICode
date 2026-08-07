@@ -7,7 +7,7 @@ public class LevelLoader : MonoBehaviour
     public GridBuilder gridBuilder;
     public ArrowController arrowPrefab;
 
-    void Start()
+    public void LoadLevel()
     {
         gridBuilder.BuildGrid(levelData.gridWidth, levelData.gridHeight);
 
