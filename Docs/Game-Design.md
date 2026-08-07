@@ -131,12 +131,14 @@ Not yet started — deferred until rendering (§3) and theming (§4) are settled
 
 ## 8. Build Order (what's next, in order)
 
-1. Rework `ArrowController` rendering to the hybrid `LineRenderer` + head/tail sprite approach (§3) — single theme (current Arrow look) first, prove it's smooth and gap-free.
-2. Build the proper blocked-animation (bump forward → red flash → reverse to original position) — see §2 TODO.
-3. Design the theming data structure (§4) once the single-theme version is solid — don't build theming *and* fix rendering at the same time, that's exactly the kind of combined change that causes churn.
-4. Lives/Hearts + Hint system (§5).
-5. Procedural level generator + manual level + solvability checker (§7) — independent of the above, can happen in parallel or after.
-6. Object pooling — deferred until many levels are actually being cycled through in testing.
+**Re-prioritized 2026-08-07** — timeline is tight, so the order now favors reaching a playable end-to-end loop first; theming/pooling/monetization move later. Steps 1–2 are done:
+
+1. ~~Rework `ArrowController` rendering to the hybrid `LineRenderer` + head/tail sprite approach (§3)~~ — **done** 2026-08-07, single theme (placeholder Triangle/Knob sprites), smooth and gap-free.
+2. ~~Build the proper blocked-animation (bump forward → red flash → reverse to original position)~~ — **done** 2026-08-06, see §2.
+3. **Lives/Hearts + Hint system (§5)** — next up.
+4. **Procedural level generator + manual level + solvability checker (§7)** — the actual 50,000-levels content pipeline; needed for a genuinely playable game, so pulled forward ahead of theming.
+5. Theming data structure (§4) — deferred from its original position (was step 3) specifically to get a playable loop faster; single-theme (Arrow, placeholder sprites) is enough until this point.
+6. Object pooling — still deferred until many levels are actually being cycled through in testing.
 7. Monetization (§6) — whenever the user wants to pick this back up.
 
 ---
@@ -145,6 +147,7 @@ Not yet started — deferred until rendering (§3) and theming (§4) are settled
 
 *(Newest at top — one line per decision change, so we can see when/why something flipped.)*
 
+- **2026-08-07 (build order re-prioritized)**: User flagged a tight timeline ("apde ochi time line che") and asked to move faster without cutting explanation depth. Re-ordered §8: theming (previously step 3) moved to step 5, after Lives/Hearts+Hint (§5) and level generation (§7) — goal is a playable end-to-end loop sooner; single-theme placeholder sprites are enough until theming is actually reached. Rendering polish (head/tail sprites riding the `LineRenderer`, §3) completed and verified same day.
 - **2026-08-06 (core loop built)**: Rebuilt the core arrow gameplay loop from scratch on `Assets/Project` (grid → level data → `ArrowController` move/block/exit) and hands-on-verified each piece in the Unity Editor. Re-validated against the template post-build — rewrote §9's comparison table since most rows were written *before* the code existed and are now stale; current code matches the template's movement/exit algorithms structurally, confirmed the bump+reverse deviation is built and working, and found the template's `GridManager` avoids Unity's `Awake`/`Start` ordering ambiguity entirely via explicit sequencing (a real bug we hit and fixed differently, worth adopting once a `LevelLoader` exists). See `CLAUDE.md` progress log for the play-by-play (including two script-execution-order/shader-color bugs found and fixed).
 - **2026-08-06 (full reset)**: User chose to wipe all of `Assets/Project` (scripts, prefabs, levels, all 4 sprites) back to empty folders and rebuild everything from scratch, step by step, specifically to learn it properly rather than inherit patched-together code. See `CLAUDE.md`'s reset banner for exactly what was deleted. This doc's *decisions* (§1–9) still stand as the target architecture for the rebuild — only the old implementation/art files are gone, not the plan.
 - **2026-08-06**: Confirmed bump+reverse blocked animation goes beyond the template on purpose (template only flashes color, verified by reading its code). Confirmed click detection uses New Input System, not the template's legacy `Input` class (architecture idea of one-check-per-arrow still borrowed). Added §9 fact-checked comparison table against the template. Confirmed `segment.png`/`corner.png` and the sprite-segment concept are being deleted everywhere (assets + code + docs), not just left unused.

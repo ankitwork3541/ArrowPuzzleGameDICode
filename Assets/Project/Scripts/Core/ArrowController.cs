@@ -175,6 +175,8 @@ public class ArrowController : MonoBehaviour
     }
     void BlockedBounce()
     {
+        LivesManager.Instance.LoseLife();
+
         int n = path.Count;
         Vector3[] originalWorld = new Vector3[n];
         line.GetPositions(originalWorld);
