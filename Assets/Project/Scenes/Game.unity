@@ -135,7 +135,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!120 &118878020
 LineRenderer:
   serializedVersion: 3
@@ -352,7 +352,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &509710744
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -365,7 +365,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a16c1da0c626e4bcab6e37fb0cb47c78, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelLoader
-  levelData: {fileID: 11400000, guid: 0ddf3bacf9406447a8d2798b1411c1f5, type: 2}
+  levelData: {fileID: 11400000, guid: 11f7cae1695fe4363a0f21cb3c401c67, type: 2}
   gridBuilder: {fileID: 827431895}
   arrowPrefab: {fileID: 5943569507495498416, guid: bccaafe9cc3dc4be5b600aa50b03acdd, type: 3}
 --- !u!4 &509710745
@@ -399,7 +399,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &560664549
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -414,6 +414,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LevelPainter
   gridBuilder: {fileID: 827431895}
   previewLine: {fileID: 118878020}
+  gridWidth: 10
+  gridHeight: 10
+  committedLinePrefab: {fileID: 6773354591183350302, guid: 760ffc84867a44c17b9914bef230b0e5, type: 3}
 --- !u!4 &560664550
 Transform:
   m_ObjectHideFlags: 0
@@ -939,10 +942,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.CanvasScaler
-  m_UiScaleMode: 0
+  m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
-  m_ReferenceResolution: {x: 800, y: 600}
+  m_ReferenceResolution: {x: 1080, y: 1920}
   m_ScreenMatchMode: 0
   m_MatchWidthOrHeight: 0
   m_PhysicalUnit: 3
