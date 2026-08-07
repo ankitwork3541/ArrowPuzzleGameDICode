@@ -91,7 +91,7 @@ Re-read `ArrowController.cs` (ours, now with working move/block/exit) and `Arrow
 
 Implication for architecture: whatever holds "how this arrow looks" (line width, line color/gradient, head sprite, tail sprite) needs to be **swappable data**, not hardcoded into `ArrowController`. Concretely (exact class names/structure TBD when we build it, not fixed yet):
 
-- A theme = a set of: body width, body color/gradient, head sprite, tail sprite (and later, possibly per-theme sound/animation).
+- A theme = a set of: body width, body color/gradient, head sprite, tail sprite, **head sprite rotation offset** (and later, possibly per-theme sound/animation). The offset is needed because `ArrowController.UpdateHeadRotation()` computes a direction angle via `Atan2` and then corrects it to match the head sprite's own default-facing direction (Unity's built-in Triangle sprite points up by default, needing a `-90°` correction to align with a rightward-moving arrow) — a different head sprite drawn facing a different default direction will need a different offset, so this must be per-theme data, not a hardcoded constant.
 - `ArrowController` reads "which theme" it should render as, rather than having sprites hardcoded as public fields the way it does today.
 - We are **not** reusing the template's `ThemeData`/`ThemeManager` code directly (per the existing rule that `Assets/MultiTech Studio` is reference-only) — we'll build our own equivalent, informed by how theirs works.
 

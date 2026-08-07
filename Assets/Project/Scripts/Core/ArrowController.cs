@@ -9,6 +9,7 @@ public class ArrowController : MonoBehaviour
 {
     public List<Vector2Int> path = new List<Vector2Int>();
     public GridBuilder gridBuilder; // Inspector ma GridBuilder object drag karo
+    public Transform headVisual; // Inspector ma "Head" child object drag karo
 
     public float spacing = 1f;
     private bool isMoving = false;
@@ -16,11 +17,14 @@ public class ArrowController : MonoBehaviour
 
     private LineRenderer line;
     private EdgeCollider2D edgeCollider;
+    private SpriteRenderer headSprite;
 
     void Awake()
     {
         line = GetComponent<LineRenderer>();
         edgeCollider = GetComponent<EdgeCollider2D>();
+        if (headVisual != null)
+            headSprite = headVisual.GetComponent<SpriteRenderer>();
     }
 
     void Start()
@@ -69,7 +73,29 @@ public class ArrowController : MonoBehaviour
 
         edgeCollider.points = colliderPoints;
         edgeCollider.edgeRadius = 0.15f; // line jetli jaadi che, e pramane
+
+        UpdateHeadPosition();
     }
+
+    void UpdateHeadPosition()
+    {
+        if (headVisual == null) return;
+
+        Vector3 headPos = line.GetPosition(line.positionCount - 1);
+        headVisual.position = headPos;
+        UpdateHeadRotation();
+    }
+
+    void UpdateHeadRotation()
+    {
+        if (headVisual == null || path.Count < 2) return;
+
+        int n = path.Count;
+        Vector2Int dir = path[n - 1] - path[n - 2];
+        float angle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+        headVisual.rotation = Quaternion.Euler(0f, 0f, angle - 90f);
+    }
+
     void TryAdvance()
     {
         if (isMoving) return; // already moving, extra click ignore
@@ -122,6 +148,7 @@ public class ArrowController : MonoBehaviour
             {
                 for (int i = 0; i < n; i++)
                     line.SetPosition(i, Vector3.Lerp(oldWorld[i], newWorld[i], t));
+                UpdateHeadPosition();
             })
             .OnComplete(() =>
             {
@@ -160,6 +187,7 @@ public class ArrowController : MonoBehaviour
             {
                 for (int i = 0; i < n; i++)
                     line.SetPosition(i, Vector3.Lerp(originalWorld[i], bumpWorld[i], t));
+                UpdateHeadPosition();
             })
             .OnComplete(() =>
             {
@@ -170,6 +198,7 @@ public class ArrowController : MonoBehaviour
                     {
                         for (int i = 0; i < n; i++)
                             line.SetPosition(i, Vector3.Lerp(bumpWorld[i], originalWorld[i], t2));
+                        UpdateHeadPosition();
                     })
                     .OnComplete(() =>
                     {
@@ -205,6 +234,7 @@ public class ArrowController : MonoBehaviour
             {
                 for (int i = 0; i < n; i++)
                     line.SetPosition(i, Vector3.Lerp(oldWorld[i], newWorld[i], t));
+                UpdateHeadPosition();
             })
             .OnComplete(() =>
             {
@@ -236,6 +266,9 @@ public class ArrowController : MonoBehaviour
             line.startColor = c;
             line.endColor = c;
         }
+
+        if (headSprite != null)
+            headSprite.color = c;
     }
 
 }
