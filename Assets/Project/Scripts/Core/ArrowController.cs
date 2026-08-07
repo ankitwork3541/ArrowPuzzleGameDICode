@@ -76,7 +76,7 @@ public class ArrowController : MonoBehaviour
         }
 
         edgeCollider.points = colliderPoints;
-        edgeCollider.edgeRadius = 0.15f; // line jetli jaadi che, e pramane
+        edgeCollider.edgeRadius = 0.09f; // line jetli jaadi che, e pramane
 
         UpdateHeadPosition();
         UpdateTailPosition();
