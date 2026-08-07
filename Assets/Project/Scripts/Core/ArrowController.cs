@@ -19,19 +19,38 @@ public class ArrowController : MonoBehaviour
     private EdgeCollider2D edgeCollider;
     private SpriteRenderer headSprite;
     private SpriteRenderer tailSprite;
+    private Vector3 headBaseScale;
+    private Vector3 tailBaseScale;
 
     void Awake()
     {
         line = GetComponent<LineRenderer>();
         edgeCollider = GetComponent<EdgeCollider2D>();
         if (headVisual != null)
+        {
             headSprite = headVisual.GetComponent<SpriteRenderer>();
+            headBaseScale = headVisual.localScale;
+        }
         if (tailVisual != null)
+        {
             tailSprite = tailVisual.GetComponent<SpriteRenderer>();
+            tailBaseScale = tailVisual.localScale;
+        }
     }
 
-    void Start()
+    // Line width + head/tail sprite size ne camera zoom sathe proportionally scale karo,
+    // taki sparse (zoomed-in) levels ma arrows disproportionately motu na dekhay.
+    public void SetVisualScale(float multiplier)
     {
+        line.widthMultiplier = multiplier;
+        if (headVisual != null) headVisual.localScale = headBaseScale * multiplier;
+        if (tailVisual != null) tailVisual.localScale = tailBaseScale * multiplier;
+    }
+
+    public void Init(List<Vector2Int> newPath, GridBuilder builder)
+    {
+        path = newPath;
+        gridBuilder = builder;
         DrawPath();
         ClaimOccupancy();
     }
@@ -324,6 +343,14 @@ public class ArrowController : MonoBehaviour
             headSprite.color = c;
         if (tailSprite != null)
             tailSprite.color = c;
+    }
+
+    public Bounds GetBounds()
+    {
+        Bounds bounds = line.bounds;
+        if (headSprite != null) bounds.Encapsulate(headSprite.bounds);
+        if (tailSprite != null) bounds.Encapsulate(tailSprite.bounds);
+        return bounds;
     }
 
 }

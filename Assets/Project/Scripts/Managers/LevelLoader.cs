@@ -6,6 +6,7 @@ public class LevelLoader : MonoBehaviour
     public LevelData[] levels;
     public GridBuilder gridBuilder;
     public ArrowController arrowPrefab;
+    public CameraController cameraController;
 
     private int currentLevelIndex = 0;
     private List<ArrowController> spawnedArrows = new List<ArrowController>();
@@ -16,9 +17,10 @@ public class LevelLoader : MonoBehaviour
 
         LevelData levelData = levels[currentLevelIndex];
         gridBuilder.BuildGrid(levelData.gridWidth, levelData.gridHeight);
-        CenterOnArrows(levelData);
 
-        int spawnedCount = 0;
+        Vector2Int min, max;
+        if (TryGetArrowBounds(levelData, out min, out max))
+            gridBuilder.CenterOnContent(min, max);
 
         foreach (ArrowPathData arrowData in levelData.arrows)
         {
@@ -29,19 +31,33 @@ public class LevelLoader : MonoBehaviour
             }
 
             ArrowController newArrow = Instantiate(arrowPrefab);
-            newArrow.path = new List<Vector2Int>(arrowData.path);
-            newArrow.gridBuilder = gridBuilder;
+            newArrow.Init(new List<Vector2Int>(arrowData.path), gridBuilder);
             spawnedArrows.Add(newArrow);
-            spawnedCount++;
         }
 
-        LevelManager.Instance.SetArrowCount(spawnedCount);
+        LevelManager.Instance.SetArrowCount(spawnedArrows.Count);
+        FitCameraToSpawnedArrows();
     }
 
-    void CenterOnArrows(LevelData levelData)
+    void FitCameraToSpawnedArrows()
     {
-        Vector2Int min = new Vector2Int(int.MaxValue, int.MaxValue);
-        Vector2Int max = new Vector2Int(int.MinValue, int.MinValue);
+        if (spawnedArrows.Count == 0) return;
+
+        Bounds combined = spawnedArrows[0].GetBounds();
+        for (int i = 1; i < spawnedArrows.Count; i++)
+            combined.Encapsulate(spawnedArrows[i].GetBounds());
+
+        cameraController.FitToBounds(combined);
+
+        float visualScale = cameraController.CurrentVisualScale;
+        foreach (ArrowController arrow in spawnedArrows)
+            arrow.SetVisualScale(visualScale);
+    }
+
+    bool TryGetArrowBounds(LevelData levelData, out Vector2Int min, out Vector2Int max)
+    {
+        min = new Vector2Int(int.MaxValue, int.MaxValue);
+        max = new Vector2Int(int.MinValue, int.MinValue);
         bool foundAny = false;
 
         foreach (ArrowPathData arrowData in levelData.arrows)
@@ -58,8 +74,7 @@ public class LevelLoader : MonoBehaviour
             }
         }
 
-        if (foundAny)
-            gridBuilder.CenterOnContent(min, max);
+        return foundAny;
     }
 
     void ClearArrows()
