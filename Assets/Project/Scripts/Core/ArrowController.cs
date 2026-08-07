@@ -12,7 +12,6 @@ public class ArrowController : MonoBehaviour
     public Transform headVisual; // Inspector ma "Head" child object drag karo
     public Transform tailVisual; // Inspector ma "Tail" child object drag karo
 
-    public float spacing = 1f;
     private bool isMoving = false;
     public float stepTime = 0.18f;
 
@@ -70,7 +69,7 @@ public class ArrowController : MonoBehaviour
 
         for (int i = 0; i < path.Count; i++)
         {
-            Vector3 worldPos = new Vector3(path[i].x * spacing, path[i].y * spacing, 0f);
+            Vector3 worldPos = gridBuilder.GridToWorld(path[i]);
             line.SetPosition(i, worldPos);
             colliderPoints[i] = worldPos;
         }
@@ -123,7 +122,7 @@ public class ArrowController : MonoBehaviour
 
         if (nextCell == null)
         {
-            Vector3 exitStep = new Vector3(dir.x, dir.y, 0f) * spacing;
+            Vector3 exitStep = new Vector3(dir.x, dir.y, 0f) * gridBuilder.spacing;
             StartExit(exitStep);
         }
         else if (gridBuilder.IsCellOccupied(nextPos))
@@ -140,9 +139,9 @@ public class ArrowController : MonoBehaviour
         int n = path.Count;
 
         // Capture old tail/head BEFORE shifting path (needed for the grow/shrink animation)
-        Vector3 oldTailWorld = new Vector3(path[0].x * spacing, path[0].y * spacing, 0f);
-        Vector3 oldHeadWorld = new Vector3(path[n - 1].x * spacing, path[n - 1].y * spacing, 0f);
-        Vector3 newHeadWorld = new Vector3(nextPos.x * spacing, nextPos.y * spacing, 0f);
+        Vector3 oldTailWorld = gridBuilder.GridToWorld(path[0]);
+        Vector3 oldHeadWorld = gridBuilder.GridToWorld(path[n - 1]);
+        Vector3 newHeadWorld = gridBuilder.GridToWorld(nextPos);
 
         gridBuilder.ClearOccupant(path[0]);
         for (int i = 0; i < n - 1; i++) path[i] = path[i + 1];
@@ -150,7 +149,7 @@ public class ArrowController : MonoBehaviour
         gridBuilder.SetOccupant(nextPos, gameObject);
 
         // Tail shrinks toward what is now path[0] (the old 2nd point) — always a straight line, no diagonal
-        Vector3 newTailTarget = new Vector3(path[0].x * spacing, path[0].y * spacing, 0f);
+        Vector3 newTailTarget = gridBuilder.GridToWorld(path[0]);
 
         // Line has n+1 points during the animation: [shrinking tail, frozen middle..., growing head]
         line.positionCount = n + 1;
@@ -158,8 +157,7 @@ public class ArrowController : MonoBehaviour
         line.SetPosition(n, oldHeadWorld);
         for (int i = 0; i < n - 1; i++)
         {
-            Vector3 p = new Vector3(path[i].x * spacing, path[i].y * spacing, 0f);
-            line.SetPosition(i + 1, p); // middle points set once, never touched again — they stay frozen
+            line.SetPosition(i + 1, gridBuilder.GridToWorld(path[i])); // middle points set once, never touched again — they stay frozen
         }
 
         isMoving = true;
@@ -178,7 +176,7 @@ public class ArrowController : MonoBehaviour
                 // Finalize: drop the now-redundant tail point (merged with what was point 2)
                 Vector3[] finalPositions = new Vector3[n];
                 for (int i = 0; i < n; i++)
-                    finalPositions[i] = new Vector3(path[i].x * spacing, path[i].y * spacing, 0f);
+                    finalPositions[i] = gridBuilder.GridToWorld(path[i]);
 
                 line.positionCount = n;
                 line.SetPositions(finalPositions);
@@ -203,7 +201,7 @@ public class ArrowController : MonoBehaviour
         Vector2Int head = path[n - 1];
         Vector2Int prev = path[n - 2];
         Vector2Int dir = head - prev;
-        Vector3 bumpOffset = new Vector3(dir.x, dir.y, 0f) * spacing * 0.3f;
+        Vector3 bumpOffset = new Vector3(dir.x, dir.y, 0f) * gridBuilder.spacing * 0.3f;
 
         Vector3[] bumpWorld = new Vector3[n];
         for (int i = 0; i < n; i++)

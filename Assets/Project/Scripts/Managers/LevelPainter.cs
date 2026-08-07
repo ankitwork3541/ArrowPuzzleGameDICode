@@ -93,8 +93,7 @@ public class LevelPainter : MonoBehaviour
         previewLine.positionCount = currentPath.Count;
         for (int i = 0; i < currentPath.Count; i++)
         {
-            Vector3 worldPos = new Vector3(currentPath[i].x * gridBuilder.spacing, currentPath[i].y * gridBuilder.spacing, 0f);
-            previewLine.SetPosition(i, worldPos);
+            previewLine.SetPosition(i, gridBuilder.GridToWorld(currentPath[i]));
         }
     }
 
@@ -141,8 +140,7 @@ public class LevelPainter : MonoBehaviour
         line.positionCount = path.Count;
         for (int i = 0; i < path.Count; i++)
         {
-            Vector3 worldPos = new Vector3(path[i].x * gridBuilder.spacing, path[i].y * gridBuilder.spacing, 0f);
-            line.SetPosition(i, worldPos);
+            line.SetPosition(i, gridBuilder.GridToWorld(path[i]));
         }
     }
 

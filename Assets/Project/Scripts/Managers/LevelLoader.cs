@@ -16,6 +16,7 @@ public class LevelLoader : MonoBehaviour
 
         LevelData levelData = levels[currentLevelIndex];
         gridBuilder.BuildGrid(levelData.gridWidth, levelData.gridHeight);
+        CenterOnArrows(levelData);
 
         int spawnedCount = 0;
 
@@ -35,6 +36,30 @@ public class LevelLoader : MonoBehaviour
         }
 
         LevelManager.Instance.SetArrowCount(spawnedCount);
+    }
+
+    void CenterOnArrows(LevelData levelData)
+    {
+        Vector2Int min = new Vector2Int(int.MaxValue, int.MaxValue);
+        Vector2Int max = new Vector2Int(int.MinValue, int.MinValue);
+        bool foundAny = false;
+
+        foreach (ArrowPathData arrowData in levelData.arrows)
+        {
+            if (arrowData.path == null) continue;
+
+            foreach (Vector2Int pos in arrowData.path)
+            {
+                foundAny = true;
+                if (pos.x < min.x) min.x = pos.x;
+                if (pos.y < min.y) min.y = pos.y;
+                if (pos.x > max.x) max.x = pos.x;
+                if (pos.y > max.y) max.y = pos.y;
+            }
+        }
+
+        if (foundAny)
+            gridBuilder.CenterOnContent(min, max);
     }
 
     void ClearArrows()

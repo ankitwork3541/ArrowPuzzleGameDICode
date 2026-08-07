@@ -6,6 +6,7 @@ public class GridBuilder : MonoBehaviour
     public int width = 5;
     public int height = 5;
     public float spacing = 1f;
+    public Vector2 origin; // grid na (0,0) cell ni world position — center karva mate calculate thay
 
     public Dictionary<Vector2Int, GridCell> cells = new Dictionary<Vector2Int, GridCell>();
 
@@ -20,6 +21,9 @@ public class GridBuilder : MonoBehaviour
         height = newHeight;
         cells.Clear();
 
+        // Grid ne world (0,0) ni around center karo — motu ke chhotu, hamesha vachche j rahe
+        origin = new Vector2(-(width - 1) * spacing / 2f, -(height - 1) * spacing / 2f);
+
         for (int row = 0; row < height; row++)
         {
             for (int col = 0; col < width; col++)
@@ -32,13 +36,26 @@ public class GridBuilder : MonoBehaviour
         Debug.Log("Grid banyo! Total cells: " + cells.Count);
     }
 
+    // Declared grid size (BuildGrid) ni jagyaae, ACTUAL content (arrows) ni bounding box ne center karo.
+    // Sparse/chhoti levels pan barobar screen-center thay, chahe declared grid size motu hoy.
+    public void CenterOnContent(Vector2Int min, Vector2Int max)
+    {
+        float centerX = (min.x + max.x) / 2f;
+        float centerY = (min.y + max.y) / 2f;
+        origin = new Vector2(-centerX * spacing, -centerY * spacing);
+    }
+
+    public Vector3 GridToWorld(Vector2Int gridPos)
+    {
+        return new Vector3(origin.x + gridPos.x * spacing, origin.y + gridPos.y * spacing, 0f);
+    }
+
     void OnDrawGizmos()
     {
         Gizmos.color = Color.cyan;
         foreach (var kvp in cells)
         {
-            Vector3 worldPos = new Vector3(kvp.Key.x * spacing, kvp.Key.y * spacing, 0f);
-            Gizmos.DrawWireSphere(worldPos, 0.1f);
+            Gizmos.DrawWireSphere(GridToWorld(kvp.Key), 0.1f);
         }
     }
 
@@ -72,8 +89,8 @@ public class GridBuilder : MonoBehaviour
 
     public Vector2Int WorldToGrid(Vector3 worldPos)
     {
-        int x = Mathf.RoundToInt(worldPos.x / spacing);
-        int y = Mathf.RoundToInt(worldPos.y / spacing);
+        int x = Mathf.RoundToInt((worldPos.x - origin.x) / spacing);
+        int y = Mathf.RoundToInt((worldPos.y - origin.y) / spacing);
         return new Vector2Int(x, y);
     }
 

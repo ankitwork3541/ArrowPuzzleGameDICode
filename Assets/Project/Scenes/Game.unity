@@ -773,9 +773,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelLoader
   levels:
-  - {fileID: 11400000, guid: 5f7fb09b08cbd4669a564f4f11ce2384, type: 2}
   - {fileID: 11400000, guid: 714cbb3f430fe4bcdb77a5df65bde0ed, type: 2}
-  - {fileID: 11400000, guid: a770f052399c84c479580e9b95b923b6, type: 2}
+  - {fileID: 11400000, guid: 62a7ad3caaa05488c90cd4bc3dadeda0, type: 2}
+  - {fileID: 11400000, guid: 821c8a94e43f34db3b704a444db65d2c, type: 2}
   gridBuilder: {fileID: 827431895}
   arrowPrefab: {fileID: 5943569507495498416, guid: bccaafe9cc3dc4be5b600aa50b03acdd, type: 3}
 --- !u!4 &509710745
@@ -1102,6 +1102,7 @@ MonoBehaviour:
   width: 5
   height: 5
   spacing: 1
+  origin: {x: 0, y: 0}
 --- !u!4 &827431896
 Transform:
   m_ObjectHideFlags: 0
