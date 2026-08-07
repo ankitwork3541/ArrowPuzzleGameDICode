@@ -44,14 +44,14 @@ public class LevelGenerator
         return walk;
     }
 
-    static bool IsExitClear(Vector2Int head, Vector2Int dir, HashSet<Vector2Int> occupied, int width, int height)
+    static bool IsExitClear(Vector2Int head, Vector2Int dir, HashSet<Vector2Int> occupied, List<Vector2Int> ownBody, int width, int height)
     {
         Vector2Int cursor = head + dir;
 
         while (IsInBounds(cursor, width, height))
         {
-            if (occupied.Contains(cursor))
-                return false; // koi biji arrow vachche aavi gai
+            if (occupied.Contains(cursor) || ownBody.Contains(cursor))
+                return false; // koi biji arrow, YA POTANI J BODY (hook/loop shape), vachche aavi gai
 
             cursor += dir;
         }
@@ -62,11 +62,11 @@ public class LevelGenerator
     [MenuItem("ArrowPuzzle/Generate Level")]
     static void GenerateLevel()
     {
-        int gridWidth = 6;
-        int gridHeight = 6;
-        int arrowCount = 6;
-        int minLength = 3;
-        int maxLength = 6;
+        int gridWidth = 10;
+        int gridHeight = 10;
+        int arrowCount = 15;
+        int minLength = 2;
+        int maxLength = 8;
 
         HashSet<Vector2Int> occupied = new HashSet<Vector2Int>();
         List<List<Vector2Int>> arrowPaths = new List<List<Vector2Int>>();
@@ -92,7 +92,7 @@ public class LevelGenerator
                 Vector2Int prev = walk[walk.Count - 2];
                 Vector2Int dir = head - prev;
 
-                if (!IsExitClear(head, dir, occupied, gridWidth, gridHeight)) continue;
+                if (!IsExitClear(head, dir, occupied, walk, gridWidth, gridHeight)) continue;
 
                 path = walk;
                 break;
