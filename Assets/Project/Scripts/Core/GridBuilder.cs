@@ -70,4 +70,11 @@ public class GridBuilder : MonoBehaviour
             cell.Occupant = null;
     }
 
+    public Vector2Int WorldToGrid(Vector3 worldPos)
+    {
+        int x = Mathf.RoundToInt(worldPos.x / spacing);
+        int y = Mathf.RoundToInt(worldPos.y / spacing);
+        return new Vector2Int(x, y);
+    }
+
 }
