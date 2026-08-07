@@ -11,6 +11,8 @@ public class LevelLoader : MonoBehaviour
     {
         gridBuilder.BuildGrid(levelData.gridWidth, levelData.gridHeight);
 
+        int spawnedCount = 0;
+
         foreach (ArrowPathData arrowData in levelData.arrows)
         {
             if (arrowData.path == null || arrowData.path.Count < 2)
@@ -22,6 +24,9 @@ public class LevelLoader : MonoBehaviour
             ArrowController newArrow = Instantiate(arrowPrefab);
             newArrow.path = new List<Vector2Int>(arrowData.path);
             newArrow.gridBuilder = gridBuilder;
+            spawnedCount++;
         }
+
+        LevelManager.Instance.SetArrowCount(spawnedCount);
     }
 }

@@ -5,6 +5,8 @@ public class GameFlowManager : MonoBehaviour
     public GameObject splashPanel;
     public GameObject homePanel;
     public GameObject gameplayPanel;
+    public GameObject winPanel;
+    public GameObject losePanel;
     public LevelLoader levelLoader;
     public float splashDuration = 2f;
 
@@ -13,6 +15,8 @@ public class GameFlowManager : MonoBehaviour
         splashPanel.SetActive(true);
         homePanel.SetActive(false);
         gameplayPanel.SetActive(false);
+        winPanel.SetActive(false);
+        losePanel.SetActive(false);
 
         Invoke(nameof(ShowHome), splashDuration);
     }
@@ -28,5 +32,17 @@ public class GameFlowManager : MonoBehaviour
         homePanel.SetActive(false);
         gameplayPanel.SetActive(true);
         levelLoader.LoadLevel();
+    }
+
+    public void ShowWin()
+    {
+        gameplayPanel.SetActive(false);
+        winPanel.SetActive(true);
+    }
+
+    public void ShowLose()
+    {
+        gameplayPanel.SetActive(false);
+        losePanel.SetActive(true);
     }
 }

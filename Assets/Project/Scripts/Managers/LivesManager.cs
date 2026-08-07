@@ -7,6 +7,7 @@ public class LivesManager : MonoBehaviour
 
     public int lives = 3;
     public Image[] heartImages; // Inspector ma Heart1, Heart2, Heart3 drag karo (order ma)
+    public GameFlowManager gameFlowManager;
 
     void Awake()
     {
@@ -22,7 +23,7 @@ public class LivesManager : MonoBehaviour
 
         if (lives <= 0)
         {
-            Debug.Log("GAME OVER — level restart karo");
+            gameFlowManager.ShowLose();
         }
     }
 }

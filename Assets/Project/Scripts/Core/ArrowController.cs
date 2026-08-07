@@ -291,7 +291,10 @@ public class ArrowController : MonoBehaviour
                 line.SetPositions(finalPositions);
 
                 if (IsFullyOffScreen())
+                {
+                    LevelManager.Instance.ArrowExited();
                     Destroy(gameObject);
+                }
                 else
                     ExitStepOnce(exitStep);
             });
