@@ -350,7 +350,7 @@ MonoBehaviour:
   headVisual: {fileID: 1805686586421358390}
   tailVisual: {fileID: 1895956130987350010}
   spacing: 1
-  stepTime: 0.08
+  stepTime: 0.15
 --- !u!68 &6532186278058067499
 EdgeCollider2D:
   m_ObjectHideFlags: 0

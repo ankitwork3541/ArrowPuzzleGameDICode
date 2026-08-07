@@ -139,17 +139,28 @@ public class ArrowController : MonoBehaviour
     {
         int n = path.Count;
 
-        Vector3[] oldWorld = new Vector3[n];
-        line.GetPositions(oldWorld);
+        // Capture old tail/head BEFORE shifting path (needed for the grow/shrink animation)
+        Vector3 oldTailWorld = new Vector3(path[0].x * spacing, path[0].y * spacing, 0f);
+        Vector3 oldHeadWorld = new Vector3(path[n - 1].x * spacing, path[n - 1].y * spacing, 0f);
+        Vector3 newHeadWorld = new Vector3(nextPos.x * spacing, nextPos.y * spacing, 0f);
 
         gridBuilder.ClearOccupant(path[0]);
         for (int i = 0; i < n - 1; i++) path[i] = path[i + 1];
         path[n - 1] = nextPos;
         gridBuilder.SetOccupant(nextPos, gameObject);
 
-        Vector3[] newWorld = new Vector3[n];
-        for (int i = 0; i < n; i++)
-            newWorld[i] = new Vector3(path[i].x * spacing, path[i].y * spacing, 0f);
+        // Tail shrinks toward what is now path[0] (the old 2nd point) — always a straight line, no diagonal
+        Vector3 newTailTarget = new Vector3(path[0].x * spacing, path[0].y * spacing, 0f);
+
+        // Line has n+1 points during the animation: [shrinking tail, frozen middle..., growing head]
+        line.positionCount = n + 1;
+        line.SetPosition(0, oldTailWorld);
+        line.SetPosition(n, oldHeadWorld);
+        for (int i = 0; i < n - 1; i++)
+        {
+            Vector3 p = new Vector3(path[i].x * spacing, path[i].y * spacing, 0f);
+            line.SetPosition(i + 1, p); // middle points set once, never touched again — they stay frozen
+        }
 
         isMoving = true;
         float t = 0f;
@@ -157,16 +168,24 @@ public class ArrowController : MonoBehaviour
             .SetEase(Ease.Linear)
             .OnUpdate(() =>
             {
-                for (int i = 0; i < n; i++)
-                    line.SetPosition(i, Vector3.Lerp(oldWorld[i], newWorld[i], t));
+                line.SetPosition(0, Vector3.Lerp(oldTailWorld, newTailTarget, t));
+                line.SetPosition(n, Vector3.Lerp(oldHeadWorld, newHeadWorld, t));
                 UpdateHeadPosition();
                 UpdateTailPosition();
             })
             .OnComplete(() =>
             {
+                // Finalize: drop the now-redundant tail point (merged with what was point 2)
+                Vector3[] finalPositions = new Vector3[n];
+                for (int i = 0; i < n; i++)
+                    finalPositions[i] = new Vector3(path[i].x * spacing, path[i].y * spacing, 0f);
+
+                line.positionCount = n;
+                line.SetPositions(finalPositions);
+
                 Vector2[] colliderPoints = new Vector2[n];
                 for (int i = 0; i < n; i++)
-                    colliderPoints[i] = newWorld[i];
+                    colliderPoints[i] = finalPositions[i];
                 edgeCollider.points = colliderPoints;
 
                 isMoving = false;
@@ -239,22 +258,38 @@ public class ArrowController : MonoBehaviour
         Vector3[] oldWorld = new Vector3[n];
         line.GetPositions(oldWorld);
 
-        Vector3[] newWorld = new Vector3[n];
-        for (int i = 0; i < n - 1; i++) newWorld[i] = oldWorld[i + 1];
-        newWorld[n - 1] = oldWorld[n - 1] + exitStep;
+        Vector3 oldTailWorld = oldWorld[0];
+        Vector3 newTailTarget = oldWorld[1];
+        Vector3 oldHeadWorld = oldWorld[n - 1];
+        Vector3 newHeadWorld = oldWorld[n - 1] + exitStep;
+
+        // Same grow/shrink technique as MoveStep: freeze the middle, only animate the two ends
+        line.positionCount = n + 1;
+        line.SetPosition(0, oldTailWorld);
+        line.SetPosition(n, oldHeadWorld);
+        for (int i = 1; i < n; i++)
+            line.SetPosition(i, oldWorld[i]); // frozen middle, unchanged from old positions
 
         float t = 0f;
         DOTween.To(() => t, v => t = v, 1f, stepTime)
             .SetEase(Ease.Linear)
             .OnUpdate(() =>
             {
-                for (int i = 0; i < n; i++)
-                    line.SetPosition(i, Vector3.Lerp(oldWorld[i], newWorld[i], t));
+                line.SetPosition(0, Vector3.Lerp(oldTailWorld, newTailTarget, t));
+                line.SetPosition(n, Vector3.Lerp(oldHeadWorld, newHeadWorld, t));
                 UpdateHeadPosition();
                 UpdateTailPosition();
             })
             .OnComplete(() =>
             {
+                Vector3[] finalPositions = new Vector3[n];
+                for (int i = 0; i < n - 1; i++)
+                    finalPositions[i] = oldWorld[i + 1];
+                finalPositions[n - 1] = newHeadWorld;
+
+                line.positionCount = n;
+                line.SetPositions(finalPositions);
+
                 if (IsFullyOffScreen())
                     Destroy(gameObject);
                 else
