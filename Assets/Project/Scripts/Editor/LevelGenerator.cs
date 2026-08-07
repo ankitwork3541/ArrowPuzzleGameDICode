@@ -140,82 +140,191 @@ public class LevelGenerator
         return mask;
     }
 
-    // Box-Muller thi gaussian random (Unity ma built-in nathi), absolute value.
-    static float AbsGaussian(float sigma)
+    // Aakhi shape ne 100% bharva mate: random-mukine-check-karvani jagyaae, SOLVE ORDER ma
+    // "carve" karvu. Sharuaat ma aakhi shape bharel gano, pachi ek pachi ek arrow kaadho —
+    // ek arrow tya j kaadhi shakay jyare eno exit-ray FAKT already-kaadhel (khali) cells
+    // mathi pasar thay. Aa rite bahar-thi-andar peel thay che.
+    //
+    // Arrow potani j body thi block kem nathi thato: body na badha cells `remaining` ma j che,
+    // ane ray ne khali NON-remaining cells mathi j pasar thavani chhut che — etle self-block
+    // structurally shakya j nathi, alag check ni jarur nathi.
+    //
+    // Carve order = solve order, etle level construction thi j solvable che. Ane apde shape ne
+    // PARTITION kari rahya chie (random rite bharta nathi), etle coverage 100% by definition.
+    static bool RayIsClear(Vector2Int head, Vector2Int dir, HashSet<Vector2Int> remaining, int width, int height)
     {
-        float u1 = 1f - Random.value;
-        float u2 = 1f - Random.value;
-        float g = Mathf.Sqrt(-2f * Mathf.Log(u1)) * Mathf.Cos(2f * Mathf.PI * u2);
-        return Mathf.Abs(g * sigma);
+        Vector2Int cursor = head + dir;
+        while (IsInBounds(cursor, width, height))
+        {
+            if (remaining.Contains(cursor)) return false;
+            cursor += dir;
+        }
+        return true;
     }
 
-    static List<List<Vector2Int>> FillShape(HashSet<Vector2Int> mask, int width, int height, int minLength, int maxLength, int maxFail, float centerBias)
+    // n na ketla padoshi `remaining` ma che, aa path nikadi lidha pachi
+    static int DegreeAfter(Vector2Int n, HashSet<Vector2Int> remaining, List<Vector2Int> path)
     {
-        // Mask cells ne ek j vaar center-thi-distance pramane sort kari lo (dar iteration ma
-        // sort karvani jarur na pade — khali occupied skip karvana).
-        List<Vector2Int> cellsByDistance = new List<Vector2Int>(mask);
-        float cx = 0f, cy = 0f;
-        foreach (Vector2Int c in cellsByDistance) { cx += c.x; cy += c.y; }
-        cx /= cellsByDistance.Count;
-        cy /= cellsByDistance.Count;
-        cellsByDistance.Sort((a, b) =>
+        int count = 0;
+        foreach (Vector2Int d in directions)
         {
-            float da = (a.x - cx) * (a.x - cx) + (a.y - cy) * (a.y - cy);
-            float db = (b.x - cx) * (b.x - cx) + (b.y - cy) * (b.y - cy);
-            return da.CompareTo(db);
-        });
+            Vector2Int nb = n + d;
+            if (remaining.Contains(nb) && !path.Contains(nb)) count++;
+        }
+        return count;
+    }
 
-        HashSet<Vector2Int> occupied = new HashSet<Vector2Int>();
+    static List<List<Vector2Int>> Carve(HashSet<Vector2Int> mask, int width, int height, int minLength, int maxLength, out int strandedCount)
+    {
+        HashSet<Vector2Int> remaining = new HashSet<Vector2Int>(mask);
         List<List<Vector2Int>> arrows = new List<List<Vector2Int>>();
-        List<Vector2Int> free = new List<Vector2Int>();
 
-        // Multi-phase: pehla lamba walks (interesting shapes), pachi dhire dhire nana —
-        // jethi bachela nana gaps pan bharai jay.
-        for (int phaseMax = maxLength; phaseMax >= minLength; phaseMax--)
+        List<Vector2Int> headCandidates = new List<Vector2Int>();
+        List<Vector2Int> dirCandidates = new List<Vector2Int>();
+        List<Vector2Int> options = new List<Vector2Int>();
+
+        while (remaining.Count > 0)
         {
-            int fails = 0;
-            while (fails < maxFail)
+            // Atyare kaya (head, dir) legally exit kari shake? Path ne >= 2 cells joiye,
+            // etle head ni pachal ni cell (head - dir) pan `remaining` ma hovi joiye.
+            headCandidates.Clear();
+            dirCandidates.Clear();
+            int minDegree = int.MaxValue;
+
+            foreach (Vector2Int c in remaining)
             {
-                free.Clear();
-                foreach (Vector2Int c in cellsByDistance)
-                    if (!occupied.Contains(c)) free.Add(c);
-                if (free.Count == 0) break;
-
-                // CENTER-THI-BAHAR: pehla mukel arrow CHHELLE solve thay (board bharelu hoy
-                // tyare) — etle e center ma hovu joiye. Chhelle mukel arrow PEHLA solve thay,
-                // etle e bahar hovu joiye jya thi eno exit-ray turat board ni bahar nikli jay.
-                int index = Mathf.Min((int)(AbsGaussian(centerBias) * free.Count), free.Count - 1);
-                Vector2Int start = free[index];
-
-                int length = Random.Range(minLength, phaseMax + 1);
-                List<Vector2Int> walk = GenerateWalk(start, occupied, width, height, length, mask);
-
-                if (walk.Count < 2) { fails++; continue; }
-
-                // Ek j walk ne be rite vaparai shakay — koi pan chheda ne head banavo.
-                // Banne try karo, clear-exit malvani shakyata bamani thai jay.
-                bool placed = false;
-                for (int variant = 0; variant < 2 && !placed; variant++)
+                foreach (Vector2Int d in directions)
                 {
-                    if (variant == 1) walk.Reverse();
+                    if (!remaining.Contains(c - d)) continue;
+                    if (!RayIsClear(c, d, remaining, width, height)) continue;
 
-                    Vector2Int head = walk[walk.Count - 1];
-                    Vector2Int prev = walk[walk.Count - 2];
-                    Vector2Int dir = head - prev;
+                    int degree = 0;
+                    foreach (Vector2Int nd in directions)
+                        if (remaining.Contains(c + nd)) degree++;
 
-                    if (IsExitClear(head, dir, occupied, walk, width, height))
+                    // Ochha-padoshi wala heads pehla — jethi danglers isolated thay e pehla
+                    // j vaparai jay (isolated single cell mathi >=2 wali arrow banti j nathi).
+                    if (degree < minDegree)
                     {
-                        foreach (Vector2Int pos in walk) occupied.Add(pos);
-                        arrows.Add(new List<Vector2Int>(walk));
-                        placed = true;
+                        minDegree = degree;
+                        headCandidates.Clear();
+                        dirCandidates.Clear();
+                    }
+                    if (degree == minDegree)
+                    {
+                        headCandidates.Add(c);
+                        dirCandidates.Add(d);
                     }
                 }
+            }
 
-                fails = placed ? 0 : fails + 1;
+            if (headCandidates.Count == 0) break; // atki gayu — bija attempt ma retry thashe
+
+            int pick = Random.Range(0, headCandidates.Count);
+            Vector2Int head = headCandidates[pick];
+            Vector2Int dir = dirCandidates[pick];
+
+            // Body ne head thi pachal tarf ugado, `remaining` ni andar j rahi ne.
+            List<Vector2Int> path = new List<Vector2Int> { head, head - dir };
+            int targetLength = Random.Range(minLength, maxLength + 1);
+
+            while (true)
+            {
+                Vector2Int tail = path[path.Count - 1];
+
+                options.Clear();
+                foreach (Vector2Int d in directions)
+                {
+                    Vector2Int n = tail + d;
+                    if (remaining.Contains(n) && !path.Contains(n)) options.Add(n);
+                }
+                if (options.Count == 0) break;
+
+                // "must" = evi padoshi cell je aa path nikdya pachi ISOLATED thai jashe.
+                // Ene atyar j absorb kari levi, nahi to e kayame stranded rahi jashe.
+                Vector2Int mustCell = default;
+                bool hasMust = false;
+                foreach (Vector2Int n in options)
+                {
+                    if (DegreeAfter(n, remaining, path) == 0) { mustCell = n; hasMust = true; break; }
+                }
+
+                if (path.Count >= targetLength && !hasMust) break;
+
+                if (hasMust)
+                {
+                    path.Add(mustCell);
+                }
+                else
+                {
+                    int lowest = int.MaxValue;
+                    foreach (Vector2Int n in options)
+                        lowest = Mathf.Min(lowest, DegreeAfter(n, remaining, path));
+
+                    List<Vector2Int> best = new List<Vector2Int>();
+                    foreach (Vector2Int n in options)
+                        if (DegreeAfter(n, remaining, path) == lowest) best.Add(n);
+
+                    path.Add(best[Random.Range(0, best.Count)]);
+                }
+            }
+
+            path.Reverse(); // have [tail ... head]
+            foreach (Vector2Int p in path) remaining.Remove(p);
+            arrows.Add(path);
+        }
+
+        // Repair: koi single cell bachi hoy to ene padoshi arrow na TAIL ma jodi do.
+        // Safe kem: head ni direction badlati nathi (etle eno ray e j rahe), ane aa cell kayre
+        // carve j nathi thai — matlab hamesha `remaining` ma hati — etle koi pan arrow no ray
+        // ene touch j nathi karto (ray khali non-remaining cells mathi pasar thay che).
+        bool progress = true;
+        while (remaining.Count > 0 && progress)
+        {
+            progress = false;
+            foreach (Vector2Int c in new List<Vector2Int>(remaining))
+            {
+                foreach (List<Vector2Int> path in arrows)
+                {
+                    Vector2Int tail = path[0];
+                    if (Mathf.Abs(tail.x - c.x) + Mathf.Abs(tail.y - c.y) == 1)
+                    {
+                        path.Insert(0, c);
+                        remaining.Remove(c);
+                        progress = true;
+                        break;
+                    }
+                }
             }
         }
 
+        strandedCount = remaining.Count;
         return arrows;
+    }
+
+    // Carve ne badhi seeds sudhi try karo jya sudhi 100% coverage na male.
+    static List<List<Vector2Int>> CarveFull(HashSet<Vector2Int> mask, int width, int height, int minLength, int maxLength, int attempts)
+    {
+        List<List<Vector2Int>> best = null;
+        int bestStranded = int.MaxValue;
+
+        for (int i = 0; i < attempts; i++)
+        {
+            int stranded;
+            List<List<Vector2Int>> arrows = Carve(mask, width, height, minLength, maxLength, out stranded);
+
+            if (stranded < bestStranded)
+            {
+                bestStranded = stranded;
+                best = arrows;
+            }
+            if (stranded == 0) break;
+        }
+
+        if (bestStranded > 0)
+            Debug.LogWarning("100% fill na thayu — " + bestStranded + " cells stranded rahi gayi.");
+
+        return best;
     }
 
     [MenuItem("ArrowPuzzle/Generate Heart Level")]
@@ -223,35 +332,39 @@ public class LevelGenerator
     {
         int gridWidth = 24;
         int gridHeight = 22;
-        int minLength = 2;
-        int maxLength = 7;
-        int maxFail = 500;
-        float centerBias = 0.33f; // prototype ma sweep karine malelo best value
-        int attempts = 10;        // best-of-N: sauthi dense result rakhvo
 
         HashSet<Vector2Int> mask = BuildHeartMask(gridWidth, gridHeight);
+        List<List<Vector2Int>> arrows = CarveFull(mask, gridWidth, gridHeight, 2, 7, 8);
 
-        List<List<Vector2Int>> best = null;
-        int bestCells = -1;
+        int cells = 0;
+        foreach (List<Vector2Int> path in arrows) cells += path.Count;
+        Debug.Log("Heart level: " + arrows.Count + " arrows, " + cells + "/" + mask.Count + " cells filled ("
+            + Mathf.RoundToInt(100f * cells / mask.Count) + "%)");
 
-        for (int i = 0; i < attempts; i++)
-        {
-            List<List<Vector2Int>> arrows = FillShape(mask, gridWidth, gridHeight, minLength, maxLength, maxFail, centerBias);
+        SaveLevel(gridWidth, gridHeight, arrows, "HeartLevel");
+    }
 
-            int cells = 0;
-            foreach (List<Vector2Int> path in arrows) cells += path.Count;
+    [MenuItem("ArrowPuzzle/Generate Huge Level")]
+    static void GenerateHugeLevel()
+    {
+        // Aa level jaanine screen karta motu che — max zoom-out par pan pooru na dekhay,
+        // etle player e 4 baju pan/scroll karine j solve kari shake.
+        int gridWidth = 30;
+        int gridHeight = 50;
 
-            if (cells > bestCells)
-            {
-                bestCells = cells;
-                best = arrows;
-            }
-        }
+        HashSet<Vector2Int> mask = new HashSet<Vector2Int>();
+        for (int row = 0; row < gridHeight; row++)
+            for (int col = 0; col < gridWidth; col++)
+                mask.Add(new Vector2Int(col, row));
 
-        Debug.Log("Heart level: " + best.Count + " arrows, " + bestCells + "/" + mask.Count
-            + " mask cells filled (" + Mathf.RoundToInt(100f * bestCells / mask.Count) + "%)");
+        List<List<Vector2Int>> arrows = CarveFull(mask, gridWidth, gridHeight, 2, 7, 5);
 
-        SaveLevel(gridWidth, gridHeight, best, "HeartLevel");
+        int cells = 0;
+        foreach (List<Vector2Int> path in arrows) cells += path.Count;
+        Debug.Log("Huge level: " + arrows.Count + " arrows, " + cells + "/" + mask.Count + " cells filled ("
+            + Mathf.RoundToInt(100f * cells / mask.Count) + "%)");
+
+        SaveLevel(gridWidth, gridHeight, arrows, "HugeLevel");
     }
 
     static void SaveLevel(int width, int height, List<List<Vector2Int>> arrowPaths, string assetName = "GeneratedLevel")

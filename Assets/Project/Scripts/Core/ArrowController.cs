@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using DG.Tweening;
 
 [RequireComponent(typeof(LineRenderer))]
@@ -49,19 +48,16 @@ public class ArrowController : MonoBehaviour
 
     void Update()
     {
-        if (Mouse.current.leftButton.wasPressedThisFrame)
-        {
-            Vector2 worldPos = Camera.main.ScreenToWorldPoint(Mouse.current.position.ReadValue());
+        // Input CameraController ek j jagyaae vanche che ane khali SACHO tap (drag ke pinch
+        // nahi) j ahi sudhi aave che — etle level pan karta vakhte bhoolthi arrow move na thay.
+        if (CameraController.Instance == null) return;
 
-            if (edgeCollider.OverlapPoint(worldPos))
-            {
-                if (edgeCollider.OverlapPoint(worldPos))
-                {
-                    TryAdvance();
-                }
+        Vector2 screenPos;
+        if (!CameraController.Instance.TryGetTapThisFrame(out screenPos)) return;
 
-            }
-        }
+        Vector2 worldPos = Camera.main.ScreenToWorldPoint(screenPos);
+        if (edgeCollider.OverlapPoint(worldPos))
+            TryAdvance();
     }
 
     void DrawPath()
