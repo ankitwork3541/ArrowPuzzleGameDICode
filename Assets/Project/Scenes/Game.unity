@@ -773,8 +773,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelLoader
   levels:
-  - {fileID: 11400000, guid: 714cbb3f430fe4bcdb77a5df65bde0ed, type: 2}
-  - {fileID: 11400000, guid: 62a7ad3caaa05488c90cd4bc3dadeda0, type: 2}
+  - {fileID: 11400000, guid: 0ddf3bacf9406447a8d2798b1411c1f5, type: 2}
+  - {fileID: 11400000, guid: 9c5bb4df361d249afa0d70b88c4399eb, type: 2}
   - {fileID: 11400000, guid: 821c8a94e43f34db3b704a444db65d2c, type: 2}
   gridBuilder: {fileID: 827431895}
   arrowPrefab: {fileID: 5943569507495498416, guid: bccaafe9cc3dc4be5b600aa50b03acdd, type: 3}
@@ -2362,8 +2362,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraController
   cellsVisibleVertically: 32
+  maxCellsVisibleVertically: 44
   fitPadding: 1.12
-  minZoom: 4
+  minZoom: 3
+  dragThresholdPixels: 12
+  mouseZoomSpeed: 4
+  panPadding: 0.35
 --- !u!1 &2004372283
 GameObject:
   m_ObjectHideFlags: 0

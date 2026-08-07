@@ -25,6 +25,11 @@ public class CameraController : MonoBehaviour
     public float dragThresholdPixels = 12f; // aa thi vadhu khasyu = drag (tap nahi)
     public float mouseZoomSpeed = 4f;       // editor ma scroll-wheel thi zoom testing mate
 
+    // Content ni kinar thi ketlu aagal pan karva devu (view size na proportion ma).
+    // Aa vagar level screen ni kinar sudhi jam thayelu lage — reference app ma scroll karo
+    // tyare shape ni farate khali jagya dekhay che, e feel aa thi aave che.
+    public float panPadding = 0.35f;
+
     private float maxZoom;
     private Bounds contentBounds;
     private bool hasContent;
@@ -206,10 +211,16 @@ public class CameraController : MonoBehaviour
         float minY = contentBounds.min.y + halfHeight;
         float maxY = contentBounds.max.y - halfHeight;
 
+        float marginX = halfWidth * panPadding;
+        float marginY = halfHeight * panPadding;
+
         Vector3 p = transform.position;
-        // Content view karta nanu hoy to pan karvani jarur j nathi — center par lock karo
-        p.x = minX > maxX ? contentBounds.center.x : Mathf.Clamp(p.x, minX, maxX);
-        p.y = minY > maxY ? contentBounds.center.y : Mathf.Clamp(p.y, minY, maxY);
+
+        // Content view karta nanu hoy (minX > maxX) to pan karvani jarur j nathi — center par lock.
+        // Motu hoy to j pan thay, ane tyare kinar thi thodu aagal javani chhut aapo, jethi
+        // shape ni farate khali jagya dekhay (reference app jem).
+        p.x = minX > maxX ? contentBounds.center.x : Mathf.Clamp(p.x, minX - marginX, maxX + marginX);
+        p.y = minY > maxY ? contentBounds.center.y : Mathf.Clamp(p.y, minY - marginY, maxY + marginY);
         transform.position = p;
     }
 
