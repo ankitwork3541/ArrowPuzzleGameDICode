@@ -47,11 +47,7 @@ public class LevelLoader : MonoBehaviour
         for (int i = 1; i < spawnedArrows.Count; i++)
             combined.Encapsulate(spawnedArrows[i].GetBounds());
 
-        cameraController.FitToBounds(combined);
-
-        float visualScale = cameraController.CurrentVisualScale;
-        foreach (ArrowController arrow in spawnedArrows)
-            arrow.SetVisualScale(visualScale);
+        cameraController.FrameLevel(combined, gridBuilder.spacing);
     }
 
     bool TryGetArrowBounds(LevelData levelData, out Vector2Int min, out Vector2Int max)

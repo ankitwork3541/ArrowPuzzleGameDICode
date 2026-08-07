@@ -2361,9 +2361,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b45b0a311d50b4a0789471d20009c285, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraController
-  padding: 1.15
-  minZoom: 3
-  defaultMaxZoom: 12
+  cellsVisibleVertically: 32
+  fitPadding: 1.12
+  minZoom: 4
 --- !u!1 &2004372283
 GameObject:
   m_ObjectHideFlags: 0
