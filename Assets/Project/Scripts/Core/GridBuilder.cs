@@ -11,6 +11,15 @@ public class GridBuilder : MonoBehaviour
 
     void Awake()
     {
+        BuildGrid(width, height);
+    }
+
+    public void BuildGrid(int newWidth, int newHeight)
+    {
+        width = newWidth;
+        height = newHeight;
+        cells.Clear();
+
         for (int row = 0; row < height; row++)
         {
             for (int col = 0; col < width; col++)
@@ -21,7 +30,6 @@ public class GridBuilder : MonoBehaviour
         }
 
         Debug.Log("Grid banyo! Total cells: " + cells.Count);
-        
     }
 
     void OnDrawGizmos()
