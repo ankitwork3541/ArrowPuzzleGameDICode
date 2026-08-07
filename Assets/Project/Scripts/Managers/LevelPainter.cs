@@ -107,7 +107,21 @@ public class LevelPainter : MonoBehaviour
             return;
         }
 
-        List<Vector2Int> finishedPath = new List<Vector2Int>(currentPath);
+        // Re-validate at commit time (defense in depth, matches template) — truncate at the first cell
+        // that's occupied by something else, even though drag-time already should have blocked this.
+        List<Vector2Int> finishedPath = new List<Vector2Int>();
+        foreach (Vector2Int pos in currentPath)
+        {
+            if (gridBuilder.IsCellOccupied(pos)) break;
+            finishedPath.Add(pos);
+        }
+
+        if (finishedPath.Count < 2)
+        {
+            currentPath.Clear();
+            UpdatePreviewLine();
+            return;
+        }
 
         foreach (Vector2Int pos in finishedPath)
             gridBuilder.SetOccupant(pos, gameObject);

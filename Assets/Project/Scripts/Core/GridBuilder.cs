@@ -59,7 +59,7 @@ public class GridBuilder : MonoBehaviour
     public void SetOccupant(Vector2Int pos, GameObject occupant)
     {
         GridCell cell = GetCell((pos));
-        if (cell != null)
+        if (cell != null && cell.Occupant == null) // template ni jem — pehla thi occupied hoy to overwrite na karo
             cell.Occupant = occupant;
     }
 

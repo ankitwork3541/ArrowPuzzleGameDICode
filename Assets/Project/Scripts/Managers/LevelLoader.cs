@@ -13,6 +13,12 @@ public class LevelLoader : MonoBehaviour
 
         foreach (ArrowPathData arrowData in levelData.arrows)
         {
+            if (arrowData.path == null || arrowData.path.Count < 2)
+            {
+                Debug.LogWarning("Skipping arrow: path has less than 2 points, invalid.");
+                continue;
+            }
+
             ArrowController newArrow = Instantiate(arrowPrefab);
             newArrow.path = new List<Vector2Int>(arrowData.path);
             newArrow.gridBuilder = gridBuilder;
