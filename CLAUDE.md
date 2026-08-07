@@ -114,15 +114,17 @@ If a new script doesn't clearly fit one of the above, ask the user rather than g
 
 ## Next Steps
 
-**Essential UI/UX flow is fully done end-to-end** (2026-08-08): Splash → Home (dynamic level number + Play button) → Gameplay → Win/Lose → Restart/Next Level, all hands-on-verified. Combined with the already-done core gameplay loop (grid, level data, move/block/exit, rendering polish, Lives/Hearts, procedural generator, manual painter + solvability checker, win/game-over detection) — see Progress Log above — the game now has a genuinely complete, playable loop from launch to level-to-level progression.
+**The game is a complete, playable product loop as of 2026-08-08.** Splash → Home (dynamic level number + Play) → Gameplay → Win/Lose → Restart/Next Level, on top of the full core loop (grid, level data, move/block/exit, head/tail rendering, Lives/Hearts, win + game-over detection), a content pipeline (procedural generator, 100%-fill carve generator, manual painter, solvability checker), and reference-quality presentation (constant-cell-size camera framing, pinch-zoom + 4-way pan with tap-vs-drag arbitration). All of it hands-on-verified — see Progress Log.
+
+**Last thing left mid-test (do this first next session)**: the user was about to verify **mouse-wheel zoom** in the Editor (Game view, scroll wheel / trackpad two-finger). Expected: zoom-out stops at the `maxCellsVisibleVertically` cap so the Huge level stays impossible to see all at once, and pan limits re-clamp correctly as zoom changes. Pinch itself can only be truly tested via Unity Remote or an Android build — but pinch and wheel both route through `ApplyZoom()`, so the logic is shared and the wheel test covers it.
 
 Deferred, revisit whenever picking this back up (no particular order implied — ask the user which matters most before starting any of these):
-- **"Out of levels" handling** — `LevelLoader.GoToNextLevel()` currently just wraps back to index 0 when it runs out of the `levels` array; no dedicated end-screen.
-- **Hint system** (`Docs/Game-Design.md` §5) — now actually buildable (the generator/painter's placement order gives a real move-order to hint from), wasn't before.
-- **Theming data structure** (§4) — single placeholder theme (Triangle/Knob sprites) has been enough so far.
-- **Object pooling** — deferred until many levels are actually being cycled through in testing.
+- **Hint system** (`Docs/Game-Design.md` §5) — now genuinely buildable and the most valuable remaining feature: the `Carve` generator produces arrows in **exact solve order**, so a real "which arrow to move next" hint just needs that order persisted into `LevelData`. It was deferred for months only because no such order existed.
+- **"Out of levels" handling** — `LevelLoader.GoToNextLevel()` currently just wraps back to index 0; no end-screen.
+- **Theming data structure** (§4) — includes the white-background / dark-arrow "premium" palette the user flagged twice from the reference app; explicitly deferred to here rather than hacking colours in now. Remember the per-theme **head-sprite rotation offset** noted in §4.
+- **Object pooling** — the Huge level (343 arrows) is now a real stress case, so this finally has a concrete trigger.
 - **Monetization** (§6) — whenever the user wants to pick this back up.
-- **Fuller app shell** — Leagues/Challenge/Collection/full Settings screens from the reference app were explicitly scoped out of the "essential flow," can be added later if wanted.
+- **Fuller app shell** — Leagues/Challenge/Collection/full Settings from the reference app, explicitly scoped out of "essential flow."
 - Smaller items from the template comparison (§9): the template's `queuedSteps` tap-queueing during a move, an `exitMargin` buffer on `IsFullyOffScreen()`.
 
 **Pace note**: user asked to move faster (bundle setup+code+wiring into fewer messages per step) given the tight timeline — explicitly without reducing explanation depth. See `feedback-beginner-teaching-style` memory.

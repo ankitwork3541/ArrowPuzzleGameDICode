@@ -127,6 +127,23 @@ Explicitly **not settled yet** — the user wants more discussion before committ
 
 **Done, 2026-08-07** — both halves built and hands-on-verified, ahead of rendering-polish/theming per the re-prioritized order (see Change Log): `LevelGenerator.cs` (`Scripts/Editor/`, reverse-construction + random walk, menu item) and `LevelPainter.cs` (`Scripts/Managers/`, click-drag manual authoring in Play mode, `S` to save). Both output `LevelData` assets to `Assets/Project/Levels/`. The solvability checker (`LevelPainter.IsLevelSolvable()`) is a greedy fixed-point simulator — repeatedly remove any arrow whose exit ray is currently clear until nothing more can be removed; solvable iff every arrow got removed.
 
+### 7b. Second generator: "carve" — 100% fill, for showcase/shaped levels (2026-08-08)
+
+Random-place-and-check (§7 above) plateaus around **87% coverage** on a small shape and **~55%** on a large grid: as the board fills, a randomly-placed arrow almost never finds a clear exit ray. For levels that must be **completely filled** (shaped showcase levels — heart, and the big "needs scrolling" level), the generator is inverted:
+
+> Treat the whole shape as already filled, then **carve arrows out one at a time in solve order**. An arrow may only be carved when its exit ray, from head to board edge, passes **exclusively through already-carved (empty) cells**. This peels the shape outside-in.
+
+Two properties fall out for free, which is why this is the better algorithm and not just a tuning win:
+- **Solvability** — the carve order *is* the solve order, so it is correct by construction (same guarantee as reverse-construction, obtained differently).
+- **100% coverage** — we are *partitioning* the shape, not randomly filling it, so coverage is total by definition rather than by luck.
+- It also **eliminates the self-block bug class entirely**: body cells are by definition still `remaining`, and the ray is only allowed to cross non-`remaining` cells, so an arrow structurally cannot block itself. (§7's generator needed an explicit `ownBody` check bolted on after that exact bug shipped.)
+
+The one real failure mode is **stranded isolated cells** (a cell with no remaining neighbour can't form a ≥2-cell arrow) — first version hit 99.3% for this reason. Fixed by absorbing would-be-isolated neighbours during path growth, plus a repair pass that appends any straggler to an adjacent arrow's **tail** — provably safe, since the tail never affects the head's ray, and a never-carved cell is one that no ray ever crossed.
+
+Both generators are kept: §7's for ordinary sparse/easy levels, this one for filled/shaped levels. Menu: `Generate Level`, `Generate Heart Level`, `Generate Huge Level`.
+
+**Note for the Hint system (§5)**: this generator emits arrows in **exact solve order**. Persisting that order into `LevelData` is all a real hint needs.
+
 ---
 
 ## 8. Build Order (what's next, in order)
@@ -143,10 +160,33 @@ Explicitly **not settled yet** — the user wants more discussion before committ
 
 ---
 
+## 10. Camera Framing & Navigation — RESOLVED (2026-08-08), don't re-litigate
+
+This caused real churn (two wrong implementations before the right one), so the model is locked here.
+
+**Decision: constant cell size, zoom-OUT only, plus pinch-zoom and 4-way pan.**
+
+- **A grid cell is the same size on screen in every level.** `CameraController.cellsVisibleVertically` (≈32) is the design constant: it defines how many cells fit vertically at default zoom, and therefore how many pixels a cell occupies. This number was derived by **measuring the reference app's screenshots in pixels** (≈57px per cell on 1080×1920), not guessed.
+- **The camera only ever zooms OUT to fit, never IN.** A level smaller than the default view **stays small and centred with empty space around it** — it is *not* blown up to fill the screen. This is precisely what makes the reference app feel premium: arrow thickness relative to the grid reads identically whether the level has 5 arrows or 300.
+- **Line width stays constant in world units** (0.25 of a cell — also measured from the reference). Never scale line width or head/tail sprites with camera zoom; that destroys the constant proportion above. *(A previous attempt did exactly this and had to be reverted.)*
+- **Framing centres on the actual arrow bounding box**, not the declared grid rect, so sparse levels still centre correctly.
+- **`maxCellsVisibleVertically` caps zoom-out**, which is what makes very large levels genuinely require panning instead of being auto-fitted into an unreadable thumbnail.
+- **Pan is clamped to content bounds + a `panPadding` margin**, so scrolling to an edge shows some empty space past the shape (reference behaviour) rather than jamming content against the screen edge.
+- **Tap vs. drag arbitration is mandatory, not polish.** Input is read **once** in `CameraController`; only a genuine tap (movement below `dragThresholdPixels`, no active pinch) is forwarded to arrows. Without this, panning drags across arrows and fires every one of them. Bonus: hundreds of arrows no longer each poll input every frame.
+
+**Rejected alternatives** (both were built and reverted — do not revisit without a reason):
+1. *Fit-to-screen every level* (`Clamp(contentFitZoom, min, max)`) — zooms IN on small levels, making arrows look enormous and inconsistent between levels.
+2. *Scaling line width/sprites by zoom to compensate* — treats the symptom, breaks the arrow-vs-cell proportion that the whole look depends on.
+
+**The template does none of this automatically** — it stores a hand-tuned `origin` and `camSize` per level, authored in its Level Editor. That cannot scale to 50,000 levels, so ours is computed at load time. This is a deliberate, documented deviation.
+
+---
+
 ## Change Log
 
 *(Newest at top — one line per decision change, so we can see when/why something flipped.)*
 
+- **2026-08-08 (camera framing + 100%-fill generator)**: Locked the camera model in new §10 after two rejected implementations (fit-to-screen-every-level, and zoom-compensated line widths) — the resolved model is constant cell size + zoom-out-only + pinch/pan, with tap-vs-drag arbitration, derived by measuring the reference app rather than guessing. Added §7b: a second, inverted generator ("carve in solve order") that reaches **100% fill** on shaped levels where the original random-place-and-check plateaued at ~87%, and which gets solvability and self-block-immunity for free. Both generators are kept for different level types. Also noted that this generator's output is in exact solve order, which is the missing ingredient the Hint system (§5) was always waiting on. Confirmed with user: the huge showcase level stays a solid rectangle, and the reference's white/dark palette waits for the theming step (§4) rather than being hacked in now.
 - **2026-08-07 (build order re-prioritized)**: User flagged a tight timeline ("apde ochi time line che") and asked to move faster without cutting explanation depth. Re-ordered §8: theming (previously step 3) moved to step 5, after Lives/Hearts+Hint (§5) and level generation (§7) — goal is a playable end-to-end loop sooner; single-theme placeholder sprites are enough until theming is actually reached. Rendering polish (head/tail sprites riding the `LineRenderer`, §3) completed and verified same day.
 - **2026-08-06 (core loop built)**: Rebuilt the core arrow gameplay loop from scratch on `Assets/Project` (grid → level data → `ArrowController` move/block/exit) and hands-on-verified each piece in the Unity Editor. Re-validated against the template post-build — rewrote §9's comparison table since most rows were written *before* the code existed and are now stale; current code matches the template's movement/exit algorithms structurally, confirmed the bump+reverse deviation is built and working, and found the template's `GridManager` avoids Unity's `Awake`/`Start` ordering ambiguity entirely via explicit sequencing (a real bug we hit and fixed differently, worth adopting once a `LevelLoader` exists). See `CLAUDE.md` progress log for the play-by-play (including two script-execution-order/shader-color bugs found and fixed).
 - **2026-08-06 (full reset)**: User chose to wipe all of `Assets/Project` (scripts, prefabs, levels, all 4 sprites) back to empty folders and rebuild everything from scratch, step by step, specifically to learn it properly rather than inherit patched-together code. See `CLAUDE.md`'s reset banner for exactly what was deleted. This doc's *decisions* (§1–9) still stand as the target architecture for the rebuild — only the old implementation/art files are gone, not the plan.
