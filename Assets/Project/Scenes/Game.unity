@@ -772,7 +772,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a16c1da0c626e4bcab6e37fb0cb47c78, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelLoader
-  levelData: {fileID: 11400000, guid: 821c8a94e43f34db3b704a444db65d2c, type: 2}
+  levels:
+  - {fileID: 11400000, guid: 5f7fb09b08cbd4669a564f4f11ce2384, type: 2}
+  - {fileID: 11400000, guid: 714cbb3f430fe4bcdb77a5df65bde0ed, type: 2}
+  - {fileID: 11400000, guid: a770f052399c84c479580e9b95b923b6, type: 2}
   gridBuilder: {fileID: 827431895}
   arrowPrefab: {fileID: 5943569507495498416, guid: bccaafe9cc3dc4be5b600aa50b03acdd, type: 3}
 --- !u!4 &509710745
@@ -1224,6 +1227,8 @@ MonoBehaviour:
   winPanel: {fileID: 227370954}
   losePanel: {fileID: 1596532888}
   levelLoader: {fileID: 509710744}
+  livesManager: {fileID: 1768828260}
+  levelText: {fileID: 97791480}
   splashDuration: 3
 --- !u!4 &1122562370
 Transform:
@@ -1990,7 +1995,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1579535097}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1122562369}
+        m_TargetAssemblyTypeName: GameFlowManager, Assembly-CSharp
+        m_MethodName: OnNextLevelButtonClicked
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &1579535097
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2593,7 +2610,19 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 2092762102}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1122562369}
+        m_TargetAssemblyTypeName: GameFlowManager, Assembly-CSharp
+        m_MethodName: OnRestartButtonClicked
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
 --- !u!114 &2092762102
 MonoBehaviour:
   m_ObjectHideFlags: 0

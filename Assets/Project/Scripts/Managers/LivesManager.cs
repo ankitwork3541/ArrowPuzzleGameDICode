@@ -26,4 +26,11 @@ public class LivesManager : MonoBehaviour
             gameFlowManager.ShowLose();
         }
     }
+
+    public void ResetLives()
+    {
+        lives = heartImages.Length;
+        foreach (Image heart in heartImages)
+            heart.color = Color.red;
+    }
 }

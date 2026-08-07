@@ -1,4 +1,5 @@
 using UnityEngine;
+using TMPro;
 
 public class GameFlowManager : MonoBehaviour
 {
@@ -8,6 +9,8 @@ public class GameFlowManager : MonoBehaviour
     public GameObject winPanel;
     public GameObject losePanel;
     public LevelLoader levelLoader;
+    public LivesManager livesManager;
+    public TMP_Text levelText;
     public float splashDuration = 2f;
 
     void Start()
@@ -25,6 +28,7 @@ public class GameFlowManager : MonoBehaviour
     {
         splashPanel.SetActive(false);
         homePanel.SetActive(true);
+        levelText.text = "Level " + levelLoader.CurrentLevelNumber();
     }
 
     public void OnPlayButtonClicked()
@@ -44,5 +48,21 @@ public class GameFlowManager : MonoBehaviour
     {
         gameplayPanel.SetActive(false);
         losePanel.SetActive(true);
+    }
+
+    public void OnRestartButtonClicked()
+    {
+        losePanel.SetActive(false);
+        gameplayPanel.SetActive(true);
+        livesManager.ResetLives();
+        levelLoader.LoadLevel();
+    }
+
+    public void OnNextLevelButtonClicked()
+    {
+        winPanel.SetActive(false);
+        gameplayPanel.SetActive(true);
+        livesManager.ResetLives();
+        levelLoader.GoToNextLevel();
     }
 }
