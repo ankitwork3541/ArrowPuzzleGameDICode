@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Pool;
 
 public class GridBuilder : MonoBehaviour
 {
@@ -9,11 +10,19 @@ public class GridBuilder : MonoBehaviour
     public Vector2 origin; // grid na (0,0) cell ni world position — center karva mate calculate thay
     public Dot dotPrefab;
 
-    public Dictionary<Vector2Int, GridCell> cells = new Dictionary<Vector2Int, GridCell>();
+
+    private Dictionary<Vector2Int, GridCell> cells = new Dictionary<Vector2Int, GridCell>();
     private Dictionary<Vector2Int, Dot> dots = new Dictionary<Vector2Int, Dot>();
+    private ObjectPool<Dot> dotPool;
 
     void Awake()
     {
+        dotPool = new ObjectPool<Dot>(
+            createFunc: () => Instantiate(dotPrefab, transform),
+            actionOnGet: dot => { dot.gameObject.SetActive(true); dot.Show(); },
+            actionOnRelease: dot => dot.gameObject.SetActive(false),
+            actionOnDestroy: dot => Destroy(dot.gameObject)
+        );
         BuildGrid(width, height);
     }
 
@@ -43,13 +52,14 @@ public class GridBuilder : MonoBehaviour
     {
         foreach (var kvp in dots)
         {
-            Destroy(kvp.Value.gameObject);
+            dotPool.Release(kvp.Value);
         }
         dots.Clear();
 
         foreach (var kvp in cells)
         {
-            Dot dot = Instantiate(dotPrefab, GridToWorld(kvp.Key), Quaternion.identity, transform);
+            Dot dot = dotPool.Get();
+            dot.transform.position = GridToWorld(kvp.Key);
             dot.GridPosition = kvp.Key;
             dots[kvp.Key] = dot;
         }
@@ -96,14 +106,20 @@ public class GridBuilder : MonoBehaviour
     {
         GridCell cell = GetCell((pos));
         if (cell != null && cell.Occupant == null) // template ni jem — pehla thi occupied hoy to overwrite na karo
+        {
             cell.Occupant = occupant;
+            if (dots.ContainsKey(pos)) dots[pos].Hide();
+        }
     }
 
     public void ClearOccupant(Vector2Int pos)
     {
         GridCell cell = GetCell(pos);
         if (cell != null)
+        {
             cell.Occupant = null;
+            if (dots.ContainsKey(pos)) dots[pos].Show();
+        }
     }
 
     public Vector2Int WorldToGrid(Vector3 worldPos)
