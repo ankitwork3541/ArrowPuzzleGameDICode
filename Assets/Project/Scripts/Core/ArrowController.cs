@@ -188,36 +188,31 @@ public class ArrowController : MonoBehaviour
                 TryAdvance();
             });
     }
+    
     void BlockedBounce()
     {
         LivesManager.Instance.LoseLife();
 
         int n = path.Count;
-        Vector3[] originalWorld = new Vector3[n];
-        line.GetPositions(originalWorld);
+        Vector3 originalHeadWorld = line.GetPosition(n - 1);
 
         Vector2Int head = path[n - 1];
         Vector2Int prev = path[n - 2];
         Vector2Int dir = head - prev;
-        Vector3 bumpOffset = new Vector3(dir.x, dir.y, 0f) * gridBuilder.spacing * 0.3f;
-
-        Vector3[] bumpWorld = new Vector3[n];
-        for (int i = 0; i < n; i++)
-            bumpWorld[i] = originalWorld[i] + bumpOffset;
+        Vector3 bumpHeadWorld = originalHeadWorld + new Vector3(dir.x, dir.y, 0f) * gridBuilder.spacing * 0.3f;
 
         SetLineColor(Color.red);
 
         isMoving = true;
         float t = 0f;
 
+        // Khali head no point (n - 1) bump kare che — baki badha points (bends + tail) tadan freeze rahe
         DOTween.To(() => t, v => t = v, 1f, stepTime * 0.5f)
             .SetEase(Ease.Linear)
             .OnUpdate(() =>
             {
-                for (int i = 0; i < n; i++)
-                    line.SetPosition(i, Vector3.Lerp(originalWorld[i], bumpWorld[i], t));
+                line.SetPosition(n - 1, Vector3.Lerp(originalHeadWorld, bumpHeadWorld, t));
                 UpdateHeadPosition();
-                UpdateTailPosition();
             })
             .OnComplete(() =>
             {
@@ -226,10 +221,8 @@ public class ArrowController : MonoBehaviour
                     .SetEase(Ease.Linear)
                     .OnUpdate(() =>
                     {
-                        for (int i = 0; i < n; i++)
-                            line.SetPosition(i, Vector3.Lerp(bumpWorld[i], originalWorld[i], t2));
+                        line.SetPosition(n - 1, Vector3.Lerp(bumpHeadWorld, originalHeadWorld, t2));
                         UpdateHeadPosition();
-                        UpdateTailPosition();
                     })
                     .OnComplete(() =>
                     {
