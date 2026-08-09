@@ -96,4 +96,15 @@ public class LevelLoader : MonoBehaviour
     {
         return currentLevelIndex + 1; // player ne "Level 1" dekhavvu che, index 0 nahi
     }
+
+    // Hint mate: atyare koi j arrow ni exit ray clear che ke nahi, e scan kari ne pehli mali te return kare
+    public ArrowController FindHintableArrow()
+    {
+        foreach (ArrowController arrow in spawnedArrows)
+        {
+            if (arrow != null && arrow.CanExit())
+                return arrow;
+        }
+        return null;
+    }
 }

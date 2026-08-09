@@ -65,4 +65,11 @@ public class GameFlowManager : MonoBehaviour
         livesManager.ResetLives();
         levelLoader.GoToNextLevel();
     }
+
+    public void OnHintButtonClicked()
+    {
+        ArrowController hintArrow = levelLoader.FindHintableArrow();
+        if (hintArrow != null)
+            hintArrow.PlayHintPulse();
+    }
 }

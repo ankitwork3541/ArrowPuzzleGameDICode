@@ -161,7 +161,7 @@ public class ArrowController : MonoBehaviour
         isMoving = true;
         float t = 0f;
         DOTween.To(() => t, v => t = v, 1f, stepTime)
-            .SetEase(Ease.Linear)
+            .SetEase(DG.Tweening.Ease.Linear)
             .OnUpdate(() =>
             {
                 line.SetPosition(0, Vector3.Lerp(oldTailWorld, newTailTarget, t));
@@ -208,7 +208,7 @@ public class ArrowController : MonoBehaviour
 
         // Khali head no point (n - 1) bump kare che — baki badha points (bends + tail) tadan freeze rahe
         DOTween.To(() => t, v => t = v, 1f, stepTime * 0.5f)
-            .SetEase(Ease.Linear)
+            .SetEase(DG.Tweening.Ease.Linear)
             .OnUpdate(() =>
             {
                 line.SetPosition(n - 1, Vector3.Lerp(originalHeadWorld, bumpHeadWorld, t));
@@ -218,7 +218,7 @@ public class ArrowController : MonoBehaviour
             {
                 float t2 = 0f;
                 DOTween.To(() => t2, v => t2 = v, 1f, stepTime * 0.5f)
-                    .SetEase(Ease.Linear)
+                    .SetEase(DG.Tweening.Ease.Linear)
                     .OnUpdate(() =>
                     {
                         line.SetPosition(n - 1, Vector3.Lerp(bumpHeadWorld, originalHeadWorld, t2));
@@ -261,7 +261,7 @@ public class ArrowController : MonoBehaviour
 
         float t = 0f;
         DOTween.To(() => t, v => t = v, 1f, stepTime)
-            .SetEase(Ease.Linear)
+            .SetEase(DG.Tweening.Ease.Linear)
             .OnUpdate(() =>
             {
                 line.SetPosition(0, Vector3.Lerp(oldTailWorld, newTailTarget, t));
@@ -323,6 +323,39 @@ public class ArrowController : MonoBehaviour
         if (headSprite != null) bounds.Encapsulate(headSprite.bounds);
         if (tailSprite != null) bounds.Encapsulate(tailSprite.bounds);
         return bounds;
+    }
+
+    // Hint mate: aa arrow ne have tap karay to e exit sudhi (bina blocked thaya) pahochi shake ke nahi
+    public bool CanExit()
+    {
+        int n = path.Count;
+        if (n < 2) return false;
+
+        Vector2Int head = path[n - 1];
+        Vector2Int prev = path[n - 2];
+        Vector2Int dir = head - prev;
+        Vector2Int cursor = head + dir;
+
+        while (gridBuilder.GetCell(cursor) != null)
+        {
+            if (gridBuilder.IsCellOccupied(cursor)) return false;
+            cursor += dir;
+        }
+
+        return true; // grid ni bahar sudhi pahochi gayu, koi avrodh na malyo
+    }
+
+    public void PlayHintPulse()
+    {
+        Color normalColor = Color.white;
+        Color highlightColor = Color.yellow;
+
+        PrimeTween.Sequence sequence = PrimeTween.Sequence.Create();
+        for (int i = 0; i < 5; i++)
+        {
+            sequence.Chain(PrimeTween.Tween.Custom(0f, 1f, duration: 0.2f, onValueChange: v => SetLineColor(Color.Lerp(normalColor, highlightColor, v))));
+            sequence.Chain(PrimeTween.Tween.Custom(1f, 0f, duration: 0.2f, onValueChange: v => SetLineColor(Color.Lerp(normalColor, highlightColor, v))));
+        }
     }
 
 }
