@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
-using DG.Tweening;
+using PrimeTween;
 
 [RequireComponent(typeof(LineRenderer))]
 [RequireComponent(typeof(EdgeCollider2D))]
@@ -159,34 +159,30 @@ public class ArrowController : MonoBehaviour
         }
 
         isMoving = true;
-        float t = 0f;
-        DOTween.To(() => t, v => t = v, 1f, stepTime)
-            .SetEase(DG.Tweening.Ease.Linear)
-            .OnUpdate(() =>
-            {
-                line.SetPosition(0, Vector3.Lerp(oldTailWorld, newTailTarget, t));
-                line.SetPosition(n, Vector3.Lerp(oldHeadWorld, newHeadWorld, t));
-                UpdateHeadPosition();
-                UpdateTailPosition();
-            })
-            .OnComplete(() =>
-            {
-                // Finalize: drop the now-redundant tail point (merged with what was point 2)
-                Vector3[] finalPositions = new Vector3[n];
-                for (int i = 0; i < n; i++)
-                    finalPositions[i] = gridBuilder.GridToWorld(path[i]);
+        Tween.Custom(0f, 1f, duration: stepTime, onValueChange: t =>
+        {
+            line.SetPosition(0, Vector3.Lerp(oldTailWorld, newTailTarget, t));
+            line.SetPosition(n, Vector3.Lerp(oldHeadWorld, newHeadWorld, t));
+            UpdateHeadPosition();
+            UpdateTailPosition();
+        }).OnComplete(() =>
+        {
+            // Finalize: drop the now-redundant tail point (merged with what was point 2)
+            Vector3[] finalPositions = new Vector3[n];
+            for (int i = 0; i < n; i++)
+                finalPositions[i] = gridBuilder.GridToWorld(path[i]);
 
-                line.positionCount = n;
-                line.SetPositions(finalPositions);
+            line.positionCount = n;
+            line.SetPositions(finalPositions);
 
-                Vector2[] colliderPoints = new Vector2[n];
-                for (int i = 0; i < n; i++)
-                    colliderPoints[i] = finalPositions[i];
-                edgeCollider.points = colliderPoints;
+            Vector2[] colliderPoints = new Vector2[n];
+            for (int i = 0; i < n; i++)
+                colliderPoints[i] = finalPositions[i];
+            edgeCollider.points = colliderPoints;
 
-                isMoving = false;
-                TryAdvance();
-            });
+            isMoving = false;
+            TryAdvance();
+        });
     }
     
     void BlockedBounce()
@@ -204,31 +200,23 @@ public class ArrowController : MonoBehaviour
         SetLineColor(Color.red);
 
         isMoving = true;
-        float t = 0f;
 
         // Khali head no point (n - 1) bump kare che — baki badha points (bends + tail) tadan freeze rahe
-        DOTween.To(() => t, v => t = v, 1f, stepTime * 0.5f)
-            .SetEase(DG.Tweening.Ease.Linear)
-            .OnUpdate(() =>
+        Sequence.Create()
+            .Chain(Tween.Custom(0f, 1f, duration: stepTime * 0.5f, onValueChange: t =>
             {
                 line.SetPosition(n - 1, Vector3.Lerp(originalHeadWorld, bumpHeadWorld, t));
                 UpdateHeadPosition();
-            })
+            }))
+            .Chain(Tween.Custom(0f, 1f, duration: stepTime * 0.5f, onValueChange: t2 =>
+            {
+                line.SetPosition(n - 1, Vector3.Lerp(bumpHeadWorld, originalHeadWorld, t2));
+                UpdateHeadPosition();
+            }))
             .OnComplete(() =>
             {
-                float t2 = 0f;
-                DOTween.To(() => t2, v => t2 = v, 1f, stepTime * 0.5f)
-                    .SetEase(DG.Tweening.Ease.Linear)
-                    .OnUpdate(() =>
-                    {
-                        line.SetPosition(n - 1, Vector3.Lerp(bumpHeadWorld, originalHeadWorld, t2));
-                        UpdateHeadPosition();
-                    })
-                    .OnComplete(() =>
-                    {
-                        SetLineColor(Color.white);
-                        isMoving = false;
-                    });
+                SetLineColor(Color.white);
+                isMoving = false;
             });
     }
 
@@ -259,34 +247,30 @@ public class ArrowController : MonoBehaviour
         for (int i = 1; i < n; i++)
             line.SetPosition(i, oldWorld[i]); // frozen middle, unchanged from old positions
 
-        float t = 0f;
-        DOTween.To(() => t, v => t = v, 1f, stepTime)
-            .SetEase(DG.Tweening.Ease.Linear)
-            .OnUpdate(() =>
-            {
-                line.SetPosition(0, Vector3.Lerp(oldTailWorld, newTailTarget, t));
-                line.SetPosition(n, Vector3.Lerp(oldHeadWorld, newHeadWorld, t));
-                UpdateHeadPosition();
-                UpdateTailPosition();
-            })
-            .OnComplete(() =>
-            {
-                Vector3[] finalPositions = new Vector3[n];
-                for (int i = 0; i < n - 1; i++)
-                    finalPositions[i] = oldWorld[i + 1];
-                finalPositions[n - 1] = newHeadWorld;
+        Tween.Custom(0f, 1f, duration: stepTime, onValueChange: t =>
+        {
+            line.SetPosition(0, Vector3.Lerp(oldTailWorld, newTailTarget, t));
+            line.SetPosition(n, Vector3.Lerp(oldHeadWorld, newHeadWorld, t));
+            UpdateHeadPosition();
+            UpdateTailPosition();
+        }).OnComplete(() =>
+        {
+            Vector3[] finalPositions = new Vector3[n];
+            for (int i = 0; i < n - 1; i++)
+                finalPositions[i] = oldWorld[i + 1];
+            finalPositions[n - 1] = newHeadWorld;
 
-                line.positionCount = n;
-                line.SetPositions(finalPositions);
+            line.positionCount = n;
+            line.SetPositions(finalPositions);
 
-                if (IsFullyOffScreen())
-                {
-                    LevelManager.Instance.ArrowExited();
-                    Destroy(gameObject);
-                }
-                else
-                    ExitStepOnce(exitStep);
-            });
+            if (IsFullyOffScreen())
+            {
+                LevelManager.Instance.ArrowExited();
+                Destroy(gameObject);
+            }
+            else
+                ExitStepOnce(exitStep);
+        });
     }
 
     bool IsFullyOffScreen()
@@ -350,11 +334,11 @@ public class ArrowController : MonoBehaviour
         Color normalColor = Color.white;
         Color highlightColor = Color.yellow;
 
-        PrimeTween.Sequence sequence = PrimeTween.Sequence.Create();
+        Sequence sequence = Sequence.Create();
         for (int i = 0; i < 5; i++)
         {
-            sequence.Chain(PrimeTween.Tween.Custom(0f, 1f, duration: 0.2f, onValueChange: v => SetLineColor(Color.Lerp(normalColor, highlightColor, v))));
-            sequence.Chain(PrimeTween.Tween.Custom(1f, 0f, duration: 0.2f, onValueChange: v => SetLineColor(Color.Lerp(normalColor, highlightColor, v))));
+            sequence.Chain(Tween.Custom(0f, 1f, duration: 0.2f, onValueChange: v => SetLineColor(Color.Lerp(normalColor, highlightColor, v))));
+            sequence.Chain(Tween.Custom(1f, 0f, duration: 0.2f, onValueChange: v => SetLineColor(Color.Lerp(normalColor, highlightColor, v))));
         }
     }
 
