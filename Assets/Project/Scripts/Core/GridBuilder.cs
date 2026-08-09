@@ -7,8 +7,10 @@ public class GridBuilder : MonoBehaviour
     public int height = 5;
     public float spacing = 1f;
     public Vector2 origin; // grid na (0,0) cell ni world position — center karva mate calculate thay
+    public Dot dotPrefab;
 
     public Dictionary<Vector2Int, GridCell> cells = new Dictionary<Vector2Int, GridCell>();
+    private Dictionary<Vector2Int, Dot> dots = new Dictionary<Vector2Int, Dot>();
 
     void Awake()
     {
@@ -34,6 +36,23 @@ public class GridBuilder : MonoBehaviour
         }
 
         Debug.Log("Grid banyo! Total cells: " + cells.Count);
+        SpawnDots();
+    }
+
+    public void SpawnDots()
+    {
+        foreach (var kvp in dots)
+        {
+            Destroy(kvp.Value.gameObject);
+        }
+        dots.Clear();
+
+        foreach (var kvp in cells)
+        {
+            Dot dot = Instantiate(dotPrefab, GridToWorld(kvp.Key), Quaternion.identity, transform);
+            dot.GridPosition = kvp.Key;
+            dots[kvp.Key] = dot;
+        }
     }
 
     // Declared grid size (BuildGrid) ni jagyaae, ACTUAL content (arrows) ni bounding box ne center karo.
