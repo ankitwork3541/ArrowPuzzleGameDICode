@@ -118,7 +118,7 @@ public class GridBuilder : MonoBehaviour
         if (cell != null)
         {
             cell.Occupant = null;
-            if (dots.ContainsKey(pos)) dots[pos].Show();
+            if (dots.ContainsKey(pos)) dots[pos].Reveal();
         }
     }
 

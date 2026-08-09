@@ -665,6 +665,26 @@ public class TestObjectPool : MonoBehaviour
 
 With thousands of levels, arrows constantly being created and destroyed would eventually slow the game down. Pooling keeps a fixed set of reusable objects instead, keeping performance consistent no matter how many levels are played — directly supporting the "premium performance" goal for this game.
 
+### Real implementation used: Unity's built-in `ObjectPool<T>` (2026-08-09)
+
+The hand-rolled pool above (a fixed-size `List<GameObject>`, manually scanning for an inactive one) was the *teaching* version. The actual grid-background-dots feature (`GridBuilder.cs`) uses Unity's own built-in generic pool instead — `UnityEngine.Pool.ObjectPool<T>` (available since Unity 2021 LTS, `using UnityEngine.Pool;`). It does the same core idea (reuse instead of Instantiate/Destroy) but Unity manages the internal storage — you only supply 4 small callback functions:
+
+```csharp
+private ObjectPool<Dot> dotPool;
+
+dotPool = new ObjectPool<Dot>(
+    createFunc: () => Instantiate(dotPrefab, transform),      // only runs when the pool is empty and a brand-new object is truly needed
+    actionOnGet: dot => { dot.gameObject.SetActive(true); dot.Show(); },  // runs every time Get() hands you a (re)used object
+    actionOnRelease: dot => dot.gameObject.SetActive(false),  // runs every time you Release() an object back
+    actionOnDestroy: dot => Destroy(dot.gameObject)           // safety net if the pool is ever told to shrink/clear
+);
+
+Dot dot = dotPool.Get();      // instead of Instantiate
+dotPool.Release(dot);         // instead of Destroy
+```
+
+Why this over the hand-rolled version: no manual "loop through a list looking for an inactive one" code, no fixed pool size to guess upfront (it grows on demand via `createFunc`, `Get()`/`Release()` calls stay `O(1)`), and it's the officially documented modern pattern (see [Unity Manual: Pooling and reusing objects](https://docs.unity3d.com/6000.4/Documentation/Manual/performance-reusable-code.html)) — write it once, `Get()`/`Release()` everywhere else.
+
 ---
 
 ## Old Input System vs New Input System

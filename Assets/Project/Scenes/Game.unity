@@ -1104,6 +1104,7 @@ MonoBehaviour:
   height: 5
   spacing: 1
   origin: {x: 0, y: 0}
+  dotPrefab: {fileID: 7537604192351407909, guid: 8bc8789a6b1d344e0819f8f1f692f458, type: 3}
 --- !u!4 &827431896
 Transform:
   m_ObjectHideFlags: 0
