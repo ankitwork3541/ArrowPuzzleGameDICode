@@ -23,7 +23,9 @@ public class GridBuilder : MonoBehaviour
             actionOnRelease: dot => dot.gameObject.SetActive(false),
             actionOnDestroy: dot => Destroy(dot.gameObject)
         );
-        BuildGrid(width, height);
+        // BuildGrid() have Awake() mathi call nathi thato — LevelLoader/LevelPainter potej
+        // Play/tool-start vakhte call kare che, jethi Splash/Home screen pachhad grid/dots
+        // dekhaay nahi (jem arrows mate LevelLoader.Start() pehla fix karyu hatu tem j pattern).
     }
 
     public void BuildGrid(int newWidth, int newHeight)
