@@ -1,5 +1,7 @@
 using UnityEngine;
+using UnityEngine.UI;
 using TMPro;
+using PrimeTween;
 
 public class GameFlowManager : MonoBehaviour
 {
@@ -11,6 +13,8 @@ public class GameFlowManager : MonoBehaviour
     public LevelLoader levelLoader;
     public LivesManager livesManager;
     public TMP_Text levelText;
+    public Image progressBarFill;
+    public TMP_Text loadingPercentText;
     public float splashDuration = 2f;
 
     void Start()
@@ -21,7 +25,12 @@ public class GameFlowManager : MonoBehaviour
         winPanel.SetActive(false);
         losePanel.SetActive(false);
 
-        Invoke(nameof(ShowHome), splashDuration);
+        progressBarFill.fillAmount = 0f;
+        Tween.Custom(0f, 1f, duration: splashDuration, onValueChange: t =>
+        {
+            progressBarFill.fillAmount = t;
+            loadingPercentText.text = Mathf.RoundToInt(t * 100f) + "%";
+        }).OnComplete(ShowHome);
     }
 
     void ShowHome()
