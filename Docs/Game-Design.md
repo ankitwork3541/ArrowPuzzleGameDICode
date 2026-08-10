@@ -87,6 +87,8 @@ Re-read `ArrowController.cs` (ours, now with working move/block/exit) and `Arrow
 
 ## 4. Theming — Neon Futuristic/Cyberpunk overall art direction + swappable piece-shape themes, planned from v1
 
+**Full design system spec (colors, typography, spacing, component rules): see `Docs/Neon-Theme-Design-System.md`** (user-provided design export, 2026-08-10) — the source of truth for exact hex values and component styling going forward.
+
 **Overall art direction (decided 2026-08-10): Neon Futuristic / Cyberpunk, applied to the WHOLE game** — Splash, Home, HUD/UI chrome, grid background, and arrow/piece rendering all share one visual language: dark backgrounds, neon glow colors (cyan/magenta/purple family), futuristic UI framing. This is not one of several selectable art styles — it is the single committed look for the entire game. Reference: user-provided mockup of a Splash screen ("NEON ROUTE ESCAPE" — glowing rounded-square app icon with a 4-direction arrow motif, neon gradient title text, circular percentage loading spinner + progress bar, dark starfield/neon-streaks background).
 
 **Swappable "theme" system (still planned from v1, scope clarified 2026-08-10): controls PIECE SHAPE, not overall art style.** Originally (2026-08-06) this was meant to cover full alternate visual styles (color/palette per theme, template-style). Clarified: the multi-theme system now specifically means **piece-shape variety** — Arrow, Snake, Train, etc. (matching the range of shapes the MultiTech template offers as its "themes") — with every shape re-skinned in the *same* Cyberpunk neon palette, not each shape getting its own distinct color scheme/art style the way the template does it.
