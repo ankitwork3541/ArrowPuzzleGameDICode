@@ -8,11 +8,13 @@ public class GameFlowManager : MonoBehaviour
     public GameObject splashPanel;
     public GameObject homePanel;
     public GameObject gameplayPanel;
+
     public GameObject winPanel;
     public GameObject losePanel;
     public LevelLoader levelLoader;
     public LivesManager livesManager;
     public TMP_Text levelText;
+    public TMP_Text difficultyText;
     public Image progressBarFill;
     public TMP_Text loadingPercentText;
     public float splashDuration = 2f;
@@ -38,6 +40,16 @@ public class GameFlowManager : MonoBehaviour
         splashPanel.SetActive(false);
         homePanel.SetActive(true);
         levelText.text = "Level " + levelLoader.CurrentLevelNumber();
+        difficultyText.text = GetDifficultyLabel(levelLoader.CurrentLevel());
+    }
+
+    string GetDifficultyLabel(LevelData level)
+    {
+        int arrowCount = level.arrows.Count;
+        if (arrowCount < 15) return "EASY";
+        if (arrowCount < 50) return "MEDIUM";
+        if (arrowCount < 150) return "HARD";
+        return "HARDEST";
     }
 
     public void OnPlayButtonClicked()
