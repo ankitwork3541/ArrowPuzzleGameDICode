@@ -6,6 +6,7 @@ public class SplashScreenController : MonoBehaviour
 {
     [SerializeField] private PanelRenderer panelRenderer;
     [SerializeField] private float splashDuration = 2f;
+    [SerializeField] private GameObject homeRoot;
 
     private ProgressBar progressBar;
 
@@ -27,6 +28,12 @@ public class SplashScreenController : MonoBehaviour
         {
             progressBar.value = t * 100f;
             progressBar.title = Mathf.RoundToInt(t * 100f) + "%";
-        });
+        }).OnComplete(GoToHome);
+    }
+
+    private void GoToHome()
+    {
+        gameObject.SetActive(false);
+        homeRoot.SetActive(true);
     }
 }

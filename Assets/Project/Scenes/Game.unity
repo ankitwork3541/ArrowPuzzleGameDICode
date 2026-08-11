@@ -2015,7 +2015,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!1931382934 &648166712
 PanelRenderer:
   m_ObjectHideFlags: 0
@@ -4059,6 +4059,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SplashScreenController
   panelRenderer: {fileID: 1434815624}
   splashDuration: 2
+  homeRoot: {fileID: 648166711}
 --- !u!114 &1434815627
 MonoBehaviour:
   m_ObjectHideFlags: 0
