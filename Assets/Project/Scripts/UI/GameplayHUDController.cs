@@ -9,11 +9,13 @@ public class GameplayHUDController : MonoBehaviour
     [SerializeField] private LevelLoader levelLoader;
     [SerializeField] private LivesManager livesManager;
     [SerializeField] private LevelManager levelManager;
+    [SerializeField] private GuideLines guideLines;
 
     private VisualElement root;
     private Label difficultyLabel;
     private VisualElement progressFill;
     private List<VisualElement> hearts;
+    private Button gridButton;
 
     // Cached state: the managers can fire their events before the UI has finished
     // loading, so we remember the latest values and (re)apply them once root exists.
@@ -45,10 +47,12 @@ public class GameplayHUDController : MonoBehaviour
         difficultyLabel = root.Q<Label>("difficulty-label");
         progressFill = root.Q<VisualElement>("progress-fill");
         hearts = root.Query<VisualElement>(className: "heart").ToList();
+        gridButton = root.Q<Button>("grid-button");
 
         Bind(root.Q<Button>("back-button"), gameFlowManager.OnBackToHomeClicked);
         Bind(root.Q<Button>("restart-button"), gameFlowManager.OnRestartLevelClicked);
         Bind(root.Q<Button>("hint-button"), gameFlowManager.OnHintButtonClicked);
+        Bind(gridButton, ToggleGuideLines);
 
         Apply();
     }
@@ -58,6 +62,12 @@ public class GameplayHUDController : MonoBehaviour
     {
         button.clicked -= handler;
         button.clicked += handler;
+    }
+
+    private void ToggleGuideLines()
+    {
+        guideLines.Toggle();
+        gridButton.EnableInClassList("grid-button--on", guideLines.IsVisible);
     }
 
     private void OnLivesChanged(int newLives, int newMax)
@@ -85,5 +95,7 @@ public class GameplayHUDController : MonoBehaviour
 
         float solved = totalArrows > 0 ? (totalArrows - remainingArrows) / (float)totalArrows : 0f;
         progressFill.style.width = new Length(solved * 100f, LengthUnit.Percent);
+
+        gridButton.EnableInClassList("grid-button--on", guideLines.IsVisible);
     }
 }

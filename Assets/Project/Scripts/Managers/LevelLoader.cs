@@ -11,6 +11,9 @@ public class LevelLoader : MonoBehaviour
     private int currentLevelIndex = 0;
     private List<ArrowController> spawnedArrows = new List<ArrowController>();
 
+    // Read-only view for systems that need to inspect the live arrows (GuideLines).
+    public IReadOnlyList<ArrowController> SpawnedArrows => spawnedArrows;
+
     public void LoadLevel()
     {
         ClearArrows();
