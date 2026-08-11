@@ -1,13 +1,29 @@
-.unity-progress-bar__background {
-    height: 100%;
-    background-color: rgb(20, 24, 40);
-    border-radius: 20px;
-    border-width: 1px;
-    border-color: rgb(0, 229, 255);
+/* Height: badhe ek j value — 40px (tamne game te value rakhi shako) */
+.neon-progress,
+.neon-progress .unity-progress-bar__container {
+    height: 72px;
+    min-height: 72px;
 }
 
-.unity-progress-bar__progress {
+/* Track */
+.neon-progress .unity-progress-bar__background {
     height: 100%;
+    border-radius: 36px;              /* height / 2 */
+    background-color: rgb(20, 24, 40);
+    border-width: 1px;
+    border-color: rgb(0, 229, 255);
+    overflow: hidden;
+}
+
+/* Fill */
+.neon-progress .unity-progress-bar__progress {
+    height: 100%;
+    margin: 0;
+    border-radius: 36px;              /* same */
     background-color: rgb(0, 229, 255);
-    border-radius: 20px;
+}
+
+.neon-progress .unity-progress-bar__title {
+    font-size: 44px;
+    color: rgb(255, 255, 255);
 }

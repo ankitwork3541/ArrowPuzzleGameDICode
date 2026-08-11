@@ -1,0 +1,5 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:VisualElement name="Root" style="flex-grow: 1; width: 100%; height: 100%; background-image: url(&quot;project://database/Assets/Project/Sprites/SplashBackground.png?fileID=2800000&amp;guid=967f87f0a3a3a4328bbb28c9c5e51474&amp;type=3#SplashBackground&quot;); justify-content: space-between; align-items: center; align-content: auto;">
+        <ui:VisualElement name="App_Icon" style="flex-grow: 1; background-image: url(&quot;project://database/Assets/Project/Sprites/logo.png?fileID=2800000&amp;guid=5966d8e28704841c58b5c407eef7c919&amp;type=3#logo&quot;); width: 512px; height: 512px;"/>
+    </ui:VisualElement>
+</ui:UXML>
