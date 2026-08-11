@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xmlns:uie="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
+>
+  <Style src="/Assets/Project/Themes/SplashScreen.uss" />
+    <ui:VisualElement name="splash-root" style="flex-grow: 1; background-color: rgb(5, 8, 22); background-image: url('/Assets/Project/Sprites/SplashBackground.png'); -unity-background-scale-mode: scale-and-crop; justify-content: center; align-items: center;">
+        <ui:VisualElement name="app-icon" style="width: 512px; height: 512px; background-image: url('/Assets/Project/Sprites/LoadingRing.png'); -unity-background-scale-mode: scale-to-fit; margin-bottom: 24px;" />
+        <ui:Label text="NEON ROUTE ESCAPE" style="color: rgb(0, 229, 255); font-size: 36px; -unity-font-style: bold;" />
+        <ui:Label name="subtitle" text="Loading..." style="color: rgb(180, 180, 200); font-size: 16px; margin-top: 8px;" />
+        <ui:ProgressBar name="loading-bar" value="45" title="45%" style="width: 300px; margin-top: 40px;" />
+    </ui:VisualElement>
+    
+</ui:UXML>  

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ui:UXML
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ui="UnityEngine.UIElements"
+    xmlns:uie="UnityEditor.UIElements"
+    xsi:noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd"
+>
+    <Style src="/Assets/Project/Themes/HomeScreen.uss" />
+    <ui:VisualElement name="home-root" style="flex-grow: 1; background-color: rgb(5, 8, 22); align-items: center;">
+        <ui:VisualElement style="flex-grow: 1;" />
+        <ui:VisualElement style="align-items: center;">
+            <ui:Label text="LEVEL 01" style="color: rgb(0, 229, 255); font-size: 32px; -unity-font-style: bold;" />
+            <ui:VisualElement name="difficulty-pill" style="margin-top: 16px; height: 32px; padding-left: 24px; padding-right: 24px; justify-content: center; align-items: center; border-width: 1px; border-color: rgba(0, 229, 255, 0.4); background-color: rgb(8, 13, 32); border-radius: 16px;">
+                <ui:Label text="EASY" style="color: rgb(0, 229, 255); font-size: 12px; -unity-font-style: bold; letter-spacing: 2px;" />
+            </ui:VisualElement>
+            <ui:VisualElement name="play-button" style="margin-top: 32px; width: 260px; height: 64px; background-color: rgb(16, 21, 45); border-width: 2px; border-color: rgb(0, 229, 255); border-radius: 32px; justify-content: center; align-items: center;">
+                <ui:Label text="PLAY  ›" style="color: rgb(255, 255, 255); font-size: 22px; -unity-font-style: bold; letter-spacing: 1px;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement style="flex-grow: 1;" />
+        <ui:VisualElement name="bottom-nav" style="width: 100%; flex-direction: row; justify-content: space-around; align-items: center; background-color: rgba(25, 33, 34, 0.85); border-top-width: 1px; border-top-color: rgba(255, 255, 255, 0.2); padding-top: 12px; padding-bottom: 24px;">
+            <ui:VisualElement style="align-items: center;">
+                <ui:VisualElement style="width: 26px; height: 26px; background-image: url('/Assets/Project/Sprites/HomeIcon.png'); -unity-background-image-tint-color: rgb(0, 229, 255); -unity-background-scale-mode: scale-to-fit; margin-bottom: 4px;" />
+                <ui:Label text="Home" style="color: rgb(0, 229, 255); font-size: 11px; -unity-font-style: bold;" />
+            </ui:VisualElement>
+            <ui:VisualElement style="align-items: center; opacity: 0.5;">
+                <ui:VisualElement style="width: 22px; height: 22px; background-image: url('/Assets/Project/Sprites/LockIcon.png'); -unity-background-image-tint-color: rgb(140, 150, 170); -unity-background-scale-mode: scale-to-fit; margin-bottom: 4px;" />
+                <ui:Label text="Lvl 10" style="color: rgb(140, 150, 170); font-size: 11px;" />
+            </ui:VisualElement>
+            <ui:VisualElement style="align-items: center; opacity: 0.5;">
+                <ui:VisualElement style="width: 22px; height: 22px; background-image: url('/Assets/Project/Sprites/LockIcon.png'); -unity-background-image-tint-color: rgb(140, 150, 170); -unity-background-scale-mode: scale-to-fit; margin-bottom: 4px;" />
+                <ui:Label text="Lvl 20" style="color: rgb(140, 150, 170); font-size: 11px;" />
+            </ui:VisualElement>
+            <ui:VisualElement style="align-items: center; opacity: 0.5;">
+                <ui:VisualElement style="width: 22px; height: 22px; background-image: url('/Assets/Project/Sprites/LockIcon.png'); -unity-background-image-tint-color: rgb(140, 150, 170); -unity-background-scale-mode: scale-to-fit; margin-bottom: 4px;" />
+                <ui:Label text="Lvl 30" style="color: rgb(140, 150, 170); font-size: 11px;" />
+            </ui:VisualElement>
+            <ui:VisualElement style="align-items: center; opacity: 0.7;">
+                <ui:VisualElement style="width: 24px; height: 24px; background-image: url('/Assets/Project/Sprites/SettingsIcon.png'); -unity-background-image-tint-color: rgb(180, 190, 200); -unity-background-scale-mode: scale-to-fit; margin-bottom: 4px;" />
+                <ui:Label text="Settings" style="color: rgb(180, 190, 200); font-size: 11px;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
