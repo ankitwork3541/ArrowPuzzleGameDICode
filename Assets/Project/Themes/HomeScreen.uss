@@ -3,10 +3,6 @@
     width: 100%;
     height: 100%;
     background-color: rgb(5, 8, 22);
-    background-image: url("project://database/Assets/Project/Sprites/GridTile.png?fileID=-39968082123777586&guid=e3e4d6085f753401a9e5f24baa25da10&type=3#GridTile_0");
-    background-repeat: repeat repeat;
-    background-size: 64px 64px;
-    -unity-background-image-tint-color: rgba(0, 229, 255, 0.12);
     -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-Bold%20SDF.asset?fileID=11400000&guid=2d8208c2123c041daaecd4a4cf0d1ae2&type=2#Oxanium-Bold SDF");
 }
 

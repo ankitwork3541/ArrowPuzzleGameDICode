@@ -1,90 +1,37 @@
 using UnityEngine;
-using UnityEngine.UI;
-using TMPro;
-using PrimeTween;
 
 public class GameFlowManager : MonoBehaviour
 {
-    public GameObject splashPanel;
-    public GameObject homePanel;
-    public GameObject gameplayPanel;
+    [Header("UI Toolkit panel roots")]
+    public GameObject homeRoot;
 
-    public GameObject winPanel;
-    public GameObject losePanel;
+    [Header("Systems")]
     public LevelLoader levelLoader;
     public LivesManager livesManager;
-    public TMP_Text levelText;
-    public TMP_Text difficultyText;
-    public Image progressBarFill;
-    public TMP_Text loadingPercentText;
-    public float splashDuration = 2f;
-
-    void Start()
-    {
-        splashPanel.SetActive(true);
-        homePanel.SetActive(false);
-        gameplayPanel.SetActive(false);
-        winPanel.SetActive(false);
-        losePanel.SetActive(false);
-
-        progressBarFill.fillAmount = 0f;
-        Tween.Custom(0f, 1f, duration: splashDuration, onValueChange: t =>
-        {
-            progressBarFill.fillAmount = t;
-            loadingPercentText.text = Mathf.RoundToInt(t * 100f) + "%";
-        }).OnComplete(ShowHome);
-    }
-
-    void ShowHome()
-    {
-        splashPanel.SetActive(false);
-        homePanel.SetActive(true);
-        levelText.text = "Level " + levelLoader.CurrentLevelNumber();
-        difficultyText.text = GetDifficultyLabel(levelLoader.CurrentLevel());
-    }
-
-    string GetDifficultyLabel(LevelData level)
-    {
-        int arrowCount = level.arrows.Count;
-        if (arrowCount < 15) return "EASY";
-        if (arrowCount < 50) return "MEDIUM";
-        if (arrowCount < 150) return "HARD";
-        return "HARDEST";
-    }
 
     public void OnPlayButtonClicked()
     {
-        homePanel.SetActive(false);
-        gameplayPanel.SetActive(true);
+        homeRoot.SetActive(false);
         levelLoader.LoadLevel();
     }
 
+    // TODO: Win panel is not rebuilt in UI Toolkit yet — for now the flow just
+    // advances a level and returns to Home so the loop stays playable.
     public void ShowWin()
     {
-        gameplayPanel.SetActive(false);
-        winPanel.SetActive(true);
-    }
-
-    public void ShowLose()
-    {
-        gameplayPanel.SetActive(false);
-        losePanel.SetActive(true);
-    }
-
-    public void OnRestartButtonClicked()
-    {
-        losePanel.SetActive(false);
-        gameplayPanel.SetActive(true);
-        livesManager.ResetLives();
-        levelLoader.LoadLevel();
-    }
-
-    public void OnNextLevelButtonClicked()
-    {
-        winPanel.SetActive(false);
-        gameplayPanel.SetActive(true);
+        Debug.Log("LEVEL WON (Win panel not rebuilt in UI Toolkit yet)");
         livesManager.ResetLives();
         levelLoader.GoToNextLevel();
+        homeRoot.SetActive(true);
+    }
+
+    // TODO: Lose panel is not rebuilt in UI Toolkit yet — same temporary behaviour.
+    public void ShowLose()
+    {
+        Debug.Log("LEVEL LOST (Lose panel not rebuilt in UI Toolkit yet)");
+        livesManager.ResetLives();
+        levelLoader.LoadLevel();
+        homeRoot.SetActive(true);
     }
 
     public void OnHintButtonClicked()
@@ -92,5 +39,14 @@ public class GameFlowManager : MonoBehaviour
         ArrowController hintArrow = levelLoader.FindHintableArrow();
         if (hintArrow != null)
             hintArrow.PlayHintPulse();
+    }
+
+    public static string GetDifficultyLabel(LevelData level)
+    {
+        int arrowCount = level.arrows.Count;
+        if (arrowCount < 15) return "EASY";
+        if (arrowCount < 50) return "MEDIUM";
+        if (arrowCount < 150) return "HARD";
+        return "HARDEST";
     }
 }

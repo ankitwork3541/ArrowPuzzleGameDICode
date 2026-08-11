@@ -1,17 +1,21 @@
 using UnityEngine;
-using UnityEngine.UI;
 
 public class LivesManager : MonoBehaviour
 {
     public static LivesManager Instance;
 
-    public int lives = 3;
-    public Image[] heartImages; // Inspector ma Heart1, Heart2, Heart3 drag karo (order ma)
+    public int maxLives = 3;
     public GameFlowManager gameFlowManager;
+
+    public int lives { get; private set; }
+
+    // The HUD subscribes to this instead of LivesManager holding UI references itself.
+    public event System.Action<int, int> OnLivesChanged; // (lives, maxLives)
 
     void Awake()
     {
         Instance = this;
+        lives = maxLives;
     }
 
     public void LoseLife()
@@ -19,7 +23,7 @@ public class LivesManager : MonoBehaviour
         if (lives <= 0) return;
 
         lives--;
-        heartImages[lives].color = Color.gray;
+        OnLivesChanged?.Invoke(lives, maxLives);
 
         if (lives <= 0)
         {
@@ -29,8 +33,7 @@ public class LivesManager : MonoBehaviour
 
     public void ResetLives()
     {
-        lives = heartImages.Length;
-        foreach (Image heart in heartImages)
-            heart.color = Color.red;
+        lives = maxLives;
+        OnLivesChanged?.Invoke(lives, maxLives);
     }
 }
