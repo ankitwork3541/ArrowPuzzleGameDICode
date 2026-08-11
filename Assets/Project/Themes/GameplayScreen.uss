@@ -8,22 +8,27 @@
     -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-Bold%20SDF.asset?fileID=11400000&guid=2d8208c2123c041daaecd4a4cf0d1ae2&type=2#Oxanium-Bold SDF");
 }
 
-/* ============ Top bar ============ */
+/* ============ Top panel ============
+   OPAQUE on purpose, and it must match the camera's Solid Color background
+   exactly. This is what stops arrows from showing above the progress line
+   when the board is panned up — no camera clipping or masking needed. */
+.top-panel {
+    background-color: rgb(5, 8, 22);
+    padding-top: 60px;
+}
+
 .top-bar {
     flex-direction: row;
     justify-content: center;
     align-items: flex-start;
-    padding-top: 60px;
-    padding-left: 40px;
-    padding-right: 40px;
 }
 
-/* Left icon pair is taken out of the flow so the centre group stays
-   truly centred no matter how wide the buttons are. */
+/* Both side groups are taken out of the flow so the centre group stays truly
+   centred regardless of how wide they are. */
 .top-bar__left {
     position: absolute;
     left: 40px;
-    top: 60px;
+    top: 0;
     flex-direction: row;
 }
 
@@ -31,7 +36,7 @@
     align-items: center;
 }
 
-/* ============ Circle icon buttons ============ */
+/* ============ Circle icon buttons (back / restart) ============ */
 .icon-button {
     width: 110px;
     height: 110px;
@@ -66,19 +71,52 @@
     background-image: url("../Sprites/IconRestart.png");
 }
 
-/* Hint floats over the board, bottom-right, and is cyan to read as the
-   one "special" action rather than navigation. */
-.icon-button--hint {
+/* ============ Hint pill (top-right, flush to the screen edge) ============ */
+.hint-pill {
     position: absolute;
-    right: 50px;
-    bottom: 70px;
-    width: 130px;
-    height: 130px;
-    border-radius: 65px;
-    background-image: url("../Sprites/IconHint.png");
-    background-size: 60px 60px;
-    border-color: rgba(0, 229, 255, 0.5);
-    -unity-background-image-tint-color: rgb(0, 229, 255);
+    right: 0;
+    top: 17px;                        /* vertically centred against the 110px circles */
+    height: 76px;
+
+    /* flush right: only the left corners are rounded */
+    border-top-left-radius: 38px;
+    border-bottom-left-radius: 38px;
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+
+    border-width: 0;
+    margin: 0;
+    padding-left: 28px;
+    padding-right: 34px;
+
+    flex-direction: row;
+    align-items: center;
+
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("../Sprites/NeonGradient.png");
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+}
+
+.hint-pill:active {
+    scale: 0.95;
+}
+
+.hint-pill__icon {
+    width: 42px;
+    height: 42px;
+    margin-right: 14px;
+    background-image: url("../Sprites/IconAd.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    -unity-background-image-tint-color: rgb(255, 255, 255);
+}
+
+.hint-pill__label {
+    font-size: 40px;
+    letter-spacing: 1px;
+    color: rgb(255, 255, 255);
 }
 
 /* ============ Difficulty + hearts ============ */
@@ -111,7 +149,9 @@
     -unity-background-image-tint-color: rgba(255, 255, 255, 0.12);
 }
 
-/* ============ Level progress line ============ */
+/* ============ Level progress line ============
+   Last child of the opaque top panel, so it reads as the boundary between
+   the HUD and the board — exactly like the reference. */
 .progress-track {
     height: 8px;
     border-radius: 4px;
@@ -127,4 +167,40 @@
     height: 100%;
     border-radius: 4px;
     background-color: rgb(0, 229, 255);
+}
+
+/* ============ Grid toggle (bottom-right, rounded square) ============ */
+.grid-button {
+    position: absolute;
+    right: 40px;
+    bottom: 60px;
+    width: 130px;
+    height: 130px;
+    border-radius: 40px;              /* rounded square, not a circle */
+    margin: 0;
+    padding: 0;
+
+    background-color: rgba(16, 25, 54, 0.85);
+    border-width: 2px;
+    border-color: rgba(0, 229, 255, 0.2);
+
+    background-image: url("../Sprites/IconGrid.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 62px 62px;
+    -unity-background-image-tint-color: rgba(220, 226, 240, 0.85);
+}
+
+.grid-button:hover {
+    background-color: rgba(22, 36, 81, 0.95);
+}
+
+.grid-button:active {
+    scale: 0.92;
+}
+
+/* Set by the controller when the guide lines are on. */
+.grid-button--on {
+    border-color: rgb(0, 229, 255);
+    -unity-background-image-tint-color: rgb(0, 229, 255);
 }

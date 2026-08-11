@@ -129,13 +129,14 @@ GameObject:
   m_Component:
   - component: {fileID: 100439263}
   - component: {fileID: 100439262}
+  - component: {fileID: 100439264}
   m_Layer: 5
   m_Name: UIToolkit_Gameplay
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!1931382934 &100439262
 PanelRenderer:
   m_ObjectHideFlags: 0
@@ -209,6 +210,23 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &100439264
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 100439261}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86b15071234164dbdba76a58e1e8f0be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameplayHUDController
+  panelRenderer: {fileID: 100439262}
+  gameFlowManager: {fileID: 1122562369}
+  levelLoader: {fileID: 509710744}
+  livesManager: {fileID: 1768828260}
+  levelManager: {fileID: 1180940109}
 --- !u!1 &118878019
 GameObject:
   m_ObjectHideFlags: 0
@@ -715,6 +733,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameFlowManager
   homeRoot: {fileID: 648166711}
+  gameplayRoot: {fileID: 100439261}
   levelLoader: {fileID: 509710744}
   livesManager: {fileID: 1768828260}
 --- !u!4 &1122562370
@@ -795,7 +814,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!1931382934 &1434815624
 PanelRenderer:
   m_ObjectHideFlags: 0
@@ -982,8 +1001,8 @@ Camera:
   m_GameObject: {fileID: 1966888461}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 1
-  m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0.019607844, g: 0.03137255, b: 0.08627451, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0

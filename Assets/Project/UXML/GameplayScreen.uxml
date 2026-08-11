@@ -2,26 +2,33 @@
     <Style src="project://database/Assets/Project/Themes/GameplayScreen.uss?fileID=7433441132597879392&amp;guid=b4369a12a23684b82832b80a76b589b0&amp;type=3#GameplayScreen" />
     <ui:VisualElement name="gameplay-root" class="gameplay-root">
 
-        <ui:VisualElement name="top-bar" class="top-bar">
-            <ui:VisualElement name="top-bar-left" class="top-bar__left">
-                <ui:Button name="back-button" class="icon-button icon-button--back" />
-                <ui:Button name="restart-button" class="icon-button icon-button--restart" />
-            </ui:VisualElement>
-
-            <ui:VisualElement name="top-bar-center" class="top-bar__center">
-                <ui:Label name="difficulty-label" text="HARD" class="hud-difficulty" />
-                <ui:VisualElement name="hearts" class="hearts">
-                    <ui:VisualElement name="heart-0" class="heart" />
-                    <ui:VisualElement name="heart-1" class="heart" />
-                    <ui:VisualElement name="heart-2" class="heart" />
+        <ui:VisualElement name="top-panel" class="top-panel">
+            <ui:VisualElement name="top-bar" class="top-bar">
+                <ui:VisualElement name="top-bar-left" class="top-bar__left">
+                    <ui:Button name="back-button" class="icon-button icon-button--back" />
+                    <ui:Button name="restart-button" class="icon-button icon-button--restart" />
                 </ui:VisualElement>
+
+                <ui:VisualElement name="top-bar-center" class="top-bar__center">
+                    <ui:Label name="difficulty-label" text="HARD" class="hud-difficulty" />
+                    <ui:VisualElement name="hearts" class="hearts">
+                        <ui:VisualElement name="heart-0" class="heart" />
+                        <ui:VisualElement name="heart-1" class="heart" />
+                        <ui:VisualElement name="heart-2" class="heart" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:Button name="hint-button" class="hint-pill">
+                    <ui:VisualElement class="hint-pill__icon" picking-mode="Ignore" />
+                    <ui:Label text="Hint" class="hint-pill__label" picking-mode="Ignore" />
+                </ui:Button>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="progress-track" class="progress-track">
+                <ui:VisualElement name="progress-fill" class="progress-fill" />
             </ui:VisualElement>
         </ui:VisualElement>
 
-        <ui:VisualElement name="progress-track" class="progress-track">
-            <ui:VisualElement name="progress-fill" class="progress-fill" />
-        </ui:VisualElement>
-
-        <ui:Button name="hint-button" class="icon-button icon-button--hint" />
+        <ui:Button name="grid-button" class="grid-button" />
     </ui:VisualElement>
 </ui:UXML>
