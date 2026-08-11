@@ -3964,13 +3964,14 @@ GameObject:
   - component: {fileID: 1434815625}
   - component: {fileID: 1434815624}
   - component: {fileID: 1434815626}
+  - component: {fileID: 1434815627}
   m_Layer: 5
   m_Name: UIToolkit_Root
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!1931382934 &1434815624
 PanelRenderer:
   m_ObjectHideFlags: 0
@@ -4058,6 +4059,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SplashScreenController
   panelRenderer: {fileID: 1434815624}
   splashDuration: 2
+--- !u!114 &1434815627
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1434815623}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 206c562b14dd44368b064f632264f818, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  panelSettings: {fileID: 11400000, guid: 32982410fc22940fdb65e3fc9c70a633, type: 2}
+  tabletDiagonalInchThreshold: 7
+  tabletScaleMultiplier: 1.4
 --- !u!1 &1438666969
 GameObject:
   m_ObjectHideFlags: 0

@@ -1,16 +1,9 @@
-<?xml version="1.0" encoding="utf-8"?>
-<ui:UXML
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns:ui="UnityEngine.UIElements"
-    xmlns:uie="UnityEditor.UIElements"
-    xsi:noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd"
->
-  <Style src="/Assets/Project/Themes/SplashScreen.uss" />
-    <ui:VisualElement name="splash-root" style="flex-grow: 1; background-color: rgb(5, 8, 22); background-image: url('/Assets/Project/Sprites/SplashBackground.png'); -unity-background-scale-mode: scale-and-crop; justify-content: center; align-items: center;">
-        <ui:VisualElement name="app-icon" style="width: 512px; height: 512px; background-image: url('/Assets/Project/Sprites/LoadingRing.png'); -unity-background-scale-mode: scale-to-fit; margin-bottom: 24px;" />
-        <ui:Label text="NEON ROUTE ESCAPE" style="color: rgb(0, 229, 255); font-size: 36px; -unity-font-style: bold;" />
-        <ui:Label name="subtitle" text="Loading..." style="color: rgb(180, 180, 200); font-size: 16px; margin-top: 8px;" />
-        <ui:ProgressBar name="loading-bar" value="45" title="45%" style="width: 300px; margin-top: 40px;" />
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Project/Themes/SplashScreen.uss?fileID=7433441132597879392&amp;guid=92e0c9856b36e4c9a9dd9950d373f2e9&amp;type=3#SplashScreen"/>
+    <ui:VisualElement name="splash-root" style="flex-grow: 1; background-color: rgb(5, 8, 22); background-image: url(&quot;project://database/Assets/Project/Sprites/SplashBackground.png?fileID=-5542483980132048990&amp;guid=967f87f0a3a3a4328bbb28c9c5e51474&amp;type=3#SplashBackground_0&quot;); -unity-background-scale-mode: scale-and-crop; justify-content: center; align-items: center;">
+        <ui:VisualElement name="app-icon" style="width: 512px; height: 512px; background-image: url(&quot;project://database/Assets/Project/Sprites/LoadingRing.png?fileID=21300000&amp;guid=5806f5e98ad9542e4b45d272e2662f2d&amp;type=3#LoadingRing&quot;); -unity-background-scale-mode: scale-to-fit; margin-bottom: 24px;"/>
+        <ui:Label text="NEON ROUTE ESCAPE" style="color: rgb(0, 229, 255); font-size: 36px; -unity-font-style: bold;"/>
+        <ui:Label name="subtitle" text="Loading..." style="color: rgb(220, 226, 240); font-size: 42px; -unity-font-style: bold; margin-top: 12px; -unity-font-definition: url(&quot;project://database/Assets/TextMesh%20Pro/Examples%20&amp;%20Extras/Fonts/Roboto-Bold.ttf?fileID=12800000&amp;guid=4beb055f07aaff244873dec698d0363e&amp;type=3#Roboto-Bold&quot;);"/>
+        <ui:ProgressBar name="loading-bar" value="45" title="45%" picking-mode="Position" style="width: 300px; height: 28px; margin-top: 40px; color: rgb(255, 255, 255); font-size: 16px; -unity-slice-type: sliced; -unity-text-align: upper-left; -unity-text-auto-size: none;"/>
     </ui:VisualElement>
-    
-</ui:UXML>  
+</ui:UXML>
