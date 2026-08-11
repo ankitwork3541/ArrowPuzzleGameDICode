@@ -13,7 +13,7 @@
                 </ui:VisualElement>
             </ui:Button>
         </ui:VisualElement>
-        <ui:VisualElement name="bottom-nav" class="bottom-nav" style="background-color: rgba(25, 33, 34, 0.588);">
+        <ui:VisualElement name="bottom-nav" class="bottom-nav" style="background-color: rgba(25, 33, 34, 0.784);">
             <ui:VisualElement class="nav-item nav-item--active">
                 <ui:VisualElement class="nav-icon nav-icon--home"/>
                 <ui:Label text="Home" class="nav-label"/>
