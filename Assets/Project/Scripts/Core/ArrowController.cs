@@ -73,10 +73,95 @@ public class ArrowController : MonoBehaviour
         }
 
         edgeCollider.points = colliderPoints;
-        edgeCollider.edgeRadius = 0.125f; // line ni half-width — tap area line jetlu j rahe
+        edgeCollider.edgeRadius = line.widthMultiplier * line.widthCurve.Evaluate(0f) / 2f;
 
         UpdateHeadPosition();
         UpdateTailPosition();
+    }
+
+    // Level-entrance: the body draws itself from the tail towards the head, like a pen
+    // stroke. Deliberately split into begin / per-frame / end rather than owning a tween —
+    // LevelLoader drives every arrow from ONE tween, because a tween per arrow would mean
+    // 300+ simultaneous tweens on a big level and blow past PrimeTween's pre-allocated pool.
+    private Vector3[] entrancePoints;
+    private float entranceLength;
+
+    public void BeginEntrance()
+    {
+        if (path.Count < 2) return;
+
+        // Taps stay blocked until the draw finishes — TryAdvance() already bails on isMoving.
+        isMoving = true;
+
+        entrancePoints = new Vector3[path.Count];
+        entranceLength = 0f;
+        for (int i = 0; i < path.Count; i++)
+        {
+            entrancePoints[i] = gridBuilder.GridToWorld(path[i]);
+            if (i > 0) entranceLength += Vector3.Distance(entrancePoints[i - 1], entrancePoints[i]);
+        }
+
+        // Collapse to a dot on the tail immediately — the full arrow Init() drew must not
+        // stay on screen while this arrow waits its turn in the wave.
+        DrawPartial(entrancePoints, entranceLength, 0f);
+    }
+
+    public void SetEntranceProgress(float fraction)
+    {
+        if (entrancePoints == null) return;
+        DrawPartial(entrancePoints, entranceLength, fraction);
+    }
+
+    public void EndEntrance()
+    {
+        if (entrancePoints == null) return;
+
+        entrancePoints = null;
+        DrawPath();          // snap to the exact final state, collider included
+        isMoving = false;
+    }
+
+    // Draw only the first `fraction` of the path, measured as length from the tail.
+    void DrawPartial(Vector3[] full, float totalLength, float fraction)
+    {
+        float target = totalLength * fraction;
+        float walked = 0f;
+        int lastWhole = 0;              // last point the stroke has fully reached
+        Vector3 tip = full[0];
+
+        for (int i = 1; i < full.Length; i++)
+        {
+            float seg = Vector3.Distance(full[i - 1], full[i]);
+            if (walked + seg >= target)
+            {
+                float k = seg > 0f ? (target - walked) / seg : 0f;
+                tip = Vector3.Lerp(full[i - 1], full[i], k);
+                lastWhole = i - 1;
+                break;
+            }
+            walked += seg;
+            lastWhole = i;
+            tip = full[i];
+        }
+
+        line.positionCount = lastWhole + 2;
+        for (int i = 0; i <= lastWhole; i++)
+            line.SetPosition(i, full[i]);
+        line.SetPosition(lastWhole + 1, tip);
+
+        if (tailVisual != null)
+            tailVisual.position = full[0];
+
+        if (headVisual != null)
+        {
+            headVisual.position = tip;
+            // At fraction 0 the tip sits on the tail, so aim along the first segment instead.
+            Vector3 dir = tip - full[lastWhole];
+            if (dir.sqrMagnitude < 0.000001f)
+                dir = full[Mathf.Min(lastWhole + 1, full.Length - 1)] - full[lastWhole];
+            if (dir.sqrMagnitude > 0.000001f)
+                headVisual.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg - 90f);
+        }
     }
 
     void UpdateHeadPosition()

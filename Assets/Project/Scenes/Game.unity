@@ -5222,7 +5222,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &509710744
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5242,6 +5242,8 @@ MonoBehaviour:
   gridBuilder: {fileID: 827431895}
   arrowPrefab: {fileID: 5943569507495498416, guid: bccaafe9cc3dc4be5b600aa50b03acdd, type: 3}
   cameraController: {fileID: 1966888466}
+  entranceDuration: 0.4
+  entranceStagger: 0.5
 --- !u!4 &509710745
 Transform:
   m_ObjectHideFlags: 0
@@ -5700,7 +5702,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1122562369
 MonoBehaviour:
   m_ObjectHideFlags: 0

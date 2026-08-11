@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using PrimeTween;
 
 public class LevelLoader : MonoBehaviour
 {
@@ -7,6 +8,17 @@ public class LevelLoader : MonoBehaviour
     public GridBuilder gridBuilder;
     public ArrowController arrowPrefab;
     public CameraController cameraController;
+
+    [Header("Level entrance animation")]
+    public float entranceDuration = 0.4f;   // how long ONE arrow takes to draw itself
+    public float entranceStagger = 0.5f;    // total window the whole wave is spread over
+
+    // The HUD hides itself between these two — the board draws in on a clean screen.
+    public event System.Action OnEntranceStart;
+    public event System.Action OnEntranceComplete;
+
+    private Tween entranceTween;
+    private List<ArrowController> entranceOrder = new List<ArrowController>();
 
     private int currentLevelIndex = 0;
     private List<ArrowController> spawnedArrows = new List<ArrowController>();
@@ -40,6 +52,58 @@ public class LevelLoader : MonoBehaviour
 
         LevelManager.Instance.SetArrowCount(spawnedArrows.Count);
         FitCameraToSpawnedArrows();
+        PlayEntrance();
+    }
+
+    // Draw every arrow in, rippling outwards from the centre of the board.
+    void PlayEntrance()
+    {
+        gridBuilder.ClearDots();   // the dot grid joins the HUD after the wave
+        OnEntranceStart?.Invoke();
+
+        if (spawnedArrows.Count == 0)
+        {
+            OnEntranceComplete?.Invoke();
+            return;
+        }
+
+        // Nearest-to-centre first. Centre is world (0,0) — CenterOnContent() already put
+        // the level's bounding box there.
+        entranceOrder = new List<ArrowController>(spawnedArrows);
+        entranceOrder.Sort((a, b) => a.GetBounds().center.sqrMagnitude.CompareTo(b.GetBounds().center.sqrMagnitude));
+
+        foreach (ArrowController arrow in entranceOrder)
+            arrow.BeginEntrance();
+
+        float total = entranceStagger + entranceDuration;
+
+        // ONE tween drives the whole wave. Giving each arrow its own tween is what blew past
+        // PrimeTween's 200-tween pool on a 150+ arrow level. Ease.Linear because the tween
+        // carries elapsed TIME here — the easing is applied per arrow, below.
+        entranceTween = Tween.Custom(this, 0f, total, duration: total, ease: Ease.Linear,
+            onValueChange: (loader, elapsed) =>
+            {
+                int count = entranceOrder.Count;   // read live — ClearArrows() can empty this
+                for (int i = 0; i < count; i++)
+                {
+                    ArrowController arrow = entranceOrder[i];
+                    if (arrow == null) continue;
+
+                    // Spread over a FIXED window, not a fixed per-arrow gap — a 0.03s gap would
+                    // make the Huge level's 338 arrows take ten seconds instead of half a second.
+                    float delay = count > 1 ? (i / (float)(count - 1)) * entranceStagger : 0f;
+                    float t = Mathf.Clamp01((elapsed - delay) / entranceDuration);
+                    arrow.SetEntranceProgress(1f - (1f - t) * (1f - t));   // OutQuad
+                }
+            })
+            .OnComplete(this, warnIfTargetDestroyed: false, onComplete: loader =>
+            {
+                foreach (ArrowController arrow in entranceOrder)
+                    if (arrow != null) arrow.EndEntrance();
+
+                gridBuilder.SpawnDots();
+                OnEntranceComplete?.Invoke();
+            });
     }
 
     void FitCameraToSpawnedArrows()
@@ -78,6 +142,11 @@ public class LevelLoader : MonoBehaviour
 
     void ClearArrows()
     {
+        // Restart calls LoadLevel() directly, so without this the previous wave's tween would
+        // still be running and its OnComplete would spawn dots / show the HUD over the new one.
+        entranceTween.Stop();
+        entranceOrder.Clear();
+
         foreach (ArrowController arrow in spawnedArrows)
         {
             if (arrow != null)

@@ -71,6 +71,9 @@ public class GridBuilder : MonoBehaviour
             dot.transform.position = GridToWorld(kvp.Key);
             dot.GridPosition = kvp.Key;
             dots[kvp.Key] = dot;
+
+            // Spawned after the arrows now, so respect whoever is already standing there.
+            if (kvp.Value.Occupant != null) dot.Hide();
         }
     }
 

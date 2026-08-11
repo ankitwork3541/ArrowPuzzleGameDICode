@@ -12,6 +12,7 @@ public class GameplayHUDController : MonoBehaviour
     [SerializeField] private GuideLines guideLines;
 
     private VisualElement root;
+    private VisualElement hudRoot;   // the .gameplay-root element itself, not the panel wrapper
     private Label difficultyLabel;
     private VisualElement progressFill;
     private List<VisualElement> hearts;
@@ -21,13 +22,19 @@ public class GameplayHUDController : MonoBehaviour
     // loading, so we remember the latest values and (re)apply them once root exists.
     private int lives, maxLives;
     private int remainingArrows, totalArrows;
+    private bool hudVisible;
 
     private void OnEnable()
     {
         panelRenderer.RegisterUIReloadCallback(OnUIReload);
         livesManager.OnLivesChanged += OnLivesChanged;
         levelManager.OnArrowCountChanged += OnArrowCountChanged;
+        levelLoader.OnEntranceStart += OnEntranceStart;
+        levelLoader.OnEntranceComplete += OnEntranceComplete;
 
+        // GameFlowManager activates this panel just before LoadLevel(), so start hidden
+        // rather than flashing the controls for the frames before the entrance begins.
+        hudVisible = false;
         lives = livesManager.lives;
         maxLives = livesManager.maxLives;
         Apply();
@@ -38,12 +45,27 @@ public class GameplayHUDController : MonoBehaviour
         panelRenderer.UnregisterUIReloadCallback(OnUIReload);
         livesManager.OnLivesChanged -= OnLivesChanged;
         levelManager.OnArrowCountChanged -= OnArrowCountChanged;
+        levelLoader.OnEntranceStart -= OnEntranceStart;
+        levelLoader.OnEntranceComplete -= OnEntranceComplete;
+    }
+
+    private void OnEntranceStart()
+    {
+        hudVisible = false;
+        Apply();
+    }
+
+    private void OnEntranceComplete()
+    {
+        hudVisible = true;
+        Apply();
     }
 
     private void OnUIReload(PanelRenderer renderer, VisualElement rootElement)
     {
         root = rootElement;
 
+        hudRoot = root.Q<VisualElement>("gameplay-root") ?? root;
         difficultyLabel = root.Q<Label>("difficulty-label");
         progressFill = root.Q<VisualElement>("progress-fill");
         hearts = root.Query<VisualElement>(className: "heart").ToList();
@@ -87,6 +109,8 @@ public class GameplayHUDController : MonoBehaviour
     private void Apply()
     {
         if (root == null) return;
+
+        hudRoot.EnableInClassList("gameplay-root--hidden", !hudVisible);
 
         difficultyLabel.text = GameFlowManager.GetDifficultyLabel(levelLoader.CurrentLevel());
 
