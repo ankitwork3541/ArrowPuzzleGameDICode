@@ -2009,7 +2009,6 @@ GameObject:
   m_Component:
   - component: {fileID: 648166713}
   - component: {fileID: 648166712}
-  - component: {fileID: 648166714}
   m_Layer: 5
   m_Name: UIToolkit_Home
   m_TagString: Untagged
@@ -2090,21 +2089,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &648166714
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 648166711}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8dfaf1c67fb040cbabb7ca61f4059365, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::HomeScreenController
-  panelRenderer: {fileID: 648166712}
-  gridSpacing: 40
-  gridLineColor: {r: 0, g: 0.898, b: 1, a: 0.03}
 --- !u!1 &650267045
 GameObject:
   m_ObjectHideFlags: 0

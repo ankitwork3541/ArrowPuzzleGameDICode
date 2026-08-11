@@ -1,10 +1,179 @@
 .screen-root {
+    flex-grow: 1;
     width: 100%;
     height: 100%;
     background-color: rgb(5, 8, 22);
-
-    background-image: url("../Sprites/GridTile.png");
-    background-repeat: repeat;
+    background-image: url("project://database/Assets/Project/Sprites/GridTile.png?fileID=-39968082123777586&guid=e3e4d6085f753401a9e5f24baa25da10&type=3#GridTile_0");
+    background-repeat: repeat repeat;
     background-size: 64px 64px;
     -unity-background-image-tint-color: rgba(0, 229, 255, 0.12);
+    -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-Bold%20SDF.asset?fileID=11400000&guid=2d8208c2123c041daaecd4a4cf0d1ae2&type=2#Oxanium-Bold SDF");
+}
+
+.content {
+    flex-grow: 1;
+    justify-content: center;
+    align-items: center;
+    padding-left: 60px;
+    padding-right: 60px;
+}
+
+.level-label {
+    font-size: 72px;
+    letter-spacing: 8px;
+    color: rgb(0, 218, 243);
+    text-shadow: 0 0 24px rgba(0, 218, 243, 0.7);
+    margin-bottom: 40px;
+    -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-ExtraBold%20SDF.asset?fileID=11400000&guid=a1b658a48c21246d783d8c4f4c297d45&type=2#Oxanium-ExtraBold SDF");
+}
+
+.difficulty-pill {
+    height: 64px;
+    border-radius: 32px;
+    background-color: rgb(8, 13, 32);
+    border-width: 2px;
+    border-color: rgba(0, 229, 255, 0.4);
+    padding-left: 40px;
+    padding-right: 40px;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 100px;
+}
+
+.difficulty-text {
+    font-size: 30px;
+    letter-spacing: 4px;
+    color: rgb(0, 229, 255);
+}
+
+/* ============ PLAY button (gradient border) ============ */
+.play-button {
+    width: 700px;
+    height: 160px;
+    border-radius: 80px;                 /* height / 2 */
+    border-width: 0;
+    margin: 0;
+    padding: 0;
+
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("../Sprites/NeonGradient.png");
+    background-repeat: no-repeat;
+    background-size: 100% 100%;          /* stretch — koi 9-slice nahi */
+}
+
+.play-button__inner {
+    position: absolute;
+    left: 5px;
+    top: 5px;
+    right: 5px;
+    bottom: 5px;
+    border-radius: 75px;                 /* 80 - 5 */
+    background-color: rgba(16, 25, 54, 0.92);
+
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.play-button__label {
+    font-size: 52px;
+    letter-spacing: 6px;
+    color: rgb(255, 255, 255);
+}
+
+.play-button__chevron {
+    font-size: 44px;
+    color: rgb(0, 229, 255);
+    margin-left: 24px;
+}
+
+.play-button:hover .play-button__inner {
+    background-color: rgba(22, 36, 81, 0.95);
+}
+
+.play-button:active {
+    scale: 0.96;
+}
+
+
+.bottom-nav {
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    background-color: rgb(25, 33, 34);
+    border-top-left-radius: 40px;
+    border-top-right-radius: 40px;
+    border-top-width: 2px;
+    border-top-color: rgba(255, 255, 255, 0.2);
+    padding-top: 28px;
+    padding-bottom: 40px;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.nav-item {
+    align-items: center;
+    justify-content: center;
+}
+
+.nav-icon {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 8px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+}
+
+.nav-label {
+    font-size: 26px;
+    letter-spacing: 2px;
+}
+
+.nav-icon--home {
+    background-image: url("project://database/Assets/Project/Sprites/HomeIcon.png?fileID=7480962188226714435&guid=4400cc3fec59f4399970e2541da7fd71&type=3#HomeIcon_0");
+}
+
+.nav-icon--lock {
+    background-image: url("project://database/Assets/Project/Sprites/LockIcon.png?fileID=-958580646009965197&guid=d8b1dbdeeae6f406ba936465b9ed71b7&type=3#LockIcon_0");
+}
+
+.nav-icon--settings {
+    background-image: url("project://database/Assets/Project/Sprites/SettingsIcon.png?fileID=5904627132653970092&guid=6212eb57667724539859a170f6e04832&type=3#SettingsIcon_0");
+}
+
+.nav-item--active {
+    scale: 1.1;
+}
+
+.nav-item--active .nav-icon {
+    -unity-background-image-tint-color: rgb(0, 218, 243);
+}
+
+.nav-item--active .nav-label {
+    color: rgb(255, 255, 255);
+}
+
+.nav-item--locked {
+    opacity: 0.5;
+}
+
+.nav-item--locked .nav-icon {
+    -unity-background-image-tint-color: rgb(57, 65, 95);
+}
+
+.nav-item--locked .nav-label {
+    color: rgb(57, 65, 95);
+}
+
+.nav-item--dim {
+    opacity: 0.7;
+}
+
+.nav-item--dim .nav-icon {
+    -unity-background-image-tint-color: rgb(59, 73, 76);
+}
+
+.nav-item--dim .nav-label {
+    color: rgb(59, 73, 76);
 }
