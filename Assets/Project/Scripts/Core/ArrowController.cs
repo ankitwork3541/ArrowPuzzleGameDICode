@@ -12,11 +12,28 @@ public class ArrowController : MonoBehaviour
     public Transform tailVisual; // Inspector ma "Tail" child object drag karo
 
     private bool isMoving = false;
-    public float stepTime = 0.18f;
+    public float stepTime = 0.09f;
+
+    [Header("Run acceleration")]
+    // Deliberately steep: only the first step or two read as a wind-up, then the arrow is at
+    // full speed for the rest of the run. A gentler ramp made the whole slide feel slow.
+    public float stepSpeedUp = 0.55f;    // each step lasts this fraction of the previous one
+    // Floor. Roughly 1.7 frames per cell at 60fps — going much below this stops reading as
+    // faster motion and starts reading as the arrow skipping cells.
+    public float minStepTime = 0.028f;
+    // Safety floor for weak devices, in rendered frames. At 60fps this is 0.025s, so minStepTime
+    // above still wins; at 30fps it becomes 0.05s and stops the arrow skipping whole cells.
+    public float minFramesPerStep = 1.5f;
+
+    private int runStepIndex;
 
     // Mid-move or mid-exit. The hint scan skips these — an arrow already on its way out is
     // not something the player needs pointed at, and it can't be pulsed safely either.
     public bool IsBusy => isMoving;
+
+    // Worn while the arrow is actually travelling. BlockedBounce puts white back when a run
+    // ends against another arrow; a run that ends off-grid destroys the arrow instead.
+    public Color activeColor = new Color(0f, 0.898f, 1f);   // Neon Cyan #00E5FF
 
     [Header("Hint pulse")]
     public float hintPulseScale = 1.25f;   // how far the body swells at the peak
@@ -71,7 +88,12 @@ public class ArrowController : MonoBehaviour
 
         Vector2 worldPos = Camera.main.ScreenToWorldPoint(screenPos);
         if (edgeCollider.OverlapPoint(worldPos))
+        {
+            // A fresh tap starts a new run, so the wind-up starts from slow again. Guarded by
+            // isMoving because TryAdvance() also re-enters itself to continue the current run.
+            if (!isMoving) runStepIndex = 0;
             TryAdvance();
+        }
     }
 
     void DrawPath()
@@ -235,8 +257,25 @@ public class ArrowController : MonoBehaviour
             MoveStep(nextPos);
         }
     }
+    // A run winds up: every step is shorter than the last, so the arrow starts at a readable
+    // pace and leaves the board fast. Pair this with Ease.Linear per step — any ease-out
+    // would brake the arrow to a full stop at every single cell boundary.
+    float NextStepTime()
+    {
+        // The timing is already frame-independent — PrimeTween advances by Time.deltaTime, so a
+        // step lasts the same real seconds everywhere. What is NOT device-independent is how many
+        // frames get drawn inside it: on a slow device 0.028s is under one frame, and the arrow
+        // would visibly jump whole cells instead of sliding. Floor every step at real frames.
+        float floor = Mathf.Max(minStepTime, Time.smoothDeltaTime * minFramesPerStep);
+
+        float duration = Mathf.Max(floor, stepTime * Mathf.Pow(stepSpeedUp, runStepIndex));
+        runStepIndex++;
+        return duration;
+    }
+
     void MoveStep(Vector2Int nextPos)
     {
+        SetLineColor(activeColor);
         int n = path.Count;
 
         // Capture old tail/head BEFORE shifting path (needed for the grow/shrink animation)
@@ -264,7 +303,7 @@ public class ArrowController : MonoBehaviour
         isMoving = true;
         // `this` is passed as the tween target so PrimeTween stops the tween by itself
         // if the arrow is destroyed mid-animation (level restart / next level).
-        Tween.Custom(this, 0f, 1f, duration: stepTime, onValueChange: (arrow, t) =>
+        Tween.Custom(this, 0f, 1f, duration: NextStepTime(), ease: Ease.Linear, onValueChange: (arrow, t) =>
         {
             line.SetPosition(0, Vector3.Lerp(oldTailWorld, newTailTarget, t));
             line.SetPosition(n, Vector3.Lerp(oldHeadWorld, newHeadWorld, t));
@@ -327,6 +366,8 @@ public class ArrowController : MonoBehaviour
 
     void StartExit(Vector3 exitStep)
     {
+        SetLineColor(activeColor);   // an arrow one cell from the edge exits without ever calling MoveStep
+
         foreach (Vector2Int pos in path)
             gridBuilder.ClearOccupant(pos);
 
@@ -352,7 +393,7 @@ public class ArrowController : MonoBehaviour
         for (int i = 1; i < n; i++)
             line.SetPosition(i, oldWorld[i]); // frozen middle, unchanged from old positions
 
-        Tween.Custom(this, 0f, 1f, duration: stepTime, onValueChange: (arrow, t) =>
+        Tween.Custom(this, 0f, 1f, duration: NextStepTime(), ease: Ease.Linear, onValueChange: (arrow, t) =>
         {
             line.SetPosition(0, Vector3.Lerp(oldTailWorld, newTailTarget, t));
             line.SetPosition(n, Vector3.Lerp(oldHeadWorld, newHeadWorld, t));
