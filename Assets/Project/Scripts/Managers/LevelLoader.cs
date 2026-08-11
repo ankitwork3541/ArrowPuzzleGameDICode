@@ -83,12 +83,25 @@ public class LevelLoader : MonoBehaviour
         spawnedArrows.Clear();
     }
 
-    public void GoToNextLevel()
+    // Abandon the level in progress (leaving to Home, win, lose). Without this the
+    // arrows keep living in the world and an in-flight exit can still report a win.
+    public void ClearLevel()
+    {
+        ClearArrows();
+        LevelManager.Instance.ClearLevel();
+    }
+
+    // Move to the next level WITHOUT loading it — the level is loaded when Play is pressed.
+    public void AdvanceLevel()
     {
         currentLevelIndex++;
         if (currentLevelIndex >= levels.Length)
             currentLevelIndex = 0; // abhi mate: badha levels puri thay etle pachu 1st thi
+    }
 
+    public void GoToNextLevel()
+    {
+        AdvanceLevel();
         LoadLevel();
     }
 

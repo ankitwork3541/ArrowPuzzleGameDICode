@@ -20,6 +20,7 @@ public class GameFlowManager : MonoBehaviour
 
     public void OnBackToHomeClicked()
     {
+        levelLoader.ClearLevel();   // abandon it, or an in-flight arrow exit still reports a win
         gameplayRoot.SetActive(false);
         homeRoot.SetActive(true);
     }
@@ -42,8 +43,9 @@ public class GameFlowManager : MonoBehaviour
     public void ShowWin()
     {
         Debug.Log("LEVEL WON (Win panel not rebuilt in UI Toolkit yet)");
+        levelLoader.ClearLevel();
+        levelLoader.AdvanceLevel();   // advance only — the level loads when Play is pressed
         gameplayRoot.SetActive(false);
-        levelLoader.GoToNextLevel();
         homeRoot.SetActive(true);
     }
 
@@ -51,6 +53,7 @@ public class GameFlowManager : MonoBehaviour
     public void ShowLose()
     {
         Debug.Log("LEVEL LOST (Lose panel not rebuilt in UI Toolkit yet)");
+        levelLoader.ClearLevel();
         gameplayRoot.SetActive(false);
         homeRoot.SetActive(true);
     }

@@ -159,13 +159,15 @@ public class ArrowController : MonoBehaviour
         }
 
         isMoving = true;
-        Tween.Custom(0f, 1f, duration: stepTime, onValueChange: t =>
+        // `this` is passed as the tween target so PrimeTween stops the tween by itself
+        // if the arrow is destroyed mid-animation (level restart / next level).
+        Tween.Custom(this, 0f, 1f, duration: stepTime, onValueChange: (arrow, t) =>
         {
             line.SetPosition(0, Vector3.Lerp(oldTailWorld, newTailTarget, t));
             line.SetPosition(n, Vector3.Lerp(oldHeadWorld, newHeadWorld, t));
             UpdateHeadPosition();
             UpdateTailPosition();
-        }).OnComplete(() =>
+        }).OnComplete(this, warnIfTargetDestroyed: false, onComplete: arrow =>
         {
             // Finalize: drop the now-redundant tail point (merged with what was point 2)
             Vector3[] finalPositions = new Vector3[n];
@@ -203,17 +205,17 @@ public class ArrowController : MonoBehaviour
 
         // Khali head no point (n - 1) bump kare che — baki badha points (bends + tail) tadan freeze rahe
         Sequence.Create()
-            .Chain(Tween.Custom(0f, 1f, duration: stepTime * 0.5f, onValueChange: t =>
+            .Chain(Tween.Custom(this, 0f, 1f, duration: stepTime * 0.5f, onValueChange: (arrow, t) =>
             {
                 line.SetPosition(n - 1, Vector3.Lerp(originalHeadWorld, bumpHeadWorld, t));
                 UpdateHeadPosition();
             }))
-            .Chain(Tween.Custom(0f, 1f, duration: stepTime * 0.5f, onValueChange: t2 =>
+            .Chain(Tween.Custom(this, 0f, 1f, duration: stepTime * 0.5f, onValueChange: (arrow, t2) =>
             {
                 line.SetPosition(n - 1, Vector3.Lerp(bumpHeadWorld, originalHeadWorld, t2));
                 UpdateHeadPosition();
             }))
-            .OnComplete(() =>
+            .OnComplete(this, warnIfTargetDestroyed: false, onComplete: arrow =>
             {
                 SetLineColor(Color.white);
                 isMoving = false;
@@ -247,13 +249,13 @@ public class ArrowController : MonoBehaviour
         for (int i = 1; i < n; i++)
             line.SetPosition(i, oldWorld[i]); // frozen middle, unchanged from old positions
 
-        Tween.Custom(0f, 1f, duration: stepTime, onValueChange: t =>
+        Tween.Custom(this, 0f, 1f, duration: stepTime, onValueChange: (arrow, t) =>
         {
             line.SetPosition(0, Vector3.Lerp(oldTailWorld, newTailTarget, t));
             line.SetPosition(n, Vector3.Lerp(oldHeadWorld, newHeadWorld, t));
             UpdateHeadPosition();
             UpdateTailPosition();
-        }).OnComplete(() =>
+        }).OnComplete(this, warnIfTargetDestroyed: false, onComplete: arrow =>
         {
             Vector3[] finalPositions = new Vector3[n];
             for (int i = 0; i < n - 1; i++)
@@ -337,8 +339,8 @@ public class ArrowController : MonoBehaviour
         Sequence sequence = Sequence.Create();
         for (int i = 0; i < 5; i++)
         {
-            sequence.Chain(Tween.Custom(0f, 1f, duration: 0.2f, onValueChange: v => SetLineColor(Color.Lerp(normalColor, highlightColor, v))));
-            sequence.Chain(Tween.Custom(1f, 0f, duration: 0.2f, onValueChange: v => SetLineColor(Color.Lerp(normalColor, highlightColor, v))));
+            sequence.Chain(Tween.Custom(this, 0f, 1f, duration: 0.2f, onValueChange: (arrow, v) => SetLineColor(Color.Lerp(normalColor, highlightColor, v))));
+            sequence.Chain(Tween.Custom(this, 1f, 0f, duration: 0.2f, onValueChange: (arrow, v) => SetLineColor(Color.Lerp(normalColor, highlightColor, v))));
         }
     }
 

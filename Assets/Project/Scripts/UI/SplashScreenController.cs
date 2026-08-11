@@ -24,11 +24,11 @@ public class SplashScreenController : MonoBehaviour
     {
         progressBar = rootElement.Q<ProgressBar>("loading-bar");
 
-        Tween.Custom(0f, 1f, duration: splashDuration, onValueChange: t =>
+        Tween.Custom(this, 0f, 1f, duration: splashDuration, onValueChange: (controller, t) =>
         {
             progressBar.value = t * 100f;
             progressBar.title = Mathf.RoundToInt(t * 100f) + "%";
-        }).OnComplete(GoToHome);
+        }).OnComplete(this, controller => controller.GoToHome());
     }
 
     private void GoToHome()
