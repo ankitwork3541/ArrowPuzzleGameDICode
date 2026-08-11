@@ -91,6 +91,7 @@ public class LevelLoader : MonoBehaviour
     public void ClearLevel()
     {
         ClearArrows();
+        gridBuilder.ClearDots();
         LevelManager.Instance.ClearLevel();
     }
 

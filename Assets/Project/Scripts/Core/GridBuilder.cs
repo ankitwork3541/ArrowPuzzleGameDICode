@@ -50,13 +50,20 @@ public class GridBuilder : MonoBehaviour
         SpawnDots();
     }
 
-    public void SpawnDots()
+    // Release every dot back to the pool. Called when a level ends, so the last
+    // level's dot grid doesn't stay visible behind the Home screen.
+    public void ClearDots()
     {
         foreach (var kvp in dots)
         {
             dotPool.Release(kvp.Value);
         }
         dots.Clear();
+    }
+
+    public void SpawnDots()
+    {
+        ClearDots();
 
         foreach (var kvp in cells)
         {

@@ -6,12 +6,16 @@ public class GameFlowManager : MonoBehaviour
     public GameObject homeRoot;
     public GameObject gameplayRoot;
 
+    [Header("Background FX")]
+    public GameObject spaceFx;   // Starfield + ShootingStars parent — Splash/Home only
+
     [Header("Systems")]
     public LevelLoader levelLoader;
     public LivesManager livesManager;
 
     public void OnPlayButtonClicked()
     {
+        spaceFx.SetActive(false);       // the board needs a clean, undistracted background
         homeRoot.SetActive(false);
         gameplayRoot.SetActive(true);   // activate before loading, so the HUD is
         livesManager.ResetLives();      // subscribed when SetArrowCount fires
@@ -23,6 +27,7 @@ public class GameFlowManager : MonoBehaviour
         levelLoader.ClearLevel();   // abandon it, or an in-flight arrow exit still reports a win
         gameplayRoot.SetActive(false);
         homeRoot.SetActive(true);
+        spaceFx.SetActive(true);
     }
 
     public void OnRestartLevelClicked()
@@ -47,6 +52,7 @@ public class GameFlowManager : MonoBehaviour
         levelLoader.AdvanceLevel();   // advance only — the level loads when Play is pressed
         gameplayRoot.SetActive(false);
         homeRoot.SetActive(true);
+        spaceFx.SetActive(true);
     }
 
     // TODO: Lose panel is not rebuilt in UI Toolkit yet — same temporary behaviour.
@@ -56,6 +62,7 @@ public class GameFlowManager : MonoBehaviour
         levelLoader.ClearLevel();
         gameplayRoot.SetActive(false);
         homeRoot.SetActive(true);
+        spaceFx.SetActive(true);
     }
 
     public static string GetDifficultyLabel(LevelData level)
