@@ -1,0 +1,130 @@
+/* ============ Root ============
+   No background-color on purpose — the grid and arrows are world-space
+   GameObjects behind this panel and must stay visible. */
+.gameplay-root {
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-Bold%20SDF.asset?fileID=11400000&guid=2d8208c2123c041daaecd4a4cf0d1ae2&type=2#Oxanium-Bold SDF");
+}
+
+/* ============ Top bar ============ */
+.top-bar {
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    padding-top: 60px;
+    padding-left: 40px;
+    padding-right: 40px;
+}
+
+/* Left icon pair is taken out of the flow so the centre group stays
+   truly centred no matter how wide the buttons are. */
+.top-bar__left {
+    position: absolute;
+    left: 40px;
+    top: 60px;
+    flex-direction: row;
+}
+
+.top-bar__center {
+    align-items: center;
+}
+
+/* ============ Circle icon buttons ============ */
+.icon-button {
+    width: 110px;
+    height: 110px;
+    border-radius: 55px;              /* half the height */
+    margin: 0;
+    padding: 0;
+
+    background-color: rgba(16, 25, 54, 0.85);
+    border-width: 2px;
+    border-color: rgba(0, 229, 255, 0.25);
+
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 50px 50px;
+    -unity-background-image-tint-color: rgba(220, 226, 240, 0.9);
+}
+
+.icon-button:hover {
+    background-color: rgba(22, 36, 81, 0.95);
+}
+
+.icon-button:active {
+    scale: 0.92;
+}
+
+.icon-button--back {
+    background-image: url("../Sprites/IconBack.png");
+    margin-right: 24px;
+}
+
+.icon-button--restart {
+    background-image: url("../Sprites/IconRestart.png");
+}
+
+/* Hint floats over the board, bottom-right, and is cyan to read as the
+   one "special" action rather than navigation. */
+.icon-button--hint {
+    position: absolute;
+    right: 50px;
+    bottom: 70px;
+    width: 130px;
+    height: 130px;
+    border-radius: 65px;
+    background-image: url("../Sprites/IconHint.png");
+    background-size: 60px 60px;
+    border-color: rgba(0, 229, 255, 0.5);
+    -unity-background-image-tint-color: rgb(0, 229, 255);
+}
+
+/* ============ Difficulty + hearts ============ */
+.hud-difficulty {
+    font-size: 44px;
+    letter-spacing: 2px;
+    color: rgb(0, 218, 243);
+    text-shadow: 0 0 18px rgba(0, 218, 243, 0.6);
+    margin: 0;
+}
+
+.hearts {
+    flex-direction: row;
+    margin-top: 10px;
+}
+
+.heart {
+    width: 54px;
+    height: 54px;
+    margin-left: 6px;
+    margin-right: 6px;
+    background-image: url("../Sprites/IconHeart.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    -unity-background-image-tint-color: rgb(255, 43, 214);
+}
+
+.heart--empty {
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.12);
+}
+
+/* ============ Level progress line ============ */
+.progress-track {
+    height: 8px;
+    border-radius: 4px;
+    margin-top: 34px;
+    margin-left: 40px;
+    margin-right: 40px;
+    background-color: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+}
+
+.progress-fill {
+    width: 0;
+    height: 100%;
+    border-radius: 4px;
+    background-color: rgb(0, 229, 255);
+}

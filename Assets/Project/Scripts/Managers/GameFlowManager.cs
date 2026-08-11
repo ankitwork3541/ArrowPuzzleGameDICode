@@ -4,6 +4,7 @@ public class GameFlowManager : MonoBehaviour
 {
     [Header("UI Toolkit panel roots")]
     public GameObject homeRoot;
+    public GameObject gameplayRoot;
 
     [Header("Systems")]
     public LevelLoader levelLoader;
@@ -12,15 +13,36 @@ public class GameFlowManager : MonoBehaviour
     public void OnPlayButtonClicked()
     {
         homeRoot.SetActive(false);
+        gameplayRoot.SetActive(true);   // activate before loading, so the HUD is
+        livesManager.ResetLives();      // subscribed when SetArrowCount fires
         levelLoader.LoadLevel();
     }
 
-    // TODO: Win panel is not rebuilt in UI Toolkit yet — for now the flow just
-    // advances a level and returns to Home so the loop stays playable.
+    public void OnBackToHomeClicked()
+    {
+        gameplayRoot.SetActive(false);
+        homeRoot.SetActive(true);
+    }
+
+    public void OnRestartLevelClicked()
+    {
+        livesManager.ResetLives();
+        levelLoader.LoadLevel();
+    }
+
+    public void OnHintButtonClicked()
+    {
+        ArrowController hintArrow = levelLoader.FindHintableArrow();
+        if (hintArrow != null)
+            hintArrow.PlayHintPulse();
+    }
+
+    // TODO: Win panel is not rebuilt in UI Toolkit yet — for now the flow advances
+    // a level and returns to Home so the loop stays playable.
     public void ShowWin()
     {
         Debug.Log("LEVEL WON (Win panel not rebuilt in UI Toolkit yet)");
-        livesManager.ResetLives();
+        gameplayRoot.SetActive(false);
         levelLoader.GoToNextLevel();
         homeRoot.SetActive(true);
     }
@@ -29,16 +51,8 @@ public class GameFlowManager : MonoBehaviour
     public void ShowLose()
     {
         Debug.Log("LEVEL LOST (Lose panel not rebuilt in UI Toolkit yet)");
-        livesManager.ResetLives();
-        levelLoader.LoadLevel();
+        gameplayRoot.SetActive(false);
         homeRoot.SetActive(true);
-    }
-
-    public void OnHintButtonClicked()
-    {
-        ArrowController hintArrow = levelLoader.FindHintableArrow();
-        if (hintArrow != null)
-            hintArrow.PlayHintPulse();
     }
 
     public static string GetDifficultyLabel(LevelData level)

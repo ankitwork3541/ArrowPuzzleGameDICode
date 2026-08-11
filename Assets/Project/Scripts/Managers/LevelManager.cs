@@ -5,7 +5,11 @@ public class LevelManager : MonoBehaviour
     public static LevelManager Instance;
     public GameFlowManager gameFlowManager;
 
-    private int remainingArrows;
+    public int TotalArrows { get; private set; }
+    public int RemainingArrows { get; private set; }
+
+    // The HUD subscribes to this instead of polling every frame.
+    public event System.Action<int, int> OnArrowCountChanged; // (remaining, total)
 
     void Awake()
     {
@@ -14,14 +18,17 @@ public class LevelManager : MonoBehaviour
 
     public void SetArrowCount(int count)
     {
-        remainingArrows = count;
+        TotalArrows = count;
+        RemainingArrows = count;
+        OnArrowCountChanged?.Invoke(RemainingArrows, TotalArrows);
     }
 
     public void ArrowExited()
     {
-        remainingArrows--;
+        RemainingArrows--;
+        OnArrowCountChanged?.Invoke(RemainingArrows, TotalArrows);
 
-        if (remainingArrows <= 0)
+        if (RemainingArrows <= 0)
         {
             gameFlowManager.ShowWin();
         }
