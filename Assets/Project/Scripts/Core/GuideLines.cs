@@ -1,13 +1,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Faint straight lines showing the lane each arrow travels along, toggled by the
-// HUD's grid button.
+// Faint guide rays showing where each arrow would travel, toggled by the HUD's grid
+// button. A ray starts AT the arrow's head and runs in the head's direction to the
+// screen edge — nothing is drawn behind the arrow.
 //
-// Every line lives in ONE procedurally built mesh, so the whole overlay costs a
-// single draw call no matter how many lines there are. Unity's own docs state that
-// runtime-generated geometry (lines, trails, particles) "submits one draw call for
-// each mesh", so a LineRenderer per line would cost one draw call per line.
+// Every ray lives in ONE procedurally built mesh, so the whole overlay costs a single
+// draw call however many rays there are. Unity's docs state that runtime-generated
+// geometry (lines, trails, particles) "submits one draw call for each mesh", so a
+// LineRenderer per ray would cost one draw call per ray.
 [RequireComponent(typeof(MeshFilter))]
 [RequireComponent(typeof(MeshRenderer))]
 public class GuideLines : MonoBehaviour
@@ -15,28 +16,39 @@ public class GuideLines : MonoBehaviour
     public GridBuilder gridBuilder;
     public LevelLoader levelLoader;
 
-    [Tooltip("World-space thickness of a guide line. Arrow bodies are 0.25 of a cell.")]
+    [Tooltip("Camera the ray length is derived from. Left empty, Camera.main is used.")]
+    public Camera targetCamera;
+
+    [Tooltip("World-space thickness of a ray. Arrow bodies are 0.25 of a cell.")]
     public float lineWidth = 0.04f;
 
     public Color lineColor = new Color(0.62f, 0.69f, 1f, 0.22f);
 
-    [Tooltip("How far past the grid edge each line extends, in cells.")]
-    public int overshootCells = 2;
+    [Tooltip("How far past the visible screen edge each ray extends, in cells.")]
+    public float screenMarginCells = 2f;
 
-    [Tooltip("Negative keeps the lines behind the arrows.")]
+    [Tooltip("Negative keeps the rays behind the arrows.")]
     public int sortingOrder = -1;
 
-    [Tooltip("On: only arrows whose exit path is currently clear get a line (fewer lines, closer to the reference app). Off: every arrow.")]
+    [Tooltip("On: only arrows whose exit path is currently clear get a ray (fewer rays). Off: every arrow.")]
     public bool onlyArrowsThatCanExit = false;
 
     private Mesh mesh;
     private MeshRenderer meshRenderer;
 
-    // Every collection below is reused, so a visible overlay allocates nothing per frame.
-    private readonly HashSet<int> rows = new HashSet<int>();
-    private readonly HashSet<int> cols = new HashSet<int>();
-    private readonly HashSet<int> prevRows = new HashSet<int>();
-    private readonly HashSet<int> prevCols = new HashSet<int>();
+    // One entry per (lane, direction). The value is the head coordinate of the arrow
+    // whose ray reaches FURTHEST, which fully covers every other ray in that lane and
+    // direction. Without this, overlapping semi-transparent quads would double up and
+    // show as brighter patches.
+    private readonly Dictionary<int, int> raysRight = new Dictionary<int, int>(); // row -> min head.x
+    private readonly Dictionary<int, int> raysLeft = new Dictionary<int, int>();  // row -> max head.x
+    private readonly Dictionary<int, int> raysUp = new Dictionary<int, int>();    // col -> min head.y
+    private readonly Dictionary<int, int> raysDown = new Dictionary<int, int>();  // col -> max head.y
+
+    private readonly Dictionary<int, int> prevRight = new Dictionary<int, int>();
+    private readonly Dictionary<int, int> prevLeft = new Dictionary<int, int>();
+    private readonly Dictionary<int, int> prevUp = new Dictionary<int, int>();
+    private readonly Dictionary<int, int> prevDown = new Dictionary<int, int>();
 
     private readonly List<Vector3> vertices = new List<Vector3>();
     private readonly List<Vector2> uvs = new List<Vector2>();
@@ -45,8 +57,12 @@ public class GuideLines : MonoBehaviour
 
     private bool dirty = true;
 
-    // Whichever colour path the assigned material actually honours — never both, or
-    // the two would multiply and the lines would come out far too faint. Mirrors what
+    // Ray length depends on the camera, so zooming or panning has to rebuild too.
+    private Vector3 prevCamPos;
+    private float prevCamSize;
+
+    // Whichever colour path the assigned material actually honours — never both, or the
+    // two would multiply and the rays would come out far too faint. Mirrors what
     // ArrowController.SetLineColor() already does for the arrow bodies.
     private bool useVertexColor;
 
@@ -63,6 +79,9 @@ public class GuideLines : MonoBehaviour
         meshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         meshRenderer.receiveShadows = false;
         meshRenderer.enabled = false;
+
+        if (targetCamera == null)
+            targetCamera = Camera.main;
     }
 
     void OnDestroy()
@@ -84,25 +103,39 @@ public class GuideLines : MonoBehaviour
 
     void LateUpdate()
     {
-        if (!meshRenderer.enabled) return;
+        if (!meshRenderer.enabled || targetCamera == null) return;
 
-        CollectLanes();
+        CollectRays();
+        if (CameraMoved()) dirty = true;
 
-        // Scanning the arrows is cheap; rebuilding the mesh is not free, so only do
-        // it when an arrow has actually moved into or out of a lane.
-        if (!dirty && rows.SetEquals(prevRows) && cols.SetEquals(prevCols)) return;
+        // Scanning the arrows is cheap; rebuilding the mesh is not free, so only do it
+        // when a head has actually moved.
+        if (!dirty && Unchanged()) return;
 
         RebuildMesh();
 
         dirty = false;
-        prevRows.Clear(); prevRows.UnionWith(rows);
-        prevCols.Clear(); prevCols.UnionWith(cols);
+        Snapshot();
     }
 
-    void CollectLanes()
+    bool CameraMoved()
     {
-        rows.Clear();
-        cols.Clear();
+        Vector3 pos = targetCamera.transform.position;
+        float size = targetCamera.orthographicSize;
+
+        if (pos == prevCamPos && Mathf.Approximately(size, prevCamSize)) return false;
+
+        prevCamPos = pos;
+        prevCamSize = size;
+        return true;
+    }
+
+    void CollectRays()
+    {
+        raysRight.Clear();
+        raysLeft.Clear();
+        raysUp.Clear();
+        raysDown.Clear();
 
         foreach (ArrowController arrow in levelLoader.SpawnedArrows)
         {
@@ -116,13 +149,109 @@ public class GuideLines : MonoBehaviour
             Vector2Int head = path[n - 1];
             Vector2Int dir = head - path[n - 2];
 
-            // The lane this arrow travels along: its head's row when it moves sideways,
-            // its head's column when it moves vertically. Several arrows often share one
-            // lane and the HashSet collapses those into a single line — which is why the
-            // spacing looks irregular instead of like a uniform grid.
-            if (dir.x != 0) rows.Add(head.y);
-            else if (dir.y != 0) cols.Add(head.x);
+            if (dir.x > 0) KeepMin(raysRight, head.y, head.x);
+            else if (dir.x < 0) KeepMax(raysLeft, head.y, head.x);
+            else if (dir.y > 0) KeepMin(raysUp, head.x, head.y);
+            else if (dir.y < 0) KeepMax(raysDown, head.x, head.y);
         }
+    }
+
+    static void KeepMin(Dictionary<int, int> map, int lane, int value)
+    {
+        if (!map.TryGetValue(lane, out int existing) || value < existing)
+            map[lane] = value;
+    }
+
+    static void KeepMax(Dictionary<int, int> map, int lane, int value)
+    {
+        if (!map.TryGetValue(lane, out int existing) || value > existing)
+            map[lane] = value;
+    }
+
+    bool Unchanged()
+    {
+        return Same(raysRight, prevRight) && Same(raysLeft, prevLeft)
+            && Same(raysUp, prevUp) && Same(raysDown, prevDown);
+    }
+
+    static bool Same(Dictionary<int, int> a, Dictionary<int, int> b)
+    {
+        if (a.Count != b.Count) return false;
+        foreach (KeyValuePair<int, int> kv in a)
+        {
+            if (!b.TryGetValue(kv.Key, out int other) || other != kv.Value) return false;
+        }
+        return true;
+    }
+
+    void Snapshot()
+    {
+        Copy(raysRight, prevRight);
+        Copy(raysLeft, prevLeft);
+        Copy(raysUp, prevUp);
+        Copy(raysDown, prevDown);
+    }
+
+    static void Copy(Dictionary<int, int> from, Dictionary<int, int> to)
+    {
+        to.Clear();
+        foreach (KeyValuePair<int, int> kv in from) to[kv.Key] = kv.Value;
+    }
+
+    void RebuildMesh()
+    {
+        ApplyColor();
+
+        vertices.Clear();
+        uvs.Clear();
+        colors.Clear();
+        triangles.Clear();
+
+        float half = lineWidth * 0.5f;
+        float margin = screenMarginCells * gridBuilder.spacing;
+
+        // Ray length comes from what the camera can actually see, NOT from the grid
+        // bounds. A small level is framed with a lot of empty space around it, so
+        // grid-bound rays would visibly stop short of the screen edge.
+        Vector3 camPos = targetCamera.transform.position;
+        float halfH = targetCamera.orthographicSize + margin;
+        float halfW = targetCamera.orthographicSize * targetCamera.aspect + margin;
+
+        float screenLeft = camPos.x - halfW;
+        float screenRight = camPos.x + halfW;
+        float screenBottom = camPos.y - halfH;
+        float screenTop = camPos.y + halfH;
+
+        foreach (KeyValuePair<int, int> kv in raysRight)
+        {
+            Vector3 headPos = gridBuilder.GridToWorld(new Vector2Int(kv.Value, kv.Key));
+            AddQuad(headPos.x, screenRight, headPos.y - half, headPos.y + half);
+        }
+
+        foreach (KeyValuePair<int, int> kv in raysLeft)
+        {
+            Vector3 headPos = gridBuilder.GridToWorld(new Vector2Int(kv.Value, kv.Key));
+            AddQuad(screenLeft, headPos.x, headPos.y - half, headPos.y + half);
+        }
+
+        foreach (KeyValuePair<int, int> kv in raysUp)
+        {
+            Vector3 headPos = gridBuilder.GridToWorld(new Vector2Int(kv.Key, kv.Value));
+            AddQuad(headPos.x - half, headPos.x + half, headPos.y, screenTop);
+        }
+
+        foreach (KeyValuePair<int, int> kv in raysDown)
+        {
+            Vector3 headPos = gridBuilder.GridToWorld(new Vector2Int(kv.Key, kv.Value));
+            AddQuad(headPos.x - half, headPos.x + half, screenBottom, headPos.y);
+        }
+
+        mesh.Clear();
+        mesh.SetVertices(vertices);
+        mesh.SetUVs(0, uvs);
+        mesh.SetColors(colors);
+        mesh.SetTriangles(triangles, 0);
+        mesh.RecalculateBounds();
     }
 
     void ApplyColor()
@@ -149,40 +278,6 @@ public class GuideLines : MonoBehaviour
         {
             useVertexColor = true;
         }
-    }
-
-    void RebuildMesh()
-    {
-        ApplyColor();
-
-        vertices.Clear();
-        uvs.Clear();
-        colors.Clear();
-        triangles.Clear();
-
-        float half = lineWidth * 0.5f;
-        int o = overshootCells;
-
-        foreach (int y in rows)
-        {
-            Vector3 a = gridBuilder.GridToWorld(new Vector2Int(-o, y));
-            Vector3 b = gridBuilder.GridToWorld(new Vector2Int(gridBuilder.width - 1 + o, y));
-            AddQuad(a.x, b.x, a.y - half, a.y + half);
-        }
-
-        foreach (int x in cols)
-        {
-            Vector3 a = gridBuilder.GridToWorld(new Vector2Int(x, -o));
-            Vector3 b = gridBuilder.GridToWorld(new Vector2Int(x, gridBuilder.height - 1 + o));
-            AddQuad(a.x - half, a.x + half, a.y, b.y);
-        }
-
-        mesh.Clear();
-        mesh.SetVertices(vertices);
-        mesh.SetUVs(0, uvs);
-        mesh.SetColors(colors);
-        mesh.SetTriangles(triangles, 0);
-        mesh.RecalculateBounds();
     }
 
     void AddQuad(float xMin, float xMax, float yMin, float yMax)

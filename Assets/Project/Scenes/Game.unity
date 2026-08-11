@@ -688,9 +688,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::GuideLines
   gridBuilder: {fileID: 827431895}
   levelLoader: {fileID: 509710744}
+  targetCamera: {fileID: 0}
   lineWidth: 0.04
   lineColor: {r: 0.62, g: 0.69, b: 1, a: 0.22}
-  overshootCells: 2
+  screenMarginCells: 2
   sortingOrder: -1
   onlyArrowsThatCanExit: 0
 --- !u!23 &686034730
@@ -718,7 +719,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 10306, guid: 0000000000000000f000000000000000, type: 0}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
