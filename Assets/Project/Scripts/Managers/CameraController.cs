@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
+using PrimeTween;
 
 public class CameraController : MonoBehaviour
 {
@@ -30,9 +31,14 @@ public class CameraController : MonoBehaviour
     // tyare shape ni farate khali jagya dekhay che, e feel aa thi aave che.
     public float panPadding = 0.35f;
 
+    [Header("Hint focus")]
+    public float focusDuration = 0.45f;
+    public float focusCellsVisible = 12f;   // how tight the hint view gets, in cells
+
     private float maxZoom;
     private Bounds contentBounds;
     private bool hasContent;
+    private Tween focusTween;
 
     // Gesture state
     private bool pointerDown;
@@ -68,6 +74,37 @@ public class CameraController : MonoBehaviour
         cam.orthographicSize = Mathf.Clamp(Mathf.Max(defaultZoom, fitZoom), minZoom, maxZoom);
         transform.position = new Vector3(bounds.center.x, bounds.center.y, transform.position.z);
         ClampPosition();
+    }
+
+    // Hint: glide the camera onto one arrow so the player can see which one to tap.
+    // Zooming IN is allowed here, unlike FrameLevel's zoom-out-only rule — this is a
+    // deliberate, temporary look at one arrow, not the level's resting framing.
+    public void FocusOn(Bounds bounds, float spacing)
+    {
+        if (!hasContent) return;
+
+        focusTween.Stop();
+
+        // On a level that already fits on screen everything is visible anyway, so a zoom-in
+        // would be pure noise — pan only. Big boards are the ones that actually need it.
+        bool contentFits = contentBounds.size.y <= cam.orthographicSize * 2f
+                        && contentBounds.size.x <= cam.orthographicSize * 2f * cam.aspect;
+
+        float startSize = cam.orthographicSize;
+        float targetSize = contentFits
+            ? startSize
+            : Mathf.Clamp(focusCellsVisible * spacing / 2f, minZoom, maxZoom);
+
+        Vector3 startPos = transform.position;
+        Vector3 targetPos = new Vector3(bounds.center.x, bounds.center.y, startPos.z);
+
+        focusTween = Tween.Custom(this, 0f, 1f, duration: focusDuration, ease: Ease.OutCubic,
+            onValueChange: (controller, t) =>
+            {
+                controller.cam.orthographicSize = Mathf.Lerp(startSize, targetSize, t);
+                controller.transform.position = Vector3.Lerp(startPos, targetPos, t);
+                controller.ClampPosition();   // never glide past the board's pan limits
+            });
     }
 
     void Update()

@@ -38,9 +38,7 @@ public class GameFlowManager : MonoBehaviour
 
     public void OnHintButtonClicked()
     {
-        ArrowController hintArrow = levelLoader.FindHintableArrow();
-        if (hintArrow != null)
-            hintArrow.PlayHintPulse();
+        levelLoader.PlayHint();
     }
 
     // TODO: Win panel is not rebuilt in UI Toolkit yet — for now the flow advances

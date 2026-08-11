@@ -14,6 +14,20 @@ public class ArrowController : MonoBehaviour
     private bool isMoving = false;
     public float stepTime = 0.18f;
 
+    // Mid-move or mid-exit. The hint scan skips these — an arrow already on its way out is
+    // not something the player needs pointed at, and it can't be pulsed safely either.
+    public bool IsBusy => isMoving;
+
+    [Header("Hint pulse")]
+    public float hintPulseScale = 1.25f;   // how far the body swells at the peak
+    public float hintPulseTime = 0.2f;     // one half-pulse; 10 yoyo cycles = 5 swells
+    public Color hintColor = new Color(1f, 0.85f, 0.2f);
+
+    private Tween hintTween;
+    private Vector3[] hintBasePoints;      // non-null only while a pulse is running
+    private Vector3 hintCentre;
+    private Vector3 hintHeadScale, hintTailScale;
+
     private LineRenderer line;
     private EdgeCollider2D edgeCollider;
     private SpriteRenderer headSprite;
@@ -192,6 +206,10 @@ public class ArrowController : MonoBehaviour
     void TryAdvance()
     {
         if (isMoving) return; // already moving, extra click ignore
+
+        // Still standing still here, so restoring the geometry is safe. Left running, the
+        // pulse would keep rewriting the same line points the move is animating.
+        StopHintPulse();
 
         int n = path.Count;
         if (n < 2) return;
@@ -416,17 +434,70 @@ public class ArrowController : MonoBehaviour
         return true; // grid ni bahar sudhi pahochi gayu, koi avrodh na malyo
     }
 
+    // Hint highlight: the arrow swells and shrinks 5 times while flashing its hint colour,
+    // so the player can see which one to tap. The body is a world-space LineRenderer, so
+    // "scaling" means pushing its points out from their own centre — transform.localScale
+    // would do nothing at all here.
     public void PlayHintPulse()
     {
-        Color normalColor = Color.white;
-        Color highlightColor = Color.yellow;
+        // Never pulse an arrow that is mid-move or mid-exit. Those animations grow the line
+        // to n+1 points, and StopHintPulse()'s DrawPath() would shrink it back to n under
+        // them — the running tween then writes index n and LineRenderer throws.
+        if (isMoving) return;
 
-        Sequence sequence = Sequence.Create();
-        for (int i = 0; i < 5; i++)
+        StopHintPulse();
+        if (path.Count < 2) return;
+
+        int n = line.positionCount;
+        hintBasePoints = new Vector3[n];
+        hintCentre = Vector3.zero;
+        for (int i = 0; i < n; i++)
         {
-            sequence.Chain(Tween.Custom(this, 0f, 1f, duration: 0.2f, onValueChange: (arrow, v) => SetLineColor(Color.Lerp(normalColor, highlightColor, v))));
-            sequence.Chain(Tween.Custom(this, 1f, 0f, duration: 0.2f, onValueChange: (arrow, v) => SetLineColor(Color.Lerp(normalColor, highlightColor, v))));
+            hintBasePoints[i] = line.GetPosition(i);
+            hintCentre += hintBasePoints[i];
         }
+        hintCentre /= n;
+
+        if (headVisual != null) hintHeadScale = headVisual.localScale;
+        if (tailVisual != null) hintTailScale = tailVisual.localScale;
+
+        // One tween, 10 yoyo cycles = 5 swells. A Sequence of 10 chained tweens would cost
+        // 10 slots in PrimeTween's pre-allocated pool for exactly the same result.
+        hintTween = Tween.Custom(this, 0f, 1f, duration: hintPulseTime, cycles: 10,
+            cycleMode: CycleMode.Yoyo, ease: Ease.InOutSine,
+            onValueChange: (arrow, v) => arrow.ApplyHintPulse(v))
+            .OnComplete(this, warnIfTargetDestroyed: false, onComplete: arrow => arrow.StopHintPulse());
+    }
+
+    void ApplyHintPulse(float v)
+    {
+        SetLineColor(Color.Lerp(Color.white, hintColor, v));
+
+        float scale = Mathf.Lerp(1f, hintPulseScale, v);
+        for (int i = 0; i < hintBasePoints.Length; i++)
+            line.SetPosition(i, hintCentre + (hintBasePoints[i] - hintCentre) * scale);
+
+        UpdateHeadPosition();
+        UpdateTailPosition();
+        if (headVisual != null) headVisual.localScale = hintHeadScale * scale;
+        if (tailVisual != null) tailVisual.localScale = hintTailScale * scale;
+    }
+
+    // Safe to call at any time — TryAdvance() uses it so a pulse can never fight a move.
+    public void StopHintPulse()
+    {
+        if (hintBasePoints == null) return;
+
+        hintTween.Stop();
+        hintBasePoints = null;
+
+        SetLineColor(Color.white);
+        if (headVisual != null) headVisual.localScale = hintHeadScale;
+        if (tailVisual != null) tailVisual.localScale = hintTailScale;
+
+        // Belt and braces: a move/exit tween owns the line's point count while it runs, so
+        // never rewrite the geometry underneath it — that animation restores it anyway.
+        if (!isMoving) DrawPath();
     }
 
 }

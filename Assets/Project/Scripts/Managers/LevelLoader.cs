@@ -193,9 +193,20 @@ public class LevelLoader : MonoBehaviour
     {
         foreach (ArrowController arrow in spawnedArrows)
         {
-            if (arrow != null && arrow.CanExit())
+            if (arrow != null && !arrow.IsBusy && arrow.CanExit())
                 return arrow;
         }
         return null;
+    }
+
+    // Hint: point the camera at the arrow first, then pulse it. Lives here rather than in
+    // GameFlowManager because this is where the camera and grid references already are.
+    public void PlayHint()
+    {
+        ArrowController arrow = FindHintableArrow();
+        if (arrow == null) return;
+
+        cameraController.FocusOn(arrow.GetBounds(), gridBuilder.spacing);
+        arrow.PlayHintPulse();
     }
 }
