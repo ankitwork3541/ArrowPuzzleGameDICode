@@ -315,8 +315,8 @@ ParticleSystem:
     startLifetime:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 7
-      minScalar: 3
+      scalar: 5
+      minScalar: 2
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -486,8 +486,8 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 3
-      scalar: 0.28
-      minScalar: 0.08
+      scalar: 0.4
+      minScalar: 0.25
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -1694,7 +1694,7 @@ ParticleSystem:
     x:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 0
+      scalar: -0.27
       minScalar: 0
       maxCurve:
         serializedVersion: 2
@@ -1747,7 +1747,7 @@ ParticleSystem:
     y:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 0
+      scalar: -0.3
       minScalar: 0
       maxCurve:
         serializedVersion: 2
@@ -1853,7 +1853,7 @@ ParticleSystem:
     orbitalX:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 0
+      scalar: -0.1
       minScalar: 0
       maxCurve:
         serializedVersion: 2
@@ -1906,7 +1906,7 @@ ParticleSystem:
     orbitalY:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 0
+      scalar: -0.15
       minScalar: 0
       maxCurve:
         serializedVersion: 2
@@ -2274,7 +2274,7 @@ ParticleSystem:
         m_PreInfinity: 2
         m_PostInfinity: 2
         m_RotationOrder: 4
-    inWorldSpace: 0
+    inWorldSpace: 1
   InheritVelocityModule:
     enabled: 0
     m_Mode: 0
@@ -6107,12 +6107,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b45b0a311d50b4a0789471d20009c285, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraController
-  cellsVisibleVertically: 32
-  maxCellsVisibleVertically: 44
+  cellsVisibleHorizontally: 18
+  maxCellsVisibleHorizontally: 26
   fitPadding: 1.12
-  minZoom: 3
+  zoomInFactor: 2.5
+  zoomOutFactor: 1.7
   dragThresholdPixels: 12
   mouseZoomSpeed: 4
+  panFriction: 6
+  velocitySmoothing: 0.35
   panPadding: 0.35
   focusDuration: 0.45
   focusCellsVisible: 12
