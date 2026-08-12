@@ -3,7 +3,6 @@ using UnityEngine;
 using PrimeTween;
 
 [RequireComponent(typeof(LineRenderer))]
-[RequireComponent(typeof(EdgeCollider2D))]
 public class ArrowController : MonoBehaviour
 {
     public List<Vector2Int> path = new List<Vector2Int>();
@@ -66,14 +65,12 @@ public class ArrowController : MonoBehaviour
     private Vector3 hintHeadScale, hintTailScale;
 
     private LineRenderer line;
-    private EdgeCollider2D edgeCollider;
     private SpriteRenderer headSprite;
     private SpriteRenderer tailSprite;
 
     void Awake()
     {
         line = GetComponent<LineRenderer>();
-        edgeCollider = GetComponent<EdgeCollider2D>();
         if (headVisual != null)
             headSprite = headVisual.GetComponent<SpriteRenderer>();
         if (tailVisual != null)
@@ -97,43 +94,29 @@ public class ArrowController : MonoBehaviour
     }
 
 
-    void Update()
+    // LevelLoader resolves a tap to a grid cell and calls this on whichever arrow occupies it.
+    //
+    // Input used to be per-arrow: every ArrowController polled the tap itself and hit-tested its
+    // own EdgeCollider2D. That was wrong twice over. Unity documents that Collider2D.OverlapPoint
+    // "will always return false when used on an EdgeCollider2D", and even where edgeRadius made it
+    // partly work the target was only ~0.1 of a cell either side of the line — so taps landed
+    // sometimes and missed sometimes. It also meant 110 arrows each polling input every frame.
+    // A cell is a 1x1 target and stays that size however thin the art gets, which is why the
+    // reference game has thinner lines and no touch trouble at all.
+    public void HandleTap()
     {
-        // Input CameraController ek j jagyaae vanche che ane khali SACHO tap (drag ke pinch
-        // nahi) j ahi sudhi aave che — etle level pan karta vakhte bhoolthi arrow move na thay.
-        if (CameraController.Instance == null) return;
-
-        // Out of lives: the losing arrow is still rewinding, so taps must not start fresh runs
-        // that would still be animating when ShowLose() tears the level down.
-        if (LivesManager.Instance != null && LivesManager.Instance.lives <= 0) return;
-
-        Vector2 screenPos;
-        if (!CameraController.Instance.TryGetTapThisFrame(out screenPos)) return;
-
-        Vector2 worldPos = Camera.main.ScreenToWorldPoint(screenPos);
-        if (edgeCollider.OverlapPoint(worldPos))
-        {
-            // A fresh tap starts a new run, so the wind-up starts from slow again. Guarded by
-            // isMoving because TryAdvance() also re-enters itself to continue the current run.
-            if (!isMoving) BeginRun();
-            TryAdvance();
-        }
+        // A fresh tap starts a new run, so the wind-up starts from slow again. Guarded by
+        // isMoving because TryAdvance() also re-enters itself to continue the current run.
+        if (!isMoving) BeginRun();
+        TryAdvance();
     }
 
     void DrawPath()
     {
         line.positionCount = path.Count;
-        Vector2[] colliderPoints = new Vector2[path.Count];
 
         for (int i = 0; i < path.Count; i++)
-        {
-            Vector3 worldPos = gridBuilder.GridToWorld(path[i]);
-            line.SetPosition(i, worldPos);
-            colliderPoints[i] = worldPos;
-        }
-
-        edgeCollider.points = colliderPoints;
-        edgeCollider.edgeRadius = line.widthMultiplier * line.widthCurve.Evaluate(0f) / 2f;
+            line.SetPosition(i, gridBuilder.GridToWorld(path[i]));
 
         UpdateHeadPosition();
         UpdateTailPosition();
@@ -365,11 +348,6 @@ public class ArrowController : MonoBehaviour
             line.positionCount = n;
             line.SetPositions(finalPositions);
 
-            Vector2[] colliderPoints = new Vector2[n];
-            for (int i = 0; i < n; i++)
-                colliderPoints[i] = finalPositions[i];
-            edgeCollider.points = colliderPoints;
-
             isMoving = false;
             TryAdvance();
         });
@@ -465,11 +443,6 @@ public class ArrowController : MonoBehaviour
 
             line.positionCount = n;
             line.SetPositions(finalPositions);
-
-            Vector2[] colliderPoints = new Vector2[n];
-            for (int i = 0; i < n; i++)
-                colliderPoints[i] = finalPositions[i];
-            edgeCollider.points = colliderPoints;
 
             arrow.RevertStep();
         });

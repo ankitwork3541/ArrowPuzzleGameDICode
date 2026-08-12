@@ -46,8 +46,9 @@ public class GridBuilder : MonoBehaviour
             }
         }
 
-        Debug.Log("Grid banyo! Total cells: " + cells.Count);
-        SpawnDots();
+        // Dots are deliberately NOT spawned here: the level's footprint isn't known yet, and
+        // LevelLoader owns their lifecycle anyway (it hides them for the entrance wave, then
+        // spawns them once the arrows have finished drawing themselves in).
     }
 
     // Release every dot back to the pool. Called when a level ends, so the last
@@ -61,20 +62,43 @@ public class GridBuilder : MonoBehaviour
         dots.Clear();
     }
 
+    // Which cells actually belong to the level being played. The grid is only a BOUNDING BOX —
+    // for a shape level (heart, teardrop) most of that box is outside the shape and has to stay
+    // blank, or the silhouette is lost in a full rectangle of dots.
+    private HashSet<Vector2Int> footprint;
+
+    public void SetFootprint(HashSet<Vector2Int> cellsInLevel)
+    {
+        footprint = cellsInLevel;
+    }
+
     public void SpawnDots()
     {
         ClearDots();
+        if (footprint == null) return;   // no level loaded — nothing to draw
 
-        foreach (var kvp in cells)
+        foreach (Vector2Int pos in footprint)
         {
+            GridCell cell = GetCell(pos);
+            if (cell == null) continue;
+
             Dot dot = dotPool.Get();
-            dot.transform.position = GridToWorld(kvp.Key);
-            dot.GridPosition = kvp.Key;
-            dots[kvp.Key] = dot;
+            dot.transform.position = GridToWorld(pos);
+            dot.GridPosition = pos;
+            dots[pos] = dot;
 
             // Spawned after the arrows now, so respect whoever is already standing there.
-            if (kvp.Value.Occupant != null) dot.Hide();
+            if (cell.Occupant != null) dot.Hide();
         }
+    }
+
+    // Who is standing on this cell, if anyone. This is how a tap finds its arrow — see
+    // LevelLoader.Update(). Returns the GameObject rather than an ArrowController so the grid
+    // stays unaware of what kinds of thing can occupy it.
+    public GameObject GetOccupant(Vector2Int pos)
+    {
+        GridCell cell = GetCell(pos);
+        return cell != null ? cell.Occupant : null;
     }
 
     // Declared grid size (BuildGrid) ni jagyaae, ACTUAL content (arrows) ni bounding box ne center karo.

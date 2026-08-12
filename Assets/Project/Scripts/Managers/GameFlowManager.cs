@@ -63,12 +63,11 @@ public class GameFlowManager : MonoBehaviour
         spaceFx.SetActive(true);
     }
 
+    // Reads what the generator measured. It used to bucket by arrow count, which said nothing
+    // about how hard a board is to read — the real difficulty is finding a legal move, so it is
+    // measured by simulating the solve. See LevelDifficulty.
     public static string GetDifficultyLabel(LevelData level)
     {
-        int arrowCount = level.arrows.Count;
-        if (arrowCount < 15) return "EASY";
-        if (arrowCount < 50) return "MEDIUM";
-        if (arrowCount < 150) return "HARD";
-        return "HARDEST";
+        return level.difficulty.ToString().ToUpper();
     }
 }

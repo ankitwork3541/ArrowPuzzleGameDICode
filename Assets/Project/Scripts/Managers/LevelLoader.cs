@@ -50,9 +50,45 @@ public class LevelLoader : MonoBehaviour
             spawnedArrows.Add(newArrow);
         }
 
+        // The cells this level actually uses, so dots appear only inside the level's own shape
+        // instead of filling the whole grid rectangle around it.
+        HashSet<Vector2Int> footprint = new HashSet<Vector2Int>();
+        foreach (ArrowPathData arrowData in levelData.arrows)
+        {
+            if (arrowData.path == null) continue;
+            foreach (Vector2Int pos in arrowData.path) footprint.Add(pos);
+        }
+        gridBuilder.SetFootprint(footprint);
+
         LevelManager.Instance.SetArrowCount(spawnedArrows.Count);
         FitCameraToSpawnedArrows();
         PlayEntrance();
+    }
+
+    // One place resolves a tap for the whole board: screen -> world -> grid cell -> whoever
+    // occupies it. Replaces every arrow polling input and hit-testing its own EdgeCollider2D,
+    // which was both unreliable (see ArrowController.HandleTap) and O(arrows) per tap.
+    void Update()
+    {
+        if (CameraController.Instance == null) return;
+
+        // Out of lives: the losing arrow is still rewinding, so taps must not start fresh runs
+        // that would still be animating when ShowLose() tears the level down.
+        if (LivesManager.Instance != null && LivesManager.Instance.lives <= 0) return;
+
+        Vector2 screenPos;
+        if (!CameraController.Instance.TryGetTapThisFrame(out screenPos)) return;
+
+        Camera cam = Camera.main;
+        if (cam == null) return;
+
+        Vector2Int cell = gridBuilder.WorldToGrid(cam.ScreenToWorldPoint(screenPos));
+
+        GameObject occupant = gridBuilder.GetOccupant(cell);
+        if (occupant == null) return;   // tapped a dot or empty space
+
+        ArrowController arrow = occupant.GetComponent<ArrowController>();
+        if (arrow != null) arrow.HandleTap();
     }
 
     // Draw every arrow in, rippling outwards from the centre of the board.
@@ -161,6 +197,7 @@ public class LevelLoader : MonoBehaviour
     {
         ClearArrows();
         gridBuilder.ClearDots();
+        gridBuilder.SetFootprint(null);   // nothing to draw until the next level defines its own
         LevelManager.Instance.ClearLevel();
     }
 

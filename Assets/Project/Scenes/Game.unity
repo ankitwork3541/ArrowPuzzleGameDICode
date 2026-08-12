@@ -5236,9 +5236,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LevelLoader
   levels:
-  - {fileID: 11400000, guid: 714cbb3f430fe4bcdb77a5df65bde0ed, type: 2}
-  - {fileID: 11400000, guid: 9c5bb4df361d249afa0d70b88c4399eb, type: 2}
-  - {fileID: 11400000, guid: 821c8a94e43f34db3b704a444db65d2c, type: 2}
+  - {fileID: 11400000, guid: 8ac2599e2dc3644078384a6770dfe36f, type: 2}
+  - {fileID: 11400000, guid: bf6270959ce5a4e08a00d0ef3baf4fd0, type: 2}
+  - {fileID: 11400000, guid: 8bceb4478244a43f3a43e922ba668bae, type: 2}
+  - {fileID: 11400000, guid: 0f3e02766e547446c9750b552c045bef, type: 2}
+  - {fileID: 11400000, guid: 0c1b76fae26954adaae1f42f6d2f4ea3, type: 2}
+  - {fileID: 11400000, guid: ecb9e508ae9cd4f418101c81cd5835fc, type: 2}
+  - {fileID: 11400000, guid: 67f51c15632534cc4800aa5bde689364, type: 2}
+  - {fileID: 11400000, guid: 01b0f678a50c34f70be6e81f8dae439c, type: 2}
+  - {fileID: 11400000, guid: 120025a2866754ca0907b4e0ec032060, type: 2}
+  - {fileID: 11400000, guid: 51ddca3587f4b4a62a2bcdfef90e5556, type: 2}
+  - {fileID: 11400000, guid: 79cf576bb60914b85b373153aa8c5944, type: 2}
   gridBuilder: {fileID: 827431895}
   arrowPrefab: {fileID: 5943569507495498416, guid: bccaafe9cc3dc4be5b600aa50b03acdd, type: 3}
   cameraController: {fileID: 1966888466}
@@ -6106,6 +6114,8 @@ MonoBehaviour:
   dragThresholdPixels: 12
   mouseZoomSpeed: 4
   panPadding: 0.35
+  focusDuration: 0.45
+  focusCellsVisible: 12
 --- !u!1 &2113883385
 GameObject:
   m_ObjectHideFlags: 0

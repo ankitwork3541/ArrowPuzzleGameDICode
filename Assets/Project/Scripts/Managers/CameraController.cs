@@ -45,6 +45,10 @@ public class CameraController : MonoBehaviour
     private Vector2 pointerDownScreenPos;
     private Vector3 dragAnchorWorld;
     private bool gestureWasDrag;
+    // Decided once, when the finger goes down. Judging it at release instead would let a drag that
+    // STARTED on the HUD still pan the board, and a finger sliding off a button onto the board
+    // would count as a board tap.
+    private bool gestureStartedOnUI;
     private bool tapThisFrame;
     private Vector2 tapScreenPos;
     private float pinchPrevDistance;
@@ -180,6 +184,8 @@ public class CameraController : MonoBehaviour
         {
             pointerDown = true;
             gestureWasDrag = false;
+            gestureStartedOnUI = GameplayHUDController.Instance != null
+                && GameplayHUDController.Instance.IsPointerOverUI(screenPos);
             pointerDownScreenPos = screenPos;
             dragAnchorWorld = cam.ScreenToWorldPoint(screenPos);
             return;
@@ -191,7 +197,7 @@ public class CameraController : MonoBehaviour
                 && Vector2.Distance(screenPos, pointerDownScreenPos) > dragThresholdPixels)
                 gestureWasDrag = true;
 
-            if (gestureWasDrag)
+            if (gestureWasDrag && !gestureStartedOnUI)
             {
                 // Aangdi niche je world-point hato e j aangdi niche rahe — "grab and move" feel
                 Vector3 current = cam.ScreenToWorldPoint(screenPos);
@@ -205,7 +211,7 @@ public class CameraController : MonoBehaviour
         if (!pressed && pointerDown)
         {
             pointerDown = false;
-            if (!gestureWasDrag)
+            if (!gestureWasDrag && !gestureStartedOnUI)
             {
                 tapThisFrame = true;
                 tapScreenPos = screenPos;
