@@ -9,22 +9,34 @@ public class CameraController : MonoBehaviour
     private Camera cam;
 
     [Header("Framing — constant cell size across every level")]
-    // Default view ma screen ni height ma keteli grid cells dekhay. Aa J apdo design constant che:
-    // e nakki kare ke ek cell screen par ketla pixels no dekhashe, ane e dar level ma SAME rahe che.
-    public float cellsVisibleVertically = 32f;
+    // How many cells span the screen's WIDTH at rest. Width, not height: a portrait board is
+    // width-constrained, and this keeps a cell the same PIXEL size on every aspect ratio.
+    // The old height-based constant gave 18 cells across on a 16:9 phone but only 14 on a 20:9
+    // one, so tall screens silently cramped every board and forced it to open zoomed out.
+    public float cellsVisibleHorizontally = 18f;
 
-    // Zoom-OUT ni sacchi limit. Aa thi vadhu bahar na jai shakay — etle bahu moti level
-    // zoom-out karva chhata pooru na dekhay, ane player e pan/scroll karvu j pade.
-    public float maxCellsVisibleVertically = 44f;
+    // How far a level is allowed to open zoomed-out. A board bigger than this opens at this size
+    // and has to be panned — it is not shrunk until it fits, which would make its cells tiny.
+    public float maxCellsVisibleHorizontally = 26f;
 
     public float fitPadding = 1.12f; // content-fit ni upar thodi breathing room
 
-    [Header("Zoom limits")]
-    public float minZoom = 4f; // sauthi vadhu zoom-IN allowed
+    [Header("Zoom range — multiples of this level's resting framing")]
+    // Absolute zoom limits could not work: a level's resting zoom ranges from ~7 (Level01) to ~49
+    // (Level11), so one fixed pair meant roughly 5x zoom-IN and almost no zoom-OUT on every board.
+    // Relative limits give both directions real room whatever the level's size.
+    public float zoomInFactor = 2.5f;
+    public float zoomOutFactor = 1.7f;
 
     [Header("Input feel")]
     public float dragThresholdPixels = 12f; // aa thi vadhu khasyu = drag (tap nahi)
     public float mouseZoomSpeed = 4f;       // editor ma scroll-wheel thi zoom testing mate
+
+    // A flick keeps the board gliding and decelerating, instead of stopping dead the instant the
+    // finger lifts. Higher friction stops sooner. There is deliberately no elastic overshoot at
+    // the edges — the glide just stops there.
+    public float panFriction = 6f;
+    [Range(0f, 1f)] public float velocitySmoothing = 0.35f;   // one noisy frame must not launch the board
 
     // Content ni kinar thi ketlu aagal pan karva devu (view size na proportion ma).
     // Aa vagar level screen ni kinar sudhi jam thayelu lage — reference app ma scroll karo
@@ -35,7 +47,8 @@ public class CameraController : MonoBehaviour
     public float focusDuration = 0.45f;
     public float focusCellsVisible = 12f;   // how tight the hint view gets, in cells
 
-    private float maxZoom;
+    private float minZoom, maxZoom, restZoom;
+    private Vector2 panVelocity;
     private Bounds contentBounds;
     private bool hasContent;
     private Tween focusTween;
@@ -62,20 +75,32 @@ public class CameraController : MonoBehaviour
     // bounds = ACTUAL rendered content ni bounding box (LineRenderer + head/tail sprites saathe).
     // Rule: ZOOM-OUT ONLY. Nani level default (constant cell size) par j rahe — nani, centered,
     // farate khali jagya — jem reference app ma thay che. Khali moti level j zoom-out thay,
-    // ane e pan maxCellsVisibleVertically sudhi j.
+    // ane e pan maxCellsVisibleHorizontally sudhi j.
     public void FrameLevel(Bounds bounds, float spacing)
     {
         contentBounds = bounds;
         hasContent = true;
+        panVelocity = Vector2.zero;
 
-        float defaultZoom = cellsVisibleVertically * spacing / 2f;
-        maxZoom = maxCellsVisibleVertically * spacing / 2f;
+        // orthographicSize is HALF the world height, and world width = 2 * size * aspect, so
+        // "N cells across" is size = N * spacing / (2 * aspect).
+        float defaultZoom = cellsVisibleHorizontally * spacing / (2f * cam.aspect);
+        float capZoom = maxCellsVisibleHorizontally * spacing / (2f * cam.aspect);
 
         float sizeForHeight = bounds.extents.y;
         float sizeForWidth = bounds.extents.x / cam.aspect;
         float fitZoom = Mathf.Max(sizeForHeight, sizeForWidth) * fitPadding;
 
-        cam.orthographicSize = Mathf.Clamp(Mathf.Max(defaultZoom, fitZoom), minZoom, maxZoom);
+        // Zoom-OUT only, then capped: a small level rests at the constant cell size with space
+        // around it; a big one opens as far out as the cap allows and is panned from there.
+        restZoom = Mathf.Min(Mathf.Max(defaultZoom, fitZoom), capZoom);
+
+        minZoom = restZoom / zoomInFactor;
+        // Whatever the resting framing, pinching out must always reach a view of the WHOLE board —
+        // on a level too big to open in full, surveying it is exactly when zoom-out is needed most.
+        maxZoom = Mathf.Max(restZoom * zoomOutFactor, fitZoom * 1.05f);
+
+        cam.orthographicSize = restZoom;
         transform.position = new Vector3(bounds.center.x, bounds.center.y, transform.position.z);
         ClampPosition();
     }
@@ -88,6 +113,7 @@ public class CameraController : MonoBehaviour
         if (!hasContent) return;
 
         focusTween.Stop();
+        panVelocity = Vector2.zero;   // a leftover glide would fight the hint's camera move
 
         // On a level that already fits on screen everything is visible anyway, so a zoom-in
         // would be pure noise — pan only. Big boards are the ones that actually need it.
@@ -119,6 +145,7 @@ public class CameraController : MonoBehaviour
         if (HandlePinch()) return; // be aangdi vaparai rahi che — pan/tap skip
         HandleMouseWheelZoom();
         HandleDragAndTap();
+        ApplyPanInertia();
     }
 
     // ---------- ZOOM ----------
@@ -141,15 +168,19 @@ public class CameraController : MonoBehaviour
         // Be aangdi aavi etle chalu drag/tap cancel karo
         pointerDown = false;
         gestureWasDrag = true;
+        panVelocity = Vector2.zero;
 
-        float distance = Vector2.Distance(
-            touch.touches[0].position.ReadValue(),
-            touch.touches[1].position.ReadValue());
+        Vector2 a = touch.touches[0].position.ReadValue();
+        Vector2 b = touch.touches[1].position.ReadValue();
+        float distance = Vector2.Distance(a, b);
 
         if (pinchPrevDistance > 0f && distance > 0f)
         {
-            // Aangdio door thay (distance vadhe) = zoom IN = orthographicSize ghate
-            ApplyZoom(cam.orthographicSize * (pinchPrevDistance / distance));
+            // Aangdio door thay (distance vadhe) = zoom IN = orthographicSize ghate.
+            // Anchored on the point BETWEEN the fingers, not the screen centre — zooming towards
+            // the centre pulls whatever you were looking at away from under your hands, which is
+            // most of why the old zoom felt wrong.
+            ApplyZoomAt(cam.orthographicSize * (pinchPrevDistance / distance), (a + b) * 0.5f);
         }
 
         pinchPrevDistance = distance;
@@ -164,12 +195,18 @@ public class CameraController : MonoBehaviour
         float scroll = mouse.scroll.ReadValue().y;
         if (Mathf.Approximately(scroll, 0f)) return;
 
-        ApplyZoom(cam.orthographicSize - scroll * 0.01f * mouseZoomSpeed);
+        ApplyZoomAt(cam.orthographicSize - scroll * 0.01f * mouseZoomSpeed, mouse.position.ReadValue());
     }
 
-    void ApplyZoom(float newSize)
+    // Zoom while keeping the world point under `screenFocus` pinned to that same screen point.
+    void ApplyZoomAt(float newSize, Vector2 screenFocus)
     {
+        Vector3 before = cam.ScreenToWorldPoint(screenFocus);
         cam.orthographicSize = Mathf.Clamp(newSize, minZoom, maxZoom);
+        Vector3 after = cam.ScreenToWorldPoint(screenFocus);
+
+        Vector3 correction = before - after;
+        transform.position += new Vector3(correction.x, correction.y, 0f);
         ClampPosition();
     }
 
@@ -199,11 +236,23 @@ public class CameraController : MonoBehaviour
 
             if (gestureWasDrag && !gestureStartedOnUI)
             {
-                // Aangdi niche je world-point hato e j aangdi niche rahe — "grab and move" feel
+                // Aangdi niche je world-point hato e j aangdi niche rahe — "grab and move" feel.
+                // Deliberately 1:1 and unsmoothed: any damping here would let the board lag behind
+                // the finger, which reads as sluggish, not smooth. Smoothing belongs after release.
+                Vector3 posBefore = transform.position;
+
                 Vector3 current = cam.ScreenToWorldPoint(screenPos);
                 Vector3 delta = dragAnchorWorld - current;
                 transform.position += new Vector3(delta.x, delta.y, 0f);
                 ClampPosition();
+
+                // Measured from the movement that actually survived clamping, so a drag pressed
+                // against an edge builds no velocity to fling with when it is released.
+                if (Time.deltaTime > 0f)
+                {
+                    Vector2 moved = transform.position - posBefore;
+                    panVelocity = Vector2.Lerp(panVelocity, moved / Time.deltaTime, velocitySmoothing);
+                }
             }
             return;
         }
@@ -211,12 +260,35 @@ public class CameraController : MonoBehaviour
         if (!pressed && pointerDown)
         {
             pointerDown = false;
+
+            if (gestureStartedOnUI) panVelocity = Vector2.zero;
+
             if (!gestureWasDrag && !gestureStartedOnUI)
             {
                 tapThisFrame = true;
                 tapScreenPos = screenPos;
+                panVelocity = Vector2.zero;   // a tap is not a flick
             }
         }
+    }
+
+    // Kinetic glide after a flick. Runs only while nothing is touching the screen.
+    void ApplyPanInertia()
+    {
+        if (pointerDown || panVelocity.sqrMagnitude < 0.0001f) return;
+
+        Vector3 posBefore = transform.position;
+        transform.position += new Vector3(panVelocity.x, panVelocity.y, 0f) * Time.deltaTime;
+        ClampPosition();
+
+        // Reaching a limit ends the glide on that axis rather than grinding against it.
+        Vector3 moved = transform.position - posBefore;
+        if (Mathf.Abs(moved.x) < 0.0001f) panVelocity.x = 0f;
+        if (Mathf.Abs(moved.y) < 0.0001f) panVelocity.y = 0f;
+
+        // Exponential decay is framerate-independent, unlike multiplying by a constant per frame.
+        panVelocity *= Mathf.Exp(-panFriction * Time.deltaTime);
+        if (panVelocity.sqrMagnitude < 0.01f) panVelocity = Vector2.zero;
     }
 
     bool TryGetPointer(out Vector2 screenPos)

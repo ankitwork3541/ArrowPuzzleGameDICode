@@ -13,6 +13,20 @@ public class GameFlowManager : MonoBehaviour
     public LevelLoader levelLoader;
     public LivesManager livesManager;
 
+    void Awake()
+    {
+        // Unity's documented default frame rate on mobile is 30fps, to save battery — and mobile
+        // platforms IGNORE QualitySettings.vSyncCount, so the project's vSyncCount:1 does nothing
+        // here. Everything was rendering at 30fps on a 120Hz screen, which is what made panning
+        // read as juddery no matter how the input maths was tuned.
+        //
+        // Ask for whatever the screen actually runs at rather than hardcoding 60: Android rounds a
+        // requested rate DOWN to a divisor of the refresh rate, so a fixed 60 would cost half the
+        // available smoothness on a 90Hz panel.
+        int refresh = Mathf.RoundToInt((float)Screen.currentResolution.refreshRateRatio.value);
+        Application.targetFrameRate = Mathf.Max(60, refresh);   // never fall back to the 30fps default
+    }
+
     public void OnPlayButtonClicked()
     {
         spaceFx.SetActive(false);       // the board needs a clean, undistracted background
