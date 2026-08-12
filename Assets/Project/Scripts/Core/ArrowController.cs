@@ -27,6 +27,26 @@ public class ArrowController : MonoBehaviour
 
     private int runStepIndex;
 
+    [Header("Blocked revert")]
+    // A blocked run rewinds all the way to where it was tapped. Leaving the arrow parked
+    // wherever it jammed would put the board in a position the generator never validated —
+    // the level could become genuinely unsolvable. Now the only cost of a bad tap is a life.
+    // No wind-up on the way back (the run out has one), so the rewind reads faster than the run.
+    public float revertStepTime = 0.028f;
+
+    // Every cell the head has stood on this run, tail-first: the starting path, then one entry
+    // appended per step. After k steps the tail sits on runTrace[k] and the head on
+    // runTrace[k + path.Count - 1]. That indexing is what lets the rewind be exact.
+    private List<Vector2Int> runTrace = new List<Vector2Int>();
+    private int stepsTaken;
+
+    // Decided at tap time, and knowable there because an arrow's heading never changes during a
+    // run — CanExit() walks the very cells the run is about to walk. A doomed run touches grid
+    // occupancy not at all: this arrow's cells stay claimed the whole way out and back, so no
+    // other arrow can take one mid-run and leave the rewind unable to reclaim it. It also stops
+    // the dots under a doomed run flashing open for cells that were never really freed.
+    private bool runDoomed;
+
     // Mid-move or mid-exit. The hint scan skips these — an arrow already on its way out is
     // not something the player needs pointed at, and it can't be pulsed safely either.
     public bool IsBusy => isMoving;
@@ -83,6 +103,10 @@ public class ArrowController : MonoBehaviour
         // nahi) j ahi sudhi aave che — etle level pan karta vakhte bhoolthi arrow move na thay.
         if (CameraController.Instance == null) return;
 
+        // Out of lives: the losing arrow is still rewinding, so taps must not start fresh runs
+        // that would still be animating when ShowLose() tears the level down.
+        if (LivesManager.Instance != null && LivesManager.Instance.lives <= 0) return;
+
         Vector2 screenPos;
         if (!CameraController.Instance.TryGetTapThisFrame(out screenPos)) return;
 
@@ -91,7 +115,7 @@ public class ArrowController : MonoBehaviour
         {
             // A fresh tap starts a new run, so the wind-up starts from slow again. Guarded by
             // isMoving because TryAdvance() also re-enters itself to continue the current run.
-            if (!isMoving) runStepIndex = 0;
+            if (!isMoving) BeginRun();
             TryAdvance();
         }
     }
@@ -273,6 +297,23 @@ public class ArrowController : MonoBehaviour
         return duration;
     }
 
+    // Called once per tap, not per step — TryAdvance() re-enters itself to continue a run.
+    void BeginRun()
+    {
+        runStepIndex = 0;
+        stepsTaken = 0;
+        runDoomed = !CanExit();
+        runTrace.Clear();
+        runTrace.AddRange(path);
+    }
+
+    float RevertStepTime()
+    {
+        // Same frame floor as the run out: under roughly one rendered frame per cell the
+        // rewind stops reading as motion and starts reading as the arrow teleporting.
+        return Mathf.Max(revertStepTime, Time.smoothDeltaTime * minFramesPerStep);
+    }
+
     void MoveStep(Vector2Int nextPos)
     {
         SetLineColor(activeColor);
@@ -283,10 +324,15 @@ public class ArrowController : MonoBehaviour
         Vector3 oldHeadWorld = gridBuilder.GridToWorld(path[n - 1]);
         Vector3 newHeadWorld = gridBuilder.GridToWorld(nextPos);
 
-        gridBuilder.ClearOccupant(path[0]);
+        if (!runDoomed) gridBuilder.ClearOccupant(path[0]);
         for (int i = 0; i < n - 1; i++) path[i] = path[i + 1];
         path[n - 1] = nextPos;
-        gridBuilder.SetOccupant(nextPos, gameObject);
+        if (!runDoomed) gridBuilder.SetOccupant(nextPos, gameObject);
+
+        // Extend the trace, not just a counter: a run can travel further than the arrow is
+        // long, and past that point the tail is standing on cells the starting path never held.
+        runTrace.Add(nextPos);
+        stepsTaken++;
 
         // Tail shrinks toward what is now path[0] (the old 2nd point) — always a straight line, no diagonal
         Vector3 newTailTarget = gridBuilder.GridToWorld(path[0]);
@@ -357,11 +403,76 @@ public class ArrowController : MonoBehaviour
                 line.SetPosition(n - 1, Vector3.Lerp(bumpHeadWorld, originalHeadWorld, t2));
                 UpdateHeadPosition();
             }))
-            .OnComplete(this, warnIfTargetDestroyed: false, onComplete: arrow =>
-            {
-                SetLineColor(Color.white);
-                isMoving = false;
-            });
+            .OnComplete(this, warnIfTargetDestroyed: false, onComplete: arrow => arrow.RevertStep());
+    }
+
+    // Rewind the run one cell at a time, undoing exactly what MoveStep() did — the mirror of it.
+    // Stays on the same "grow one end, shrink the other, freeze the middle" technique: a single
+    // tween lerping every point at once would cut diagonally across every bend on the way back,
+    // which is the exact bug that technique exists to avoid.
+    void RevertStep()
+    {
+        if (stepsTaken <= 0)
+        {
+            // Back where the tap found it. Occupancy is identical to the tap-time board too,
+            // because every step's claim was undone one at a time on the way here.
+            SetLineColor(Color.white);
+            isMoving = false;
+
+            // Only now is it safe to end the level: ShowLose() destroys this arrow.
+            LivesManager.Instance.ResolveBlockedTap();
+            return;
+        }
+
+        int n = path.Count;
+
+        Vector3 oldTailWorld = gridBuilder.GridToWorld(path[0]);
+        Vector3 oldHeadWorld = gridBuilder.GridToWorld(path[n - 1]);
+
+        // The tail steps back onto the cell it vacated on the way out.
+        Vector2Int newTailCell = runTrace[stepsTaken - 1];
+
+        // Mirrors MoveStep(): a doomed run never released anything, so there is nothing to reclaim.
+        if (!runDoomed) gridBuilder.ClearOccupant(path[n - 1]);
+        for (int i = n - 1; i >= 1; i--) path[i] = path[i - 1];
+        path[0] = newTailCell;
+        if (!runDoomed) gridBuilder.SetOccupant(newTailCell, gameObject);
+
+        stepsTaken--;
+
+        Vector3 newTailTarget = gridBuilder.GridToWorld(path[0]);
+        Vector3 newHeadTarget = gridBuilder.GridToWorld(path[n - 1]);
+
+        // n+1 points while animating: [growing tail, frozen middle..., shrinking head]
+        line.positionCount = n + 1;
+        line.SetPosition(0, oldTailWorld);
+        for (int i = 1; i <= n - 1; i++)
+            line.SetPosition(i, gridBuilder.GridToWorld(path[i]));
+        line.SetPosition(n, oldHeadWorld);
+
+        Tween.Custom(this, 0f, 1f, duration: RevertStepTime(), ease: Ease.Linear, onValueChange: (arrow, t) =>
+        {
+            line.SetPosition(0, Vector3.Lerp(oldTailWorld, newTailTarget, t));
+            line.SetPosition(n, Vector3.Lerp(oldHeadWorld, newHeadTarget, t));
+            UpdateHeadPosition();
+            UpdateTailPosition();
+        }).OnComplete(this, warnIfTargetDestroyed: false, onComplete: arrow =>
+        {
+            // Drop the now-redundant duplicate point at the head end.
+            Vector3[] finalPositions = new Vector3[n];
+            for (int i = 0; i < n; i++)
+                finalPositions[i] = gridBuilder.GridToWorld(path[i]);
+
+            line.positionCount = n;
+            line.SetPositions(finalPositions);
+
+            Vector2[] colliderPoints = new Vector2[n];
+            for (int i = 0; i < n; i++)
+                colliderPoints[i] = finalPositions[i];
+            edgeCollider.points = colliderPoints;
+
+            arrow.RevertStep();
+        });
     }
 
     void StartExit(Vector3 exitStep)
