@@ -102,7 +102,8 @@ public static class RefLevelImporter
 
         Debug.Log(log.ToString());
         Debug.Log($"[RefImport] {imported} reference levels written to {DestFolder}. "
-                  + "To play them, point LevelLoader's Levels array at them — then run "
+                  + "These are for measuring against the tables above — the game itself loads baked "
+                  + "chunks, not .asset files, so they are not playable in place. Run "
                   + "ArrowPuzzle/Delete Reference Levels when finished.");
     }
 

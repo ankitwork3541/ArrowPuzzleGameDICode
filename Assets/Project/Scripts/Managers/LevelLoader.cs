@@ -4,7 +4,6 @@ using PrimeTween;
 
 public class LevelLoader : MonoBehaviour
 {
-    public LevelData[] levels;
     public GridBuilder gridBuilder;
     public ArrowController arrowPrefab;
     public CameraController cameraController;
@@ -26,11 +25,96 @@ public class LevelLoader : MonoBehaviour
     // Read-only view for systems that need to inspect the live arrows (GuideLines).
     public IReadOnlyList<ArrowController> SpawnedArrows => spawnedArrows;
 
+    // ---------- level source: packed binary chunks in Resources ----------
+    //
+    // This used to be a `public LevelData[] levels` dragged in through the Inspector. That does not
+    // survive the 50,000-level target for two separate reasons: a serialized array of asset
+    // references makes Unity load EVERY level the moment this component loads, and someone has to
+    // drag each one in by hand. Chunks are loaded on demand and only the current one is held.
+    //
+    // See LevelBinary for the format and why it is not Resources-of-JSON or Addressables.
+
+    private byte[] chunkBytes;
+    private int loadedChunkIndex = -1;
+
+    // One reused LevelData instance, refilled in place. Creating a ScriptableObject per level would
+    // leak one per load, and every other system already speaks LevelData.
+    private LevelData current;
+    private int decodedLevelIndex = -1;
+
+    private int totalLevels;
+
+    public int TotalLevels
+    {
+        get
+        {
+            EnsureCurrent();
+            return totalLevels;
+        }
+    }
+
+    // Decodes the current level if it is not already decoded, loading its chunk first if needed.
+    // Cheap to call repeatedly — the Home screen asks for the difficulty label before the board is
+    // ever built, and that must not re-parse or re-load anything.
+    private LevelData EnsureCurrent()
+    {
+        if (current == null) current = ScriptableObject.CreateInstance<LevelData>();
+        if (decodedLevelIndex == currentLevelIndex && chunkBytes != null) return current;
+
+        int wantChunk = LevelBinary.ChunkIndexOf(currentLevelIndex);
+
+        if (loadedChunkIndex != wantChunk || chunkBytes == null)
+        {
+            string path = LevelBinary.ChunkResourcePath(wantChunk);
+            TextAsset asset = Resources.Load<TextAsset>(path);
+
+            if (asset == null)
+            {
+                Debug.LogError($"[LevelLoader] no level chunk at Resources/{path}. "
+                               + "Run ArrowPuzzle > Campaign > Bake to create it.");
+                return current;
+            }
+
+            // `.bytes` hands back a fresh copy, so the TextAsset itself can go straight back out of
+            // memory — what we keep is our own array.
+            byte[] bytes = asset.bytes;
+            Resources.UnloadAsset(asset);
+
+            string error;
+            if (!LevelBinary.IsValidChunk(bytes, out error))
+            {
+                Debug.LogError($"[LevelLoader] chunk {wantChunk} is unusable: {error}");
+                return current;
+            }
+
+            chunkBytes = bytes;
+            loadedChunkIndex = wantChunk;
+            totalLevels = LevelBinary.TotalLevelsIn(bytes);
+        }
+
+        int withinChunk = LevelBinary.IndexWithinChunk(currentLevelIndex);
+        if (withinChunk >= LevelBinary.LevelCountIn(chunkBytes))
+        {
+            Debug.LogError($"[LevelLoader] level {currentLevelIndex} is past the end of chunk {loadedChunkIndex}.");
+            return current;
+        }
+
+        LevelBinary.ReadLevelInto(chunkBytes, withinChunk, current);
+        decodedLevelIndex = currentLevelIndex;
+        return current;
+    }
+
     public void LoadLevel()
     {
         ClearArrows();
 
-        LevelData levelData = levels[currentLevelIndex];
+        LevelData levelData = EnsureCurrent();
+        if (levelData.arrows == null || levelData.arrows.Count == 0)
+        {
+            Debug.LogError("[LevelLoader] current level has no arrows — nothing to load.");
+            return;
+        }
+
         gridBuilder.BuildGrid(levelData.gridWidth, levelData.gridHeight);
 
         Vector2Int min, max;
@@ -204,8 +288,10 @@ public class LevelLoader : MonoBehaviour
     // Move to the next level WITHOUT loading it — the level is loaded when Play is pressed.
     public void AdvanceLevel()
     {
+        EnsureCurrent();        // so totalLevels is known before it is compared against
+
         currentLevelIndex++;
-        if (currentLevelIndex >= levels.Length)
+        if (totalLevels > 0 && currentLevelIndex >= totalLevels)
             currentLevelIndex = 0; // abhi mate: badha levels puri thay etle pachu 1st thi
     }
 
@@ -222,7 +308,13 @@ public class LevelLoader : MonoBehaviour
 
     public LevelData CurrentLevel()
     {
-        return levels[currentLevelIndex];
+        return EnsureCurrent();
+    }
+
+    void OnDestroy()
+    {
+        // The reused LevelData is created with CreateInstance, so it is ours to clean up.
+        if (current != null) Destroy(current);
     }
 
     // Hint mate: atyare koi j arrow ni exit ray clear che ke nahi, e scan kari ne pehli mali te return kare

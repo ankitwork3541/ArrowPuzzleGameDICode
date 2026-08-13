@@ -136,7 +136,11 @@ public static class ProductionLevelGenerator
             ? "Every level hit what its slot asked for (arrow count where named, band otherwise)."
             : misses + " level(s) missed — see the rows above. The `arrows` column reads got/want; "
               + "adjust that slot's grid size if the miss is large, since board area is what sets the count.");
-        summary.AppendLine("Next: drag Level01..Level15 into LevelLoader's `levels` array in the Inspector, in order.");
+        // These .asset files are NOT what the game loads any more — LevelLoader reads the packed
+        // chunks written by LevelCampaignGenerator. This table stays as the small hand-specified
+        // set for eyeballing shapes and experimenting with tiers.
+        summary.AppendLine("Note: these .asset levels are for inspection only. The game loads the "
+                           + "baked chunks — run ArrowPuzzle > Campaign > Bake to update what ships.");
 
         Debug.Log(summary.ToString());
     }
