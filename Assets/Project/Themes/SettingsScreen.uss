@@ -1,0 +1,170 @@
+/* ============ Root ============
+   No background-color: the starfield FX behind the panel must stay visible,
+   same as the Home screen. */
+.screen-root {
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-Bold%20SDF.asset?fileID=11400000&guid=2d8208c2123c041daaecd4a4cf0d1ae2&type=2#Oxanium-Bold SDF");
+}
+
+/* The wrapper the <ui:Instance> creates for the shared bottom nav. It is an
+   element of THIS document, so this is the stylesheet guaranteed to reach it.
+   It must never give up space — the ScrollView above owns all the growth. */
+.nav-slot {
+    flex-shrink: 0;
+}
+
+/* ============ Header ============ */
+.settings-header {
+    align-items: center;
+    padding-top: 80px;
+    padding-bottom: 40px;
+}
+
+.settings-title {
+    font-size: 64px;
+    letter-spacing: 8px;
+    color: rgb(0, 218, 243);
+    text-shadow: 0 0 24px rgba(0, 218, 243, 0.7);
+    -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-ExtraBold%20SDF.asset?fileID=11400000&guid=a1b658a48c21246d783d8c4f4c297d45&type=2#Oxanium-ExtraBold SDF");
+}
+
+/* ============ Scrolling list ============
+   A ScrollView from the start, not a plain container: more option groups are
+   planned, and swapping the container later would mean restyling everything
+   inside it. The padding lives on an inner wrapper so none of ScrollView's own
+   nested parts have to be targeted. */
+.settings-scroll {
+    flex-grow: 1;
+}
+
+.settings-list {
+    padding-left: 40px;
+    padding-right: 40px;
+    padding-bottom: 50px;
+}
+
+/* ============ Option group card ============ */
+.card {
+    background-color: rgba(16, 25, 54, 0.55);
+    border-radius: 36px;
+    border-width: 1px;
+    border-color: rgba(0, 229, 255, 0.14);
+    padding-left: 30px;
+    padding-right: 30px;
+    margin-bottom: 34px;
+}
+
+/* ============ Row ============ */
+.row {
+    flex-direction: row;
+    align-items: center;
+    height: 132px;
+}
+
+/* USS has no adjacent-sibling (`+`) selector, so "every row except the first"
+   is marked explicitly in the UXML rather than derived. */
+.row--sep {
+    border-top-width: 1px;
+    border-top-color: rgba(0, 229, 255, 0.1);
+}
+
+/* Link rows deliberately have NO :hover / :active highlight — a cyan wash across
+   a whole row read as an accidental selection rather than as feedback. */
+
+.row__icon {
+    width: 54px;
+    height: 54px;
+    margin-right: 28px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    -unity-background-image-tint-color: rgb(0, 229, 255);
+}
+
+/* flex-grow pushes whatever follows (switch or chevron) to the right edge. */
+.row__label {
+    flex-grow: 1;
+    font-size: 36px;
+    letter-spacing: 1px;
+    color: rgb(220, 228, 229);
+}
+
+/* ">" rather than a typographic chevron glyph — the Oxanium SDF atlas is not
+   guaranteed to contain "›", and a missing glyph renders as nothing at all. */
+.row__chevron {
+    font-size: 38px;
+    color: rgba(0, 229, 255, 0.7);
+    margin-right: 8px;
+}
+
+.row__icon--vibration {
+    background-image: url("../Sprites/IconVibration.png");
+}
+
+.row__icon--sound {
+    background-image: url("../Sprites/IconSound.png");
+}
+
+.row__icon--refresh {
+    background-image: url("../Sprites/IconRefreshRate.png");
+}
+
+.row__icon--star {
+    background-image: url("../Sprites/IconStar.png");
+}
+
+.row__icon--pencil {
+    background-image: url("../Sprites/IconPencil.png");
+}
+
+.row__icon--document {
+    background-image: url("../Sprites/IconDocument.png");
+}
+
+.row__icon--info {
+    background-image: url("../Sprites/IconInfo.png");
+}
+
+/* ============ Switch ============
+   Built from plain VisualElements instead of ui:Toggle. ui:Toggle renders as a
+   checkbox made of nested theme parts that inline styling cannot reach (the same
+   trap ProgressBar set on the Splash screen), and this design is a pill switch
+   anyway. The knob slides via a USS transition on `left` — no C# animation. */
+.switch {
+    width: 104px;
+    height: 56px;
+    border-radius: 28px;
+    background-color: rgba(255, 255, 255, 0.08);
+    border-width: 2px;
+    border-color: rgba(255, 255, 255, 0.12);
+    transition-property: background-color, border-color;
+    transition-duration: 0.18s;
+    transition-timing-function: ease-out;
+}
+
+.switch__knob {
+    position: absolute;
+    left: 4px;
+    top: 4px;
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    background-color: rgb(112, 124, 152);
+    transition-property: left, background-color;
+    transition-duration: 0.18s;
+    transition-timing-function: ease-out;
+}
+
+.switch--on {
+    background-color: rgba(0, 229, 255, 0.22);
+    border-color: rgb(0, 229, 255);
+}
+
+/* 104 total - 2+2 border - 40 knob - 4 right gap = 56 */
+.switch--on .switch__knob {
+    left: 56px;
+    background-color: rgb(0, 229, 255);
+}

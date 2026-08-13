@@ -5,6 +5,7 @@ public class GameFlowManager : MonoBehaviour
     [Header("UI Toolkit panel roots")]
     public GameObject homeRoot;
     public GameObject gameplayRoot;
+    public GameObject settingsRoot;
 
     [Header("Background FX")]
     public GameObject spaceFx;   // Starfield + ShootingStars parent — Splash/Home only
@@ -13,19 +14,9 @@ public class GameFlowManager : MonoBehaviour
     public LevelLoader levelLoader;
     public LivesManager livesManager;
 
-    void Awake()
-    {
-        // Unity's documented default frame rate on mobile is 30fps, to save battery — and mobile
-        // platforms IGNORE QualitySettings.vSyncCount, so the project's vSyncCount:1 does nothing
-        // here. Everything was rendering at 30fps on a 120Hz screen, which is what made panning
-        // read as juddery no matter how the input maths was tuned.
-        //
-        // Ask for whatever the screen actually runs at rather than hardcoding 60: Android rounds a
-        // requested rate DOWN to a divisor of the refresh rate, so a fixed 60 would cost half the
-        // available smoothness on a 90Hz panel.
-        int refresh = Mathf.RoundToInt((float)Screen.currentResolution.refreshRateRatio.value);
-        Application.targetFrameRate = Mathf.Max(60, refresh);   // never fall back to the 30fps default
-    }
+    // The target frame rate used to be set here. It now lives in SettingsManager, because the
+    // player can turn it off — two Awake()s both writing Application.targetFrameRate would race,
+    // and Unity does not define which one wins.
 
     public void OnPlayButtonClicked()
     {
@@ -53,6 +44,24 @@ public class GameFlowManager : MonoBehaviour
     public void OnHintButtonClicked()
     {
         levelLoader.PlayHint();
+    }
+
+    // Home <-> Settings. Settings kills the starfield the same way gameplay does: it is a dense
+    // reading screen, and the drifting particles behind the text are a distraction. Turning the FX
+    // off rather than covering it also stops the particles simulating while they cannot be seen —
+    // the panel itself stays transparent, so what shows through is the camera's solid colour.
+    public void OnSettingsNavClicked()
+    {
+        spaceFx.SetActive(false);
+        homeRoot.SetActive(false);
+        settingsRoot.SetActive(true);
+    }
+
+    public void OnHomeNavClicked()
+    {
+        settingsRoot.SetActive(false);
+        homeRoot.SetActive(true);
+        spaceFx.SetActive(true);
     }
 
     // TODO: Win panel is not rebuilt in UI Toolkit yet — for now the flow advances

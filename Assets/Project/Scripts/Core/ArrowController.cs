@@ -356,7 +356,7 @@ public class ArrowController : MonoBehaviour
     void BlockedBounce()
     {
         AudioManager.Instance.PlayArrowClickBlocked();
-        Handheld.Vibrate();
+        if (SettingsManager.Instance.VibrationEnabled) Handheld.Vibrate();
         LivesManager.Instance.LoseLife();
 
         int n = path.Count;

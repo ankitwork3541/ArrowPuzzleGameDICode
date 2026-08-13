@@ -35,7 +35,15 @@ public class HomeScreenController : MonoBehaviour
         playButton.clicked -= gameFlowManager.OnPlayButtonClicked;
         playButton.clicked += gameFlowManager.OnPlayButtonClicked;
 
+        // Home is the current screen, so its own nav item only highlights.
+        BottomNavBinder.Bind(root, "nav-home", null, OnSettingsNavClicked);
+
         Refresh();
+    }
+
+    private void OnSettingsNavClicked(ClickEvent evt)
+    {
+        gameFlowManager.OnSettingsNavClicked();
     }
 
     // Called every time Home becomes visible, so the level number and difficulty

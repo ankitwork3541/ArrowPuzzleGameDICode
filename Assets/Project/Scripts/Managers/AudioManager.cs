@@ -30,6 +30,7 @@ public class AudioManager : MonoBehaviour
     void PlaySfx(AudioClip clip)
     {
         if (clip == null) return;
+        if (!SettingsManager.Instance.SoundEnabled) return;
         sfxSource.PlayOneShot(clip);
     }
 }

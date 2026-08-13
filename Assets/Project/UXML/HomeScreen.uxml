@@ -1,5 +1,6 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/Project/Themes/HomeScreen.uss?fileID=7433441132597879392&amp;guid=374be4457ec7e46788af90c7b240d263&amp;type=3#HomeScreen"/>
+    <ui:Template name="BottomNav" src="project://database/Assets/Project/UXML/BottomNav.uxml" />
     <ui:VisualElement name="screen-root" class="screen-root">
         <ui:VisualElement name="content" class="content">
             <ui:Label name="level-label" text="LEVEL 01" class="level-label"/>
@@ -13,27 +14,6 @@
                 </ui:VisualElement>
             </ui:Button>
         </ui:VisualElement>
-        <ui:VisualElement name="bottom-nav" class="bottom-nav" style="background-color: rgba(25, 33, 34, 0.784);">
-            <ui:VisualElement class="nav-item nav-item--active">
-                <ui:VisualElement class="nav-icon nav-icon--home"/>
-                <ui:Label text="Home" class="nav-label"/>
-            </ui:VisualElement>
-            <ui:VisualElement class="nav-item nav-item--locked">
-                <ui:VisualElement class="nav-icon nav-icon--lock"/>
-                <ui:Label text="Lvl 10" class="nav-label"/>
-            </ui:VisualElement>
-            <ui:VisualElement class="nav-item nav-item--locked">
-                <ui:VisualElement class="nav-icon nav-icon--lock"/>
-                <ui:Label text="Lvl 20" class="nav-label"/>
-            </ui:VisualElement>
-            <ui:VisualElement class="nav-item nav-item--locked">
-                <ui:VisualElement class="nav-icon nav-icon--lock"/>
-                <ui:Label text="Lvl 30" class="nav-label"/>
-            </ui:VisualElement>
-            <ui:VisualElement class="nav-item nav-item--dim">
-                <ui:VisualElement class="nav-icon nav-icon--settings"/>
-                <ui:Label text="Settings" class="nav-label"/>
-            </ui:VisualElement>
-        </ui:VisualElement>
+        <ui:Instance template="BottomNav" name="bottom-nav-slot" class="nav-slot" />
     </ui:VisualElement>
 </ui:UXML>

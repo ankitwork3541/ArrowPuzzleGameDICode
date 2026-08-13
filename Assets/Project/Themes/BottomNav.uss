@@ -1,0 +1,99 @@
+/* ============ Bottom navigation ============
+   Shared by every screen that shows the nav (Home, Settings, ...). The markup
+   lives in UXML/BottomNav.uxml and is instanced per screen, so these rules are
+   the single place the nav's look is defined.
+
+   Which item reads as "selected" is NOT baked in here — BottomNavBinder.cs
+   toggles nav-item--active / nav-item--dim per screen. */
+
+/* Note: `.nav-slot` (the <ui:Instance> wrapper) is styled in each host screen's
+   own stylesheet, not here — the wrapper element belongs to the host's UXML, so
+   that is the stylesheet guaranteed to reach it. */
+
+.bottom-nav {
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    background-color: rgba(25, 33, 34, 0.78);
+    border-top-left-radius: 40px;
+    border-top-right-radius: 40px;
+    border-top-width: 2px;
+    border-top-color: rgba(255, 255, 255, 0.2);
+    padding-top: 28px;
+    padding-bottom: 40px;
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+/* The horizontal padding is deliberate: it widens the tap target of the two
+   items that actually navigate, without changing how the row looks. */
+.nav-item {
+    align-items: center;
+    justify-content: center;
+    padding-left: 14px;
+    padding-right: 14px;
+}
+
+.nav-icon {
+    width: 56px;
+    height: 56px;
+    margin-bottom: 8px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+}
+
+.nav-label {
+    font-size: 26px;
+    letter-spacing: 2px;
+}
+
+.nav-icon--home {
+    background-image: url("project://database/Assets/Project/Sprites/HomeIcon.png?fileID=7480962188226714435&guid=4400cc3fec59f4399970e2541da7fd71&type=3#HomeIcon_0");
+}
+
+.nav-icon--lock {
+    background-image: url("project://database/Assets/Project/Sprites/LockIcon.png?fileID=-958580646009965197&guid=d8b1dbdeeae6f406ba936465b9ed71b7&type=3#LockIcon_0");
+}
+
+.nav-icon--settings {
+    background-image: url("project://database/Assets/Project/Sprites/SettingsIcon.png?fileID=5904627132653970092&guid=6212eb57667724539859a170f6e04832&type=3#SettingsIcon_0");
+}
+
+/* ---- states ---- */
+
+.nav-item--active {
+    scale: 1.1;
+}
+
+.nav-item--active .nav-icon {
+    -unity-background-image-tint-color: rgb(0, 218, 243);
+}
+
+.nav-item--active .nav-label {
+    color: rgb(255, 255, 255);
+}
+
+.nav-item--locked {
+    opacity: 0.5;
+}
+
+.nav-item--locked .nav-icon {
+    -unity-background-image-tint-color: rgb(57, 65, 95);
+}
+
+.nav-item--locked .nav-label {
+    color: rgb(57, 65, 95);
+}
+
+.nav-item--dim {
+    opacity: 0.7;
+}
+
+.nav-item--dim .nav-icon {
+    -unity-background-image-tint-color: rgb(59, 73, 76);
+}
+
+.nav-item--dim .nav-label {
+    color: rgb(59, 73, 76);
+}
