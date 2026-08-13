@@ -506,27 +506,43 @@ public class ArrowController : MonoBehaviour
         });
     }
 
+    // Runs once per exit step, on every arrow leaving the board.
+    //
+    // It used to call Camera.main INSIDE a loop over every point, and test each point separately.
+    // Camera.main is a tag lookup — internally cached since 2019, but still roughly the cost of a
+    // GetComponent, and it was paying that per point. The renderer already keeps a world-space
+    // bounding box of the whole line, so one rectangle test answers the same question.
     bool IsFullyOffScreen()
     {
-        int n = line.positionCount;
-        for (int i = 0; i < n; i++)
-        {
-            Vector3 viewportPos = Camera.main.WorldToViewportPoint(line.GetPosition(i));
-            if (viewportPos.x >= 0f && viewportPos.x <= 1f && viewportPos.y >= 0f && viewportPos.y <= 1f)
-                return false;
-        }
-        return true;
+        Camera cam = Camera.main;
+        if (cam == null) return true;   // no camera to be on-screen of
+
+        Bounds b = line.bounds;
+
+        // Compare in viewport space via the two extreme corners. An orthographic camera keeps
+        // axis alignment, so the min/max corners bound the whole box.
+        Vector3 min = cam.WorldToViewportPoint(b.min);
+        Vector3 max = cam.WorldToViewportPoint(b.max);
+
+        float loX = Mathf.Min(min.x, max.x), hiX = Mathf.Max(min.x, max.x);
+        float loY = Mathf.Min(min.y, max.y), hiY = Mathf.Max(min.y, max.y);
+
+        return hiX < 0f || loX > 1f || hiY < 0f || loY > 1f;
     }
 
+    // Vertex colours only — deliberately never `line.material`.
+    //
+    // Reading `.material` (as opposed to `.sharedMaterial`) INSTANTIATES a private copy of the
+    // material for that renderer. This used to do exactly that, so a board of 160 arrows ended up
+    // with 160 unique materials: two renderers can only batch when they share one, so it quietly
+    // cancelled the SRP Batcher for every arrow, and leaked a material per arrow on top.
+    //
+    // Sprite shaders — the built-in one and URP's alike — multiply their texture by the vertex
+    // colour, and startColor/endColor is what feeds that. Same result, no instancing, batchable.
     void SetLineColor(Color c)
     {
-        if (line.material.HasProperty("_Color"))
-            line.material.color = c;
-        else
-        {
-            line.startColor = c;
-            line.endColor = c;
-        }
+        line.startColor = c;
+        line.endColor = c;
 
         if (headSprite != null)
             headSprite.color = c;
