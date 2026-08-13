@@ -30,6 +30,7 @@ public class GameFlowManager : MonoBehaviour
     public void OnBackToHomeClicked()
     {
         levelLoader.ClearLevel();   // abandon it, or an in-flight arrow exit still reports a win
+        CameraController.Instance.FrameMenu();
         gameplayRoot.SetActive(false);
         homeRoot.SetActive(true);
         spaceFx.SetActive(true);
@@ -71,6 +72,7 @@ public class GameFlowManager : MonoBehaviour
         Debug.Log("LEVEL WON (Win panel not rebuilt in UI Toolkit yet)");
         levelLoader.ClearLevel();
         levelLoader.AdvanceLevel();   // advance only — the level loads when Play is pressed
+        CameraController.Instance.FrameMenu();
         gameplayRoot.SetActive(false);
         homeRoot.SetActive(true);
         spaceFx.SetActive(true);
@@ -81,6 +83,7 @@ public class GameFlowManager : MonoBehaviour
     {
         Debug.Log("LEVEL LOST (Lose panel not rebuilt in UI Toolkit yet)");
         levelLoader.ClearLevel();
+        CameraController.Instance.FrameMenu();
         gameplayRoot.SetActive(false);
         homeRoot.SetActive(true);
         spaceFx.SetActive(true);

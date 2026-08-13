@@ -66,10 +66,36 @@ public class CameraController : MonoBehaviour
     private Vector2 tapScreenPos;
     private float pinchPrevDistance;
 
+    // The framing the scene was authored with. Menus are drawn over the same world the board
+    // lives in, so the starfield behind them is only positioned correctly while the camera sits
+    // where it started — a level leaves it somewhere else entirely.
+    private Vector3 menuPosition;
+    private float menuZoom;
+
     void Awake()
     {
         Instance = this;
         cam = GetComponent<Camera>();
+
+        menuPosition = transform.position;
+        menuZoom = cam.orthographicSize;
+    }
+
+    // Put the camera back where the scene started. Called whenever gameplay ends, because
+    // FrameLevel() moves and zooms the camera to the board and nothing else ever undoes that:
+    // returning to Home left the menu looking at whatever framing the last level happened to
+    // need, which showed up as the starfield reading differently on Home than on Splash.
+    //
+    // Clearing hasContent matters just as much: Update() gates all pan/zoom input on it, so
+    // leaving it set let the player drag and pinch the camera around on the menu screens.
+    public void FrameMenu()
+    {
+        focusTween.Stop();
+        hasContent = false;
+        panVelocity = Vector2.zero;
+
+        transform.position = menuPosition;
+        cam.orthographicSize = menuZoom;
     }
 
     // bounds = ACTUAL rendered content ni bounding box (LineRenderer + head/tail sprites saathe).

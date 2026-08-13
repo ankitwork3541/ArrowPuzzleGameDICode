@@ -21,7 +21,11 @@ public class GridBuilder : MonoBehaviour
             createFunc: () => Instantiate(dotPrefab, transform),
             actionOnGet: dot => { dot.gameObject.SetActive(true); dot.Show(); },
             actionOnRelease: dot => dot.gameObject.SetActive(false),
-            actionOnDestroy: dot => Destroy(dot.gameObject)
+            // The null check is not paranoia: leaving Play mode makes Unity clear every
+            // ObjectPool, but the scene's GameObjects are already gone by then, so this
+            // callback runs on dots that no longer exist. Unity's overloaded == reports a
+            // destroyed object as null, which is exactly what catches that case.
+            actionOnDestroy: dot => { if (dot != null) Destroy(dot.gameObject); }
         );
         // BuildGrid() have Awake() mathi call nathi thato — LevelLoader/LevelPainter potej
         // Play/tool-start vakhte call kare che, jethi Splash/Home screen pachhad grid/dots

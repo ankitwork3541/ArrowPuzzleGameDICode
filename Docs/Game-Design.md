@@ -245,6 +245,14 @@ Sources: [Unity Manual — Audio file compression](https://docs.unity3d.com/Manu
 
 ---
 
+### 10a. Menu framing — the camera must be reset when gameplay ends (2026-08-13)
+
+`FrameLevel()` moves and zooms the camera onto the board, and nothing ever undid that: returning to Home left the menu looking through whatever framing the last level happened to need. Because the starfield FX is a **world-space** particle system, that showed up as the particles reading noticeably differently on Home than on Splash — the same field, seen from a different camera. `CameraController` now caches the scene-authored position/`orthographicSize` in `Awake()` and exposes `FrameMenu()` to restore it; `GameFlowManager` calls it from `OnBackToHomeClicked()`, `ShowWin()` and `ShowLose()`.
+
+`FrameMenu()` also clears `hasContent`, which fixed a second, previously unnoticed bug: `Update()` gates all pan/zoom input on that flag and it was never set back to false, so after finishing a level the player could drag and pinch the camera around **on the menu screens**.
+
+---
+
 ## 13. Settings Screen — LOCKED (2026-08-13)
 
 Built in UI Toolkit from a user-supplied reference screenshot (a light-themed competitor's settings list), re-skinned to this project's Neon palette. Scope was deliberately cut to what the game can actually honour today — the reference's Language, Dark mode, Account Connection, Remove Ads and Restore purchases rows are **not** built, because none of those systems exist yet and a toggle that does nothing is worse than no toggle.
