@@ -1,39 +1,20 @@
 using UnityEngine;
 
-// The shipped level format: a few packed binary chunks, read on demand.
+// The shipped level format: packed binary chunks in Resources, read on demand.
 //
-// WHY NOT one ScriptableObject per level, which is how this project started: a serialized
-// `LevelData[]` array forces EVERY referenced level resident the moment the component loads, each
-// level has to be dragged into the Inspector by hand, and tens of thousands of .asset files punish
-// the Editor's asset database long before they punish the player. None of that survives 50,000.
+// An arrow is a chain of 4-connected cells, so only the tail cell and 2 bits per step are stored,
+// not a coordinate per cell — ~0.25 bytes per cell against 24 for a ScriptableObject.
 //
-// WHY NOT Resources-full-of-JSON, which is how the reference game does it: Unity's own manual puts
-// initialising a Resources system of 10,000 assets at "several seconds on low-end mobile devices",
-// and its per-level JSON extrapolates to ~446 MB at 50,000 — past Google Play's download cap. Its
-// files were also plain text, so unzipping the APK handed over every level.
-//
-// WHY NOT Addressables: measured overhead is ~30 MB of APK growth on Android and ~72 MB on iOS,
-// comparable to this game's entire level payload, and its real value (remote content, dependency
-// dedup, eviction across thousands of bundles) is not needed here. A handful of chunk files in
-// Resources costs nothing, because the documented Resources penalty scales with OBJECT COUNT.
-//
-// THE ENCODING. An arrow is a chain of 4-connected cells, so storing a coordinate per cell is
-// waste: only the tail cell and the direction of each step are needed, and a direction is 2 bits.
-// Verified against 3,161 steps of this project's own levels and 364,774 of the reference's — zero
-// non-adjacent steps in either, and the longest arrow anywhere is 89 cells, so `length` fits a byte.
-// That lands at roughly 0.25 bytes per cell against 24 for the ScriptableObject form.
-//
-// Deliberately NO manifest of per-level difficulty. The Home screen needs a difficulty label before
-// the board is built, but the chunk it would read that from is the chunk it is about to play anyway,
-// so it is loaded and cached either way.
+// Rejected: one .asset per level (a serialized array makes every level resident, and needs manual
+// Inspector wiring), Resources-of-JSON (Unity documents ~seconds of startup at 10k assets), and
+// Addressables (~30 MB Android / ~72 MB iOS overhead, and no remote content is needed).
 public static class LevelBinary
 {
     // 'A' 'P' 'L' 'C' — Arrow Puzzle Level Chunk.
     public const uint Magic = 0x434C5041;
     public const ushort Version = 1;
 
-    // Levels per chunk. At ~250-500 bytes each that is a file of well under a megabyte, and 50
-    // files at 50,000 levels — few enough that Resources' index cost stays irrelevant.
+    // 50 files at 50,000 levels — few enough that Resources' index cost stays irrelevant.
     public const int LevelsPerChunk = 1000;
 
     public const string ResourceFolder = "Levels/";
@@ -71,9 +52,8 @@ public static class LevelBinary
     //   4  version          uint16
     //   6  levelCount       uint16    (levels in THIS chunk)
     //   8  firstLevelIndex  int32
-    //  12  totalLevels      int32     (levels in the whole campaign — repeated in every chunk, so
-    //                                  the loader learns the campaign length from whichever chunk
-    //                                  it happens to load first instead of probing for files)
+    //  12  totalLevels      int32     (whole campaign; repeated in every chunk so the loader never
+    //                                  has to probe for files to learn the length)
     //  16  offsets          int32 x levelCount   (absolute byte offset of each level record)
     //
     // level record
@@ -130,9 +110,8 @@ public static class LevelBinary
     public static int FirstLevelIndexIn(byte[] bytes) { return ReadI32(bytes, 8); }
     public static int TotalLevelsIn(byte[] bytes) { return ReadI32(bytes, 12); }
 
-    // Fills an existing LevelData rather than returning a new one: the loader keeps a single
-    // runtime instance and overwrites it, so switching levels allocates no ScriptableObject and
-    // leaves nothing to destroy. The arrow lists are reused too where they are already big enough.
+    // Fills an existing LevelData rather than returning a new one, so switching levels allocates
+    // no ScriptableObject and reuses the arrow lists.
     public static void ReadLevelInto(byte[] bytes, int indexWithinChunk, LevelData target)
     {
         int at = ReadI32(bytes, HeaderSize + indexWithinChunk * 4);

@@ -3,50 +3,38 @@ using System.Text;
 using UnityEngine;
 using UnityEditor;
 
-// Note: System.Diagnostics is deliberately NOT imported — its `Debug` collides with
-// UnityEngine.Debug, so Stopwatch is fully qualified below instead.
+// System.Diagnostics is deliberately NOT imported — its `Debug` collides with UnityEngine.Debug.
 
-// Bakes the shipping campaign: N levels straight into packed binary chunks, never into .asset files.
+// Bakes the shipping campaign straight into packed binary chunks. Editor-only, so the generator
+// never ships — only the data does.
 //
-// This is the tool the player never sees, and it is the whole point of the split — the reference
-// game's own generator was never in its APK either, only the data.
-//
-// Levels are specified procedurally rather than listed, because 1,000 hand-written table rows is not
-// a table any more. Two ideas drive the specification:
-//
-//  1. An ARROW-COUNT ramp, not a board-size ramp. Board area is derived from the wanted count, since
-//     the count is what the player feels.
-//  2. A SAWTOOTH, not a straight line. Measured in the reference game: 868 same-grid runs across its
-//     1,806 campaign levels, and in 207 of the 216 runs longer than two levels the arrow count rises
-//     across the run before resetting. A monotone ramp gives the player no breathing room.
+// Two ideas shape the ramp:
+//  1. Arrow COUNT leads and board area follows, because the count is what the player feels.
+//  2. A SAWTOOTH, not a straight line — runs where the count climbs, then resets. Measured in the
+//     reference game: 868 same-grid runs across its 1,806 levels.
 public static class LevelCampaignGenerator
 {
     // ---------- campaign shape ----------
 
-    // The first stretch is the tutorial and is NOT part of the sawtooth: these counts are the
-    // reference game's own early progression, and levels this small want exact counts.
+    // Tutorial, outside the sawtooth — the reference game's own early progression.
     static readonly int[] OnboardingArrows = { 3, 6, 8, 10, 16, 20, 24, 28, 32, 36 };
 
-    // Where the sawtooth's peaks travel, from the end of onboarding to the last level. 160 arrows on
-    // roughly 40x50 matches the reference's hardest shipped bucket (37x54, ~160 arrows).
+    // Where the peaks travel. 160 arrows on ~40x50 matches the reference's hardest bucket.
     const int PeakArrowsStart = 36;
     const int PeakArrowsEnd = 160;
 
-    // Peaks approach the ceiling late rather than linearly: in the reference only ~4% of levels sit
-    // in its hardest bucket, so most of the campaign should live in the middle.
+    // Peaks reach the ceiling late — only ~4% of the reference's levels are in its hardest bucket.
     const float PeakCurvePower = 1.5f;
 
-    // Each run drops back to this fraction of the current peak, then climbs to it. This IS the
-    // sawtooth's tooth height — at 1.0 the ramp becomes monotone.
+    // Tooth height: each run drops to this fraction of the peak, then climbs back. 1.0 = monotone.
     const float RunFloorFraction = 0.55f;
     const int RunLengthMin = 5;
     const int RunLengthMax = 9;
 
     // ---------- generation effort ----------
 
-    // Onboarding wants its exact counts, so it gets a real seed search. The bulk of the campaign
-    // only needs to be near its target, and a carve on a 2,000-cell board is not cheap — attempts
-    // here multiply into hours across a thousand levels.
+    // Onboarding wants exact counts; the bulk only needs to be close. A carve on a 2,000-cell board
+    // is not cheap, and attempts multiply into hours across a thousand levels.
     const int SeedAttemptsOnboarding = 60;
     const int SeedAttemptsBulk = 3;
     const int CarveAttemptsBulk = 3;
@@ -112,8 +100,7 @@ public static class LevelCampaignGenerator
                 if (Mathf.Abs(arrows.Count - wantArrows) > Mathf.Max(1, wantArrows * ArrowTolerance))
                     arrowMisses++;
 
-                // Only the head of the campaign is logged per level; a thousand rows is unreadable
-                // and Unity truncates the console anyway.
+                // Only the head is logged — Unity truncates a thousand rows anyway.
                 if (i < 20 || (i + 1) % 100 == 0)
                     ramp.AppendLine(RampRow(i, width, height, wantArrows, arrows, result));
             }
@@ -179,8 +166,7 @@ public static class LevelCampaignGenerator
 
         float peak = Mathf.Lerp(PeakArrowsStart, PeakArrowsEnd, Mathf.Pow(u, PeakCurvePower));
 
-        // Where in the current tooth this level sits. Run lengths vary so the sawtooth does not
-        // read as a fixed mechanical pulse; derived from the index so it stays deterministic.
+        // Where in the current tooth this level sits. Lengths vary so it is not a mechanical pulse.
         int runStart, runLength;
         RunAt(postOnboarding, out runStart, out runLength);
         float withinRun = runLength <= 1 ? 1f : (postOnboarding - runStart) / (float)(runLength - 1);
@@ -189,16 +175,14 @@ public static class LevelCampaignGenerator
         return Mathf.Max(3, Mathf.RoundToInt(arrows));
     }
 
-    // Walks the run pattern from the start rather than storing it. Deterministic, and cheap enough
-    // at these counts that a lookup table would be premature.
+    // Walked from the start rather than stored — deterministic, and cheap at these counts.
     static void RunAt(int postOnboardingIndex, out int runStart, out int runLength)
     {
         int at = 0;
         int run = 0;
         while (true)
         {
-            // A small deterministic hash, so run lengths vary without a Random instance whose state
-            // would depend on how many times this has been called.
+            // Deterministic hash, so lengths vary without depending on call order.
             uint h = (uint)run * 2654435761u;
             int length = RunLengthMin + (int)(h % (uint)(RunLengthMax - RunLengthMin + 1));
 

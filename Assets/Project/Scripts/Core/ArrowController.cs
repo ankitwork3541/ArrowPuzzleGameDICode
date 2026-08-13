@@ -506,12 +506,8 @@ public class ArrowController : MonoBehaviour
         });
     }
 
-    // Runs once per exit step, on every arrow leaving the board.
-    //
-    // It used to call Camera.main INSIDE a loop over every point, and test each point separately.
-    // Camera.main is a tag lookup — internally cached since 2019, but still roughly the cost of a
-    // GetComponent, and it was paying that per point. The renderer already keeps a world-space
-    // bounding box of the whole line, so one rectangle test answers the same question.
+    // One bounds test, not a Camera.main lookup per point — the renderer already tracks the line's
+    // world-space box.
     bool IsFullyOffScreen()
     {
         Camera cam = Camera.main;
@@ -519,8 +515,7 @@ public class ArrowController : MonoBehaviour
 
         Bounds b = line.bounds;
 
-        // Compare in viewport space via the two extreme corners. An orthographic camera keeps
-        // axis alignment, so the min/max corners bound the whole box.
+        // Orthographic keeps axis alignment, so the two extreme corners bound the whole box.
         Vector3 min = cam.WorldToViewportPoint(b.min);
         Vector3 max = cam.WorldToViewportPoint(b.max);
 
@@ -530,15 +525,8 @@ public class ArrowController : MonoBehaviour
         return hiX < 0f || loX > 1f || hiY < 0f || loY > 1f;
     }
 
-    // Vertex colours only — deliberately never `line.material`.
-    //
-    // Reading `.material` (as opposed to `.sharedMaterial`) INSTANTIATES a private copy of the
-    // material for that renderer. This used to do exactly that, so a board of 160 arrows ended up
-    // with 160 unique materials: two renderers can only batch when they share one, so it quietly
-    // cancelled the SRP Batcher for every arrow, and leaked a material per arrow on top.
-    //
-    // Sprite shaders — the built-in one and URP's alike — multiply their texture by the vertex
-    // colour, and startColor/endColor is what feeds that. Same result, no instancing, batchable.
+    // Vertex colours only, never `line.material` — reading `.material` instantiates a private copy
+    // per renderer, so 160 arrows meant 160 unique materials and no batching at all.
     void SetLineColor(Color c)
     {
         line.startColor = c;

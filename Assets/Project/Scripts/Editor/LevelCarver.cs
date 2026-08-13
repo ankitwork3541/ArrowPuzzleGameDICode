@@ -20,24 +20,17 @@ public static class LevelCarver
 
     public class Params
     {
-        // Length is drawn from a DECAYING distribution, not a uniform range: each extra cell is
-        // added only while a coin keeps coming up, so 2-cell arrows are the single most common
-        // outcome and a thin long tail lifts the average. Measured on the reference game's 47k
-        // shipped arrows, that is exactly its shape — mode 2, mean ~11, tail out past 90. A
-        // uniform range instead makes every arrow come out the same size, which reads as diced.
-        // Mean length works out at roughly minLength + lengthDecay / (1 - lengthDecay).
+        // Decaying, not uniform: short arrows are the commonest single outcome and a thin long tail
+        // lifts the average — the shape measured across the reference's 47k arrows (mode 2, mean 11).
+        // Mean is roughly minLength + lengthDecay / (1 - lengthDecay).
         public int minLength = 2;
         public int maxLength = 40;      // cap, rarely reached
         public float lengthDecay = 0.9f;
 
-        // Probability of turning at each step, when turning and continuing straight are equally
-        // safe. This used to be a `straightPenalty` that PENALISED going straight, on the
-        // assumption that more bends read as "tangled" and therefore harder. Measuring the
-        // reference game killed that assumption: its arrows bend on only ~0.30 of their segments
-        // and run straight for ~5 cells at a stretch, while ours bent on 0.73 and never held a
-        // straight run past ~2 cells. That is the difference between a shape and a staircase.
-        // Note it is also FLAT across their difficulty tiers — they scale the board, not the
-        // tangle — so this should not be tuned per tier.
+        // Chance of turning at a step where turning and going straight are equally safe. The
+        // reference bends on ~0.30 of segments and runs straight ~5 cells; penalising straight
+        // instead (what this used to do) gave 0.73 and staircases. Flat across their tiers — they
+        // scale the board, not the tangle — so do not tune this per tier.
         public float turnChance = 0.33f;
 
         public int attempts = 12;   // retries until the carve reaches 100% coverage
@@ -153,10 +146,8 @@ public static class LevelCarver
                     continue;
                 }
 
-                // Not-stranding-cells comes first and is not negotiable: only the options that
-                // leave the fewest near-isolated neighbours behind are considered at all. Shape
-                // preference is applied strictly within that safe set, so pursuing a nicer body
-                // can never cost coverage.
+                // Not stranding cells comes first: shape preference is applied only within the
+                // safest options, so a nicer body can never cost coverage.
                 int bestDegree = int.MaxValue;
                 foreach (Vector2Int n in options)
                 {
@@ -175,8 +166,7 @@ public static class LevelCarver
                     else best.Add(n);          // the turning options
                 }
 
-                // Straight by default; turn only turnChance of the time. This is what makes a body
-                // read as a shape — a run of several cells in one direction, then a corner.
+                // Straight by default; turn only turnChance of the time.
                 if (straightSafe && (best.Count == 0 || Random.value >= prm.turnChance))
                     path.Add(straightCell);
                 else

@@ -1,19 +1,15 @@
 using UnityEngine;
 
-// Player-facing options, persisted across launches. Singleton to match
-// LivesManager / LevelManager / AudioManager.
+// Player-facing options, persisted in PlayerPrefs.
 //
-// Nothing subscribes to changes: whoever needs a setting reads it at the moment
-// it matters (AudioManager before playing a clip, ArrowController before
-// vibrating). The one setting that cannot work that way is the frame rate,
-// because it is pushed to Unity rather than pulled — so this class applies it
-// itself, both at startup and whenever it is toggled.
+// Nothing subscribes to changes — sound and vibration are read at the moment they matter. The
+// frame rate is the exception, because it is pushed into Unity rather than pulled, so this class
+// applies it itself.
 public class SettingsManager : MonoBehaviour
 {
     public static SettingsManager Instance;
 
-    // Never rename these once the game has shipped — a changed key silently
-    // resets that option back to its default for every existing player.
+    // Never rename once shipped — a changed key silently resets that option for every player.
     private const string SoundKey = "settings.sound";
     private const string VibrationKey = "settings.vibration";
     private const string RefreshKey = "settings.nativeRefreshRate";
@@ -26,8 +22,7 @@ public class SettingsManager : MonoBehaviour
     {
         Instance = this;
 
-        // PlayerPrefs has no bool overload, so 1/0 is the standard idiom.
-        // Everything defaults to on, matching the reference app.
+        // PlayerPrefs has no bool overload; everything defaults to on.
         SoundEnabled = PlayerPrefs.GetInt(SoundKey, 1) == 1;
         VibrationEnabled = PlayerPrefs.GetInt(VibrationKey, 1) == 1;
         NativeRefreshRateEnabled = PlayerPrefs.GetInt(RefreshKey, 1) == 1;
@@ -58,20 +53,13 @@ public class SettingsManager : MonoBehaviour
     {
         PlayerPrefs.SetInt(key, on ? 1 : 0);
 
-        // Android/iOS also flush on pause, but a crash before that would lose the
-        // change. Settings are toggled rarely, so writing immediately is free.
+        // Toggled rarely, so writing immediately is free and survives a crash before pause.
         PlayerPrefs.Save();
     }
 
-    // Unity's documented default frame rate on mobile is 30fps, to save battery — and mobile
-    // platforms IGNORE QualitySettings.vSyncCount, so the project's vSyncCount:1 does nothing
-    // here. Everything was rendering at 30fps on a 120Hz screen, which is what made panning
-    // read as juddery no matter how the input maths was tuned.
-    //
-    // Ask for whatever the screen actually runs at rather than hardcoding 60: Android rounds a
-    // requested rate DOWN to a divisor of the refresh rate, so a fixed 60 would cost half the
-    // available smoothness on a 90Hz panel. Turning the option off falls back to a flat 60,
-    // which is the point of the option — a high-refresh panel costs real battery.
+    // Mobile defaults to 30fps and IGNORES vSyncCount, which is what made panning judder on a
+    // 120Hz screen. Ask for the panel's actual rate rather than a fixed 60 — Android rounds a
+    // request DOWN to a divisor, so 60 would halve the smoothness available on a 90Hz panel.
     private void ApplyFrameRate()
     {
         int refresh = Mathf.RoundToInt((float)Screen.currentResolution.refreshRateRatio.value);

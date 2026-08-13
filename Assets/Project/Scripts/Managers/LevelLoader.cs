@@ -25,14 +25,8 @@ public class LevelLoader : MonoBehaviour
     // Read-only view for systems that need to inspect the live arrows (GuideLines).
     public IReadOnlyList<ArrowController> SpawnedArrows => spawnedArrows;
 
-    // ---------- level source: packed binary chunks in Resources ----------
-    //
-    // This used to be a `public LevelData[] levels` dragged in through the Inspector. That does not
-    // survive the 50,000-level target for two separate reasons: a serialized array of asset
-    // references makes Unity load EVERY level the moment this component loads, and someone has to
-    // drag each one in by hand. Chunks are loaded on demand and only the current one is held.
-    //
-    // See LevelBinary for the format and why it is not Resources-of-JSON or Addressables.
+    // Levels come from packed binary chunks (see LevelBinary), loaded on demand. This replaced a
+    // serialized `LevelData[]`, which made every level resident and needed manual Inspector wiring.
 
     private byte[] chunkBytes;
     private int loadedChunkIndex = -1;
@@ -53,9 +47,7 @@ public class LevelLoader : MonoBehaviour
         }
     }
 
-    // Decodes the current level if it is not already decoded, loading its chunk first if needed.
-    // Cheap to call repeatedly — the Home screen asks for the difficulty label before the board is
-    // ever built, and that must not re-parse or re-load anything.
+    // Cheap to call repeatedly — Home asks for the difficulty label before the board exists.
     private LevelData EnsureCurrent()
     {
         if (current == null) current = ScriptableObject.CreateInstance<LevelData>();
@@ -75,8 +67,7 @@ public class LevelLoader : MonoBehaviour
                 return current;
             }
 
-            // `.bytes` hands back a fresh copy, so the TextAsset itself can go straight back out of
-            // memory — what we keep is our own array.
+            // `.bytes` is a fresh copy, so the TextAsset can go straight back out of memory.
             byte[] bytes = asset.bytes;
             Resources.UnloadAsset(asset);
 
@@ -313,8 +304,7 @@ public class LevelLoader : MonoBehaviour
 
     void OnDestroy()
     {
-        // The reused LevelData is created with CreateInstance, so it is ours to clean up.
-        if (current != null) Destroy(current);
+        if (current != null) Destroy(current);   // created with CreateInstance, so ours to clean up
     }
 
     // Hint mate: atyare koi j arrow ni exit ray clear che ke nahi, e scan kari ne pehli mali te return kare
