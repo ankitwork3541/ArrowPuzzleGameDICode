@@ -15,27 +15,36 @@ public class CameraController : MonoBehaviour
     // one, so tall screens silently cramped every board and forced it to open zoomed out.
     public float cellsVisibleHorizontally = 18f;
 
-    // How far a level is allowed to open zoomed-out. A board bigger than this opens at this size
-    // and has to be panned — it is not shrunk until it fits, which would make its cells tiny.
-    public float maxCellsVisibleHorizontally = 26f;
-
-    public float fitPadding = 1.12f; // content-fit ni upar thodi breathing room
 
     [Header("Zoom range — multiples of this level's resting framing")]
     // Absolute zoom limits could not work: a level's resting zoom ranges from ~7 (Level01) to ~49
     // (Level11), so one fixed pair meant roughly 5x zoom-IN and almost no zoom-OUT on every board.
     // Relative limits give both directions real room whatever the level's size.
     public float zoomInFactor = 2.5f;
-    public float zoomOutFactor = 1.7f;
+
+    // Zoom-OUT is capped by the CONTENT, not by a multiplier. A fixed multiplier is inconsistent by
+    // construction: 1.7x of resting made a ~20x20 board fully visible while a 40x50 one stayed
+    // partly hidden, so the same gesture meant different things on different levels. This game's
+    // difficulty is visual search, so seeing the whole board is the one thing zoom must never give.
+    [Range(0.3f, 1f)] public float maxVisibleContentFraction = 0.75f;
+
+    // Small boards fit at rest, so a content cap would leave them with no zoom-out at all. Allow a
+    // little, purely so the gesture does not feel dead.
+    public float minZoomOutFactor = 1.15f;
 
     [Header("Input feel")]
-    public float dragThresholdPixels = 12f; // aa thi vadhu khasyu = drag (tap nahi)
+    // Android's own touch slop is 8dp. A raw pixel count is ~4dp on a 3x screen, which let drags
+    // steal taps. Screen.dpi is unreliable on Android (Unity's own issue tracker), so this scales
+    // off the screen's short side instead — ~2% lands near 8dp across real phones.
+    public float dragThresholdPixels = 12f;
+    public float dragThresholdScreenFraction = 0.02f;
+
     public float mouseZoomSpeed = 4f;       // editor ma scroll-wheel thi zoom testing mate
 
-    // A flick keeps the board gliding and decelerating, instead of stopping dead the instant the
-    // finger lifts. Higher friction stops sooner. There is deliberately no elastic overshoot at
-    // the edges — the glide just stops there.
-    public float panFriction = 6f;
+    // Flick deceleration, as `v *= exp(-friction * dt)`. Apple's documented UIScrollView rates
+    // convert to roughly friction 2.0 ("normal") and 10.0 ("fast") in this form — the old 6 sat
+    // near "fast", so momentum died almost immediately and the board read as sticky.
+    public float panFriction = 2.5f;
     [Range(0f, 1f)] public float velocitySmoothing = 0.35f;   // one noisy frame must not launch the board
 
     // Content ni kinar thi ketlu aagal pan karva devu (view size na proportion ma).
@@ -43,15 +52,48 @@ public class CameraController : MonoBehaviour
     // tyare shape ni farate khali jagya dekhay che, e feel aa thi aave che.
     public float panPadding = 0.35f;
 
+    // Past the padding the board resists elastically instead of hitting a wall, then springs back.
+    // Apple's rubber-band curve, f(x) = (x*d*c)/(d + c*x) with c = 0.55, which asymptotes: pulling a
+    // whole viewport past the edge still only shows ~0.355 of one.
+    public float edgeSpringSpeed = 12f;
+
+    [Header("Level intro")]
+    // The board opens fully visible, then the camera closes in to the playing framing. Measured off
+    // the reference game: 2.17s, and near-linear — the board's height grew at a steady ~0.33 px/ms
+    // with no ease-out. This is also what makes capping zoom-out fair: the player is GIVEN the
+    // overview once, as an animation, instead of being able to pull it up whenever they want.
+    public float introDuration = 2.0f;
+
+    // Breathing room around the board at the widest point of the move.
+    //
+    // There is deliberately NO minimum-move floor: the intro plays only on boards that actually
+    // overflow the screen, which is what the reference game does — a level small enough to fit gets
+    // no opening move at all, because there is nothing the player cannot already see.
+    public float introFitPadding = 1.18f;
+
+    // How much wider the overview has to be than the resting framing before the move is worth
+    // playing. A board that overflows by a few percent would otherwise spend two seconds animating
+    // a 5% change, which reads as a stutter on load rather than a reveal.
+    public float introMinimumGain = 1.15f;
+
     [Header("Hint focus")]
     public float focusDuration = 0.45f;
     public float focusCellsVisible = 12f;   // how tight the hint view gets, in cells
 
     private float minZoom, maxZoom, restZoom;
+
+    // The un-resisted camera XY. transform.position is DERIVED from this every frame by
+    // ApplyPan(), which bends it back near the edges. Keeping the raw value separate is what makes
+    // the elastic edge stable — resisting an already-resisted position compounds every frame.
+    private Vector2 panTarget;
+
     private Vector2 panVelocity;
     private Bounds contentBounds;
     private bool hasContent;
     private Tween focusTween;
+
+    private Tween introTween;
+    private bool introPlaying;
 
     // Gesture state
     private bool pointerDown;
@@ -91,17 +133,17 @@ public class CameraController : MonoBehaviour
     public void FrameMenu()
     {
         focusTween.Stop();
+        introTween.Stop();
+        introPlaying = false;
         hasContent = false;
         panVelocity = Vector2.zero;
 
         transform.position = menuPosition;
+        panTarget = new Vector2(menuPosition.x, menuPosition.y);
         cam.orthographicSize = menuZoom;
     }
 
     // bounds = ACTUAL rendered content ni bounding box (LineRenderer + head/tail sprites saathe).
-    // Rule: ZOOM-OUT ONLY. Nani level default (constant cell size) par j rahe — nani, centered,
-    // farate khali jagya — jem reference app ma thay che. Khali moti level j zoom-out thay,
-    // ane e pan maxCellsVisibleHorizontally sudhi j.
     public void FrameLevel(Bounds bounds, float spacing)
     {
         contentBounds = bounds;
@@ -110,25 +152,76 @@ public class CameraController : MonoBehaviour
 
         // orthographicSize is HALF the world height, and world width = 2 * size * aspect, so
         // "N cells across" is size = N * spacing / (2 * aspect).
-        float defaultZoom = cellsVisibleHorizontally * spacing / (2f * cam.aspect);
-        float capZoom = maxCellsVisibleHorizontally * spacing / (2f * cam.aspect);
-
-        float sizeForHeight = bounds.extents.y;
-        float sizeForWidth = bounds.extents.x / cam.aspect;
-        float fitZoom = Mathf.Max(sizeForHeight, sizeForWidth) * fitPadding;
-
-        // Zoom-OUT only, then capped: a small level rests at the constant cell size with space
-        // around it; a big one opens as far out as the cap allows and is panned from there.
-        restZoom = Mathf.Min(Mathf.Max(defaultZoom, fitZoom), capZoom);
+        //
+        // The resting framing is ONLY this — a cell is the same size on every level, full stop.
+        // It used to be Min(Max(defaultZoom, fitZoom), capZoom), i.e. zoom out until the board
+        // fits. That quietly contradicted the constant-cell-size rule this header claims: a 20x20
+        // board opened at 17.5pt per cell against 21.8pt on a small one, AND it was why a 20x20
+        // was entirely visible before the player touched anything. A board bigger than the view
+        // now simply overflows and is panned, which is what the reference game does — the opening
+        // intro is what gives the player their one look at the whole thing.
+        restZoom = cellsVisibleHorizontally * spacing / (2f * cam.aspect);
 
         minZoom = restZoom / zoomInFactor;
-        // Whatever the resting framing, pinching out must always reach a view of the WHOLE board —
-        // on a level too big to open in full, surveying it is exactly when zoom-out is needed most.
-        maxZoom = Mathf.Max(restZoom * zoomOutFactor, fitZoom * 1.05f);
+
+        // The visible region may never exceed maxVisibleContentFraction of the board on either
+        // axis. On a board that already fits at rest that cap is tighter than resting, so the
+        // minZoomOutFactor floor keeps the gesture alive there.
+        float contentCapY = 0.5f * bounds.size.y * maxVisibleContentFraction;
+        float contentCapX = 0.5f * bounds.size.x * maxVisibleContentFraction / cam.aspect;
+        maxZoom = Mathf.Max(restZoom * minZoomOutFactor, Mathf.Min(contentCapY, contentCapX));
 
         cam.orthographicSize = restZoom;
-        transform.position = new Vector3(bounds.center.x, bounds.center.y, transform.position.z);
-        ClampPosition();
+        panTarget = new Vector2(bounds.center.x, bounds.center.y);
+        ApplyPan();
+    }
+
+    // Open the level fully visible and close in to the playing framing.
+    //
+    // Starts at max(introZoom, restZoom): on a board that already fits at rest there is nothing to
+    // reveal, so the intro collapses to a no-op rather than zooming OUT and then back in.
+    public void PlayIntro()
+    {
+        if (!hasContent) return;
+
+        introTween.Stop();
+
+        float fitY = contentBounds.extents.y;
+        float fitX = contentBounds.extents.x / cam.aspect;
+        float from = Mathf.Max(fitY, fitX) * introFitPadding;
+
+        // Board already fits, or barely overflows — nothing worth revealing, so no move at all.
+        if (from <= restZoom * introMinimumGain) return;
+
+        float to = restZoom;
+
+        introPlaying = true;
+        cam.orthographicSize = from;
+        panTarget = new Vector2(contentBounds.center.x, contentBounds.center.y);
+        ApplyPan();
+
+        // Interpolate 1/size, not size.
+        //
+        // On-screen scale is proportional to 1/orthographicSize, so a linear tween of SIZE grows the
+        // board slowly at first and then accelerates into the finish — which is exactly why the move
+        // read as abrupt. Measured on the reference, the board's pixel height grew at a steady rate
+        // throughout, and constant apparent growth IS linear in the reciprocal. Same endpoints, and
+        // the arrival decelerates on its own without an ease having to fake it.
+        float invFrom = 1f / from;
+        float invTo = 1f / to;
+
+        introTween = Tween.Custom(this, invFrom, invTo, duration: introDuration, ease: Ease.Linear,
+            onValueChange: (controller, inv) =>
+            {
+                controller.cam.orthographicSize = 1f / inv;
+                controller.ApplyPan();
+            })
+            .OnComplete(this, warnIfTargetDestroyed: false, onComplete: controller =>
+            {
+                controller.cam.orthographicSize = controller.restZoom;
+                controller.introPlaying = false;
+                controller.ApplyPan();
+            });
     }
 
     // Hint: glide the camera onto one arrow so the player can see which one to tap.
@@ -158,8 +251,9 @@ public class CameraController : MonoBehaviour
             onValueChange: (controller, t) =>
             {
                 controller.cam.orthographicSize = Mathf.Lerp(startSize, targetSize, t);
-                controller.transform.position = Vector3.Lerp(startPos, targetPos, t);
-                controller.ClampPosition();   // never glide past the board's pan limits
+                Vector3 glide = Vector3.Lerp(startPos, targetPos, t);
+                controller.panTarget = new Vector2(glide.x, glide.y);
+                controller.ApplyPan();        // never glide past the board's pan limits
             });
     }
 
@@ -168,10 +262,23 @@ public class CameraController : MonoBehaviour
         tapThisFrame = false;
         if (!hasContent) return;
 
+        // The opening camera move owns the view — a pinch or drag mid-intro fights the tween and
+        // leaves the board at a framing the level never chose.
+        if (introPlaying) return;
+
         if (HandlePinch()) return; // be aangdi vaparai rahi che — pan/tap skip
         HandleMouseWheelZoom();
         HandleDragAndTap();
         ApplyPanInertia();
+        SpringBackToBounds();
+    }
+
+    // Scaled off the screen rather than a raw pixel count, so the same gesture reads the same on a
+    // 1080p phone and a tablet.
+    float DragThreshold()
+    {
+        float shortSide = Mathf.Min(Screen.width, Screen.height);
+        return Mathf.Max(dragThresholdPixels, shortSide * dragThresholdScreenFraction);
     }
 
     // ---------- ZOOM ----------
@@ -232,8 +339,8 @@ public class CameraController : MonoBehaviour
         Vector3 after = cam.ScreenToWorldPoint(screenFocus);
 
         Vector3 correction = before - after;
-        transform.position += new Vector3(correction.x, correction.y, 0f);
-        ClampPosition();
+        panTarget += new Vector2(correction.x, correction.y);
+        ApplyPan();
     }
 
     // ---------- PAN + TAP ----------
@@ -257,7 +364,7 @@ public class CameraController : MonoBehaviour
         if (pressed && pointerDown)
         {
             if (!gestureWasDrag
-                && Vector2.Distance(screenPos, pointerDownScreenPos) > dragThresholdPixels)
+                && Vector2.Distance(screenPos, pointerDownScreenPos) > DragThreshold())
                 gestureWasDrag = true;
 
             if (gestureWasDrag && !gestureStartedOnUI)
@@ -269,8 +376,8 @@ public class CameraController : MonoBehaviour
 
                 Vector3 current = cam.ScreenToWorldPoint(screenPos);
                 Vector3 delta = dragAnchorWorld - current;
-                transform.position += new Vector3(delta.x, delta.y, 0f);
-                ClampPosition();
+                panTarget += new Vector2(delta.x, delta.y);
+                ApplyPan();
 
                 // Measured from the movement that actually survived clamping, so a drag pressed
                 // against an edge builds no velocity to fling with when it is released.
@@ -304,10 +411,11 @@ public class CameraController : MonoBehaviour
         if (pointerDown || panVelocity.sqrMagnitude < 0.0001f) return;
 
         Vector3 posBefore = transform.position;
-        transform.position += new Vector3(panVelocity.x, panVelocity.y, 0f) * Time.deltaTime;
-        ClampPosition();
+        panTarget += panVelocity * Time.deltaTime;
+        ApplyPan();
 
-        // Reaching a limit ends the glide on that axis rather than grinding against it.
+        // Once the elastic edge has compressed the glide to nothing there is no point carrying the
+        // velocity further — SpringBackToBounds() is what actually returns the board from here.
         Vector3 moved = transform.position - posBefore;
         if (Mathf.Abs(moved.x) < 0.0001f) panVelocity.x = 0f;
         if (Mathf.Abs(moved.y) < 0.0001f) panVelocity.y = 0f;
@@ -340,29 +448,78 @@ public class CameraController : MonoBehaviour
         return false;
     }
 
-    void ClampPosition()
+    // The free pan range, padding included. min > max means the content is narrower than the view
+    // on that axis, so there is nothing to pan and the board simply centres.
+    void GetPanRange(out Vector2 min, out Vector2 max, out Vector2 viewSize)
     {
-        if (!hasContent) return;
-
         float halfHeight = cam.orthographicSize;
         float halfWidth = halfHeight * cam.aspect;
 
-        float minX = contentBounds.min.x + halfWidth;
-        float maxX = contentBounds.max.x - halfWidth;
-        float minY = contentBounds.min.y + halfHeight;
-        float maxY = contentBounds.max.y - halfHeight;
+        viewSize = new Vector2(halfWidth * 2f, halfHeight * 2f);
 
+        // Kinar thi thodu aagal javani chhut, jethi shape ni farate khali jagya dekhay.
         float marginX = halfWidth * panPadding;
         float marginY = halfHeight * panPadding;
 
-        Vector3 p = transform.position;
+        min = new Vector2(contentBounds.min.x + halfWidth - marginX,
+                          contentBounds.min.y + halfHeight - marginY);
+        max = new Vector2(contentBounds.max.x - halfWidth + marginX,
+                          contentBounds.max.y - halfHeight + marginY);
+    }
 
-        // Content view karta nanu hoy (minX > maxX) to pan karvani jarur j nathi — center par lock.
-        // Motu hoy to j pan thay, ane tyare kinar thi thodu aagal javani chhut aapo, jethi
-        // shape ni farate khali jagya dekhay (reference app jem).
-        p.x = minX > maxX ? contentBounds.center.x : Mathf.Clamp(p.x, minX - marginX, maxX + marginX);
-        p.y = minY > maxY ? contentBounds.center.y : Mathf.Clamp(p.y, minY - marginY, maxY + marginY);
+    // Apple's rubber-band curve. Asymptotes towards `dimension`, so however hard the board is
+    // dragged past its edge the visible overshoot stays bounded and always looks intentional.
+    static float RubberBand(float overshoot, float dimension)
+    {
+        const float c = 0.55f;
+        return (overshoot * dimension * c) / (dimension + c * overshoot);
+    }
+
+    // Derive transform.position from panTarget, bending it back past the edges instead of stopping
+    // dead against them. A hard clamp is what made the board feel bolted down.
+    void ApplyPan()
+    {
+        if (!hasContent) return;
+
+        Vector2 min, max, viewSize;
+        GetPanRange(out min, out max, out viewSize);
+
+        Vector3 p = transform.position;
+        p.x = ResistAxis(panTarget.x, min.x, max.x, contentBounds.center.x, viewSize.x);
+        p.y = ResistAxis(panTarget.y, min.y, max.y, contentBounds.center.y, viewSize.y);
         transform.position = p;
+    }
+
+    static float ResistAxis(float target, float min, float max, float centre, float viewSize)
+    {
+        if (min > max) return centre;
+        if (target < min) return min - RubberBand(min - target, viewSize);
+        if (target > max) return max + RubberBand(target - max, viewSize);
+        return target;
+    }
+
+    // Pull panTarget back into range once nothing is holding the board out there.
+    void SpringBackToBounds()
+    {
+        if (!hasContent || pointerDown) return;
+
+        Vector2 min, max, viewSize;
+        GetPanRange(out min, out max, out viewSize);
+
+        Vector2 settled = new Vector2(
+            min.x > max.x ? contentBounds.center.x : Mathf.Clamp(panTarget.x, min.x, max.x),
+            min.y > max.y ? contentBounds.center.y : Mathf.Clamp(panTarget.y, min.y, max.y));
+
+        if (Mathf.Approximately(settled.x, panTarget.x) && Mathf.Approximately(settled.y, panTarget.y))
+            return;
+
+        // Momentum must not fight the spring, or the board buzzes at the edge.
+        if (!Mathf.Approximately(settled.x, panTarget.x)) panVelocity.x = 0f;
+        if (!Mathf.Approximately(settled.y, panTarget.y)) panVelocity.y = 0f;
+
+        float t = 1f - Mathf.Exp(-edgeSpringSpeed * Time.deltaTime);
+        panTarget += (settled - panTarget) * t;
+        ApplyPan();
     }
 
     // Arrows aa vaapre che: khali SACHO tap (drag/pinch nahi) j arrow ne move karave.

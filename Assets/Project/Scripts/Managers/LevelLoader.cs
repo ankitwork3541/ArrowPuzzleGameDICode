@@ -226,6 +226,10 @@ public class LevelLoader : MonoBehaviour
             combined.Encapsulate(spawnedArrows[i].GetBounds());
 
         cameraController.FrameLevel(combined, gridBuilder.spacing);
+
+        // Boards too big to fit open fully visible and close in. A no-op on boards that already
+        // fit, so small levels are unaffected.
+        cameraController.PlayIntro();
     }
 
     bool TryGetArrowBounds(LevelData levelData, out Vector2Int min, out Vector2Int max)
