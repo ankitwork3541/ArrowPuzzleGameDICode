@@ -9,9 +9,7 @@ using UnityEditor;
 // Bakes the shipping campaign: N levels straight into packed binary chunks, never into .asset files.
 //
 // This is the tool the player never sees, and it is the whole point of the split — the reference
-// game's own generator was never in its APK either, only the data. ProductionLevelGenerator stays
-// alongside this as the small hand-specified table used for eyeballing and experiments; THIS is what
-// ships.
+// game's own generator was never in its APK either, only the data.
 //
 // Levels are specified procedurally rather than listed, because 1,000 hand-written table rows is not
 // a table any more. Two ideas drive the specification:
@@ -165,7 +163,7 @@ public static class LevelCampaignGenerator
         {
             LevelBinaryWriter.LevelRecord r = records[i];
             Debug.Log($"Level {i + 1}  {r.width}x{r.height}  {r.arrows.Count} arrows\n"
-                      + ProductionLevelGenerator.RenderAscii(r.arrows, r.width, r.height));
+                      + RenderAscii(r.arrows, r.width, r.height));
         }
     }
 
@@ -313,6 +311,52 @@ public static class LevelCampaignGenerator
     }
 
     // ---------- logging ----------
+
+    // Lets the tangle be judged without opening the game: '-' and '|' are straight body cells,
+    // '+' is a bend, 'o' a tail, and < > ^ v the heads.
+    public static string RenderAscii(List<List<Vector2Int>> arrows, int width, int height)
+    {
+        char[,] grid = new char[width, height];
+        for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+                grid[x, y] = '.';
+
+        foreach (List<Vector2Int> p in arrows)
+        {
+            for (int i = 0; i < p.Count; i++)
+            {
+                Vector2Int c = p[i];
+                if (c.x < 0 || c.x >= width || c.y < 0 || c.y >= height) continue;
+
+                char ch;
+                if (i == p.Count - 1)
+                {
+                    Vector2Int d = p[i] - p[i - 1];
+                    ch = d.x > 0 ? '>' : d.x < 0 ? '<' : d.y > 0 ? '^' : 'v';
+                }
+                else if (i == 0)
+                {
+                    ch = 'o';
+                }
+                else
+                {
+                    Vector2Int inDir = p[i] - p[i - 1];
+                    Vector2Int outDir = p[i + 1] - p[i];
+                    ch = inDir != outDir ? '+' : (inDir.x != 0 ? '-' : '|');
+                }
+
+                grid[c.x, c.y] = ch;
+            }
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (int y = height - 1; y >= 0; y--)   // top row first, so it reads like the screen
+        {
+            for (int x = 0; x < width; x++) sb.Append(grid[x, y]);
+            sb.Append('\n');
+        }
+        return sb.ToString();
+    }
 
     static string RampRow(int levelIndex, int width, int height, int wantArrows,
                           List<List<Vector2Int>> arrows, LevelDifficulty.Result result)

@@ -69,7 +69,7 @@ public static class LevelDifficulty
         foreach (List<Vector2Int> p in arrows) totalBends += CountBends(p);
         r.avgBends = arrows.Count > 0 ? totalBends / (float)arrows.Count : 0f;
 
-        // Greedy fixed-point solve, the same model as LevelPainter's solvability check: clear every
+        // Greedy fixed-point solve, the same model the carve itself is built on: clear every
         // currently-legal arrow, then look again. Each round is one "wave". Order within a wave
         // never matters, because clearing an arrow can only ever help the others.
         HashSet<Vector2Int> occupied = new HashSet<Vector2Int>();

@@ -27,7 +27,7 @@ public class GridBuilder : MonoBehaviour
             // destroyed object as null, which is exactly what catches that case.
             actionOnDestroy: dot => { if (dot != null) Destroy(dot.gameObject); }
         );
-        // BuildGrid() have Awake() mathi call nathi thato — LevelLoader/LevelPainter potej
+        // BuildGrid() have Awake() mathi call nathi thato — LevelLoader potej
         // Play/tool-start vakhte call kare che, jethi Splash/Home screen pachhad grid/dots
         // dekhaay nahi (jem arrows mate LevelLoader.Start() pehla fix karyu hatu tem j pattern).
     }
