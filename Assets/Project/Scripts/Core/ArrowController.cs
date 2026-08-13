@@ -355,6 +355,7 @@ public class ArrowController : MonoBehaviour
     
     void BlockedBounce()
     {
+        AudioManager.Instance.PlayArrowClickBlocked();
         LivesManager.Instance.LoseLife();
 
         int n = path.Count;
@@ -450,6 +451,7 @@ public class ArrowController : MonoBehaviour
 
     void StartExit(Vector3 exitStep)
     {
+        AudioManager.Instance.PlayArrowClickSuccess();
         SetLineColor(activeColor);   // an arrow one cell from the edge exits without ever calling MoveStep
 
         foreach (Vector2Int pos in path)
