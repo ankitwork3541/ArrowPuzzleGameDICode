@@ -12,22 +12,36 @@ using UnityEditor;
 // why), so each slot's target band is one its configuration can actually reach.
 public static class ProductionLevelGenerator
 {
-    // Arrow length and turn-bias presets. Longer arrows mean FEWER of them and many more bends:
-    // measured on a 16x22 board, T1 gives ~90 arrows at 1.8 bends each, T3 gives ~40 at 6.7.
-    // T1 reads as neat and diced, T3 as the tangled "gunch" look of the reference boards.
+    // Arrow-length presets. The tiers deliberately differ only MILDLY, and they no longer differ
+    // at all in how much the bodies bend.
+    //
+    // They used to: straightPenalty climbed 1.2 -> 1.5 -> 2.0, on the assumption that a more
+    // tangled board is a harder board. Measuring the reference game's 47k shipped arrows showed
+    // that is not how it scales difficulty — its bend rate is FLAT across all four of its tiers
+    // (~0.30 bends per segment) and so is its mean arrow length (10.2 -> 12.5). What actually
+    // ramps is board size and arrow count, which is the size table below, not these presets.
+    // So turnChance stays constant here and only the length decay moves, matching that 10 -> 12.5.
+    // Tutorial only. Short-ish arrows that run almost perfectly straight, so the very first board
+    // teaches "tap an arrow, it slides out" with nothing else going on — the reference game's own
+    // first level is literally three straight columns, measured at 0.00 bends per segment.
+    static LevelCarver.Params Tier0()
+    {
+        return new LevelCarver.Params { lengthDecay = 0.80f, turnChance = 0.08f };
+    }
+
     static LevelCarver.Params Tier1()
     {
-        return new LevelCarver.Params { minLength = 2, maxLength = 5, longMinLength = 8, longMaxLength = 12, longChance = 0.10f, straightPenalty = 1.2f };
+        return new LevelCarver.Params { lengthDecay = 0.86f, turnChance = 0.33f };
     }
 
     static LevelCarver.Params Tier2()
     {
-        return new LevelCarver.Params { minLength = 2, maxLength = 7, longMinLength = 10, longMaxLength = 20, longChance = 0.22f, straightPenalty = 1.5f };
+        return new LevelCarver.Params { lengthDecay = 0.90f, turnChance = 0.33f };
     }
 
     static LevelCarver.Params Tier3()
     {
-        return new LevelCarver.Params { minLength = 3, maxLength = 10, longMinLength = 14, longMaxLength = 26, longChance = 0.35f, straightPenalty = 2.0f };
+        return new LevelCarver.Params { lengthDecay = 0.92f, turnChance = 0.33f };
     }
 
     class Spec
@@ -39,30 +53,55 @@ public static class ProductionLevelGenerator
         public int rectWidth, rectHeight;
         public System.Func<LevelCarver.Params> tier;
         public Difficulty target;
+
+        // How many arrows this slot wants. 0 = don't care, pick the seed by measured band instead
+        // (right for the shaped levels, where the silhouette already fixes the cell count).
+        public int targetArrows;
     }
 
+    // Levels 1-10 are a deliberate ARROW-COUNT ramp, not a board-size ramp picked by feel: 3, 6, 8,
+    // 10, 16, 20, 24, 28, 32, 36. Those counts are the reference game's own early progression, read
+    // off its screens.
+    //
+    // The board sizes were FITTED to those counts by simulating this carver, not calculated. The
+    // obvious arithmetic — cells = arrows x average length — overshoots badly on small boards,
+    // because an arrow there cannot reach its target length: the remaining region fragments around
+    // it, so average length runs ~7 on an 8x8 against ~11 on a 20x20. Sizing Level02 by the big
+    // board average gave 10-11 arrows where 6 were wanted.
+    //
+    // All ten are plain rectangles on purpose. Every early board in the reference is rectangular
+    // and its first shaped board arrives around its sixth level, so shapes are held back to
+    // Level 11+ rather than mixed into the tutorial ramp.
     static List<Spec> Table()
     {
         return new List<Spec>
         {
-            new Spec { name = "Level01", shapeName = "Rectangle", rectWidth = 6,  rectHeight = 8,  tier = Tier1, target = Difficulty.Easy },
-            new Spec { name = "Level02", shapeName = "Rectangle", rectWidth = 8,  rectHeight = 11, tier = Tier2, target = Difficulty.Easy },
-            new Spec { name = "Level03", shapeName = "Heart",    ascii = LevelShapes.Heart,    scale = 1.0f, tier = Tier1, target = Difficulty.Medium },
-            new Spec { name = "Level04", shapeName = "Rectangle", rectWidth = 10, rectHeight = 14, tier = Tier1, target = Difficulty.Medium },
-            new Spec { name = "Level05", shapeName = "Bulb",     ascii = LevelShapes.Bulb,     scale = 1.0f, tier = Tier3, target = Difficulty.Medium },
-            new Spec { name = "Level06", shapeName = "Rectangle", rectWidth = 14, rectHeight = 19, tier = Tier2, target = Difficulty.Hard },
-            new Spec { name = "Level07", shapeName = "Teardrop", ascii = LevelShapes.Teardrop, scale = 1.6f, tier = Tier2, target = Difficulty.Hard },
-            new Spec { name = "Level08", shapeName = "Cat",      ascii = LevelShapes.Cat,      scale = 1.6f, tier = Tier3, target = Difficulty.Hardest },
-            new Spec { name = "Level09", shapeName = "Rectangle", rectWidth = 24, rectHeight = 33, tier = Tier2, target = Difficulty.Hardest },
-            new Spec { name = "Level10", shapeName = "Rectangle", rectWidth = 28, rectHeight = 38, tier = Tier3, target = Difficulty.Nightmare },
-            new Spec { name = "Level11", shapeName = "Gun",      ascii = LevelShapes.Gun,      scale = 2.8f, tier = Tier3, target = Difficulty.Nightmare }
+            //                                                                            target arrows / fitted
+            new Spec { name = "Level01", shapeName = "Rectangle", rectWidth = 4,  rectHeight = 4,  tier = Tier0, target = Difficulty.Easy,     targetArrows = 3  },
+            new Spec { name = "Level02", shapeName = "Rectangle", rectWidth = 5,  rectHeight = 7,  tier = Tier1, target = Difficulty.Easy,     targetArrows = 6  },
+            new Spec { name = "Level03", shapeName = "Rectangle", rectWidth = 6,  rectHeight = 8,  tier = Tier1, target = Difficulty.Easy,     targetArrows = 8  },
+            new Spec { name = "Level04", shapeName = "Rectangle", rectWidth = 8,  rectHeight = 8,  tier = Tier2, target = Difficulty.Medium,   targetArrows = 10 },
+            new Spec { name = "Level05", shapeName = "Rectangle", rectWidth = 10, rectHeight = 12, tier = Tier2, target = Difficulty.Medium,   targetArrows = 16 },
+            new Spec { name = "Level06", shapeName = "Rectangle", rectWidth = 12, rectHeight = 16, tier = Tier2, target = Difficulty.Medium,   targetArrows = 20 },
+            new Spec { name = "Level07", shapeName = "Rectangle", rectWidth = 13, rectHeight = 16, tier = Tier2, target = Difficulty.Hard,     targetArrows = 24 },
+            new Spec { name = "Level08", shapeName = "Rectangle", rectWidth = 14, rectHeight = 17, tier = Tier2, target = Difficulty.Hard,     targetArrows = 28 },
+            new Spec { name = "Level09", shapeName = "Rectangle", rectWidth = 16, rectHeight = 23, tier = Tier3, target = Difficulty.Hard,     targetArrows = 32 },
+            new Spec { name = "Level10", shapeName = "Rectangle", rectWidth = 20, rectHeight = 20, tier = Tier3, target = Difficulty.Hardest,  targetArrows = 36 },
+
+            // Shapes start here, once the mechanic is fully taught.
+            new Spec { name = "Level11", shapeName = "Heart",    ascii = LevelShapes.Heart,    scale = 1.0f, tier = Tier2, target = Difficulty.Hard },
+            new Spec { name = "Level12", shapeName = "Bulb",     ascii = LevelShapes.Bulb,     scale = 1.0f, tier = Tier2, target = Difficulty.Hard },
+            new Spec { name = "Level13", shapeName = "Teardrop", ascii = LevelShapes.Teardrop, scale = 1.6f, tier = Tier2, target = Difficulty.Hardest },
+            new Spec { name = "Level14", shapeName = "Cat",      ascii = LevelShapes.Cat,      scale = 1.6f, tier = Tier3, target = Difficulty.Hardest },
+            new Spec { name = "Level15", shapeName = "Gun",      ascii = LevelShapes.Gun,      scale = 2.8f, tier = Tier3, target = Difficulty.Nightmare }
         };
     }
 
-    // How many seeds to try before settling for the closest miss.
-    const int SeedAttempts = 40;
+    // How many seeds to try before settling for the closest miss. Raised from 40 once slots started
+    // naming an exact arrow count: a band has 5 buckets and is easy to land, an exact count is not.
+    const int SeedAttempts = 150;
 
-    [MenuItem("ArrowPuzzle/Generate Production Levels (11)")]
+    [MenuItem("ArrowPuzzle/Generate Production Levels (15)")]
     static void GenerateAll()
     {
         List<Spec> table = Table();
@@ -94,9 +133,10 @@ public static class ProductionLevelGenerator
 
         summary.AppendLine();
         summary.AppendLine(misses == 0
-            ? "Every level hit its target band."
-            : misses + " level(s) missed their target band — see the rows above. Adjust that slot's size or tier.");
-        summary.AppendLine("Next: drag Level01..Level11 into LevelLoader's `levels` array in the Inspector, in order.");
+            ? "Every level hit what its slot asked for (arrow count where named, band otherwise)."
+            : misses + " level(s) missed — see the rows above. The `arrows` column reads got/want; "
+              + "adjust that slot's grid size if the miss is large, since board area is what sets the count.");
+        summary.AppendLine("Next: drag Level01..Level15 into LevelLoader's `levels` array in the Inspector, in order.");
 
         Debug.Log(summary.ToString());
     }
@@ -152,7 +192,16 @@ public static class ProductionLevelGenerator
             LevelDifficulty.Result r = LevelDifficulty.Measure(arrows, width, height);
             if (!r.solvable) continue;
 
-            int distance = Mathf.Abs((int)r.band - (int)spec.target);
+            // Which of the two goals leads matters, and getting it wrong is subtle. Selecting on the
+            // measured BAND alone quietly fought the size table: an Easy target prefers a board with
+            // FEW, long arrows, so Level02 kept saving at 3 arrows however carefully its 5x7 was
+            // fitted for 6. Where a slot names an arrow count, that count leads and the band is only
+            // a tie-break — difficulty here is emergent from scale, exactly as it is in the
+            // reference game, so it is measured and reported rather than requested.
+            int arrowMiss = spec.targetArrows > 0 ? Mathf.Abs(arrows.Count - spec.targetArrows) : 0;
+            int bandMiss = Mathf.Abs((int)r.band - (int)spec.target);
+            int distance = spec.targetArrows > 0 ? arrowMiss * 10 + bandMiss : bandMiss;
+
             if (distance < bestDistance)
             {
                 bestDistance = distance;
@@ -161,7 +210,10 @@ public static class ProductionLevelGenerator
                 bestSeed = seed;
             }
 
-            if (r.band == spec.target) { hit = true; break; }
+            // "Hit" means the slot got what it actually asked for: the arrow count where one is
+            // named, the band otherwise.
+            bool bullseye = spec.targetArrows > 0 ? arrowMiss == 0 : bandMiss == 0;
+            if (bullseye) { hit = true; break; }
         }
 
         if (bestArrows == null)
@@ -176,9 +228,14 @@ public static class ProductionLevelGenerator
 
         SaveLevel(spec.name, width, height, bestArrows, bestResult, bestSeed);
 
+        // "got/want" where the slot named a count, so a miss is readable at a glance.
+        string arrowsColumn = spec.targetArrows > 0
+            ? bestArrows.Count + "/" + spec.targetArrows
+            : bestArrows.Count.ToString();
+
         summaryLine = string.Format(
             "{0} | {1,-9} | {2,3}x{3,-3} | {4,5} | {5,6} | {6,5:F1} | {7,4:F1} | {8,5:P1} | {9,5} | {10,3} | {11,5} | {12,-10} | {13}{14}",
-            spec.name, spec.shapeName, width, height, cells, bestArrows.Count,
+            spec.name, spec.shapeName, width, height, cells, arrowsColumn,
             bestResult.avgBends, bestResult.avgRayLength, bestResult.avgClearableRatio,
             bestResult.waves, bestResult.hardestVerify, bestResult.score,
             bestResult.band.ToString().ToUpper(), spec.target.ToString().ToUpper(),
@@ -255,8 +312,8 @@ public static class ProductionLevelGenerator
         List<Spec> table = Table();
         StringBuilder sb = new StringBuilder("TIER SWEEP (no assets written)\nlevel   | shape     | tier | arrows | bends | ray  | clr%  | waves | score | band\n");
 
-        System.Func<LevelCarver.Params>[] tiers = { Tier1, Tier2, Tier3 };
-        string[] tierNames = { "T1", "T2", "T3" };
+        System.Func<LevelCarver.Params>[] tiers = { Tier0, Tier1, Tier2, Tier3 };
+        string[] tierNames = { "T0", "T1", "T2", "T3" };
 
         for (int i = 0; i < table.Count; i++)
         {

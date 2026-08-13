@@ -20,19 +20,25 @@ public static class LevelCarver
 
     public class Params
     {
+        // Length is drawn from a DECAYING distribution, not a uniform range: each extra cell is
+        // added only while a coin keeps coming up, so 2-cell arrows are the single most common
+        // outcome and a thin long tail lifts the average. Measured on the reference game's 47k
+        // shipped arrows, that is exactly its shape — mode 2, mean ~11, tail out past 90. A
+        // uniform range instead makes every arrow come out the same size, which reads as diced.
+        // Mean length works out at roughly minLength + lengthDecay / (1 - lengthDecay).
         public int minLength = 2;
-        public int maxLength = 7;
+        public int maxLength = 40;      // cap, rarely reached
+        public float lengthDecay = 0.9f;
 
-        // A minority of very long snaking arrows is what gives the reference boards their tangled
-        // look. A single uniform length range reads as evenly diced and much flatter.
-        public int longMinLength = 10;
-        public int longMaxLength = 22;
-        public float longChance = 0.25f;
-
-        // How strongly growth prefers turning over continuing straight. This is the knob that
-        // produces bends — with it at 0 the carve grows near-straight arrows, which is exactly
-        // what the old generator did and why its levels never looked tangled.
-        public float straightPenalty = 1.5f;
+        // Probability of turning at each step, when turning and continuing straight are equally
+        // safe. This used to be a `straightPenalty` that PENALISED going straight, on the
+        // assumption that more bends read as "tangled" and therefore harder. Measuring the
+        // reference game killed that assumption: its arrows bend on only ~0.30 of their segments
+        // and run straight for ~5 cells at a stretch, while ours bent on 0.73 and never held a
+        // straight run past ~2 cells. That is the difference between a shape and a staircase.
+        // Note it is also FLAT across their difficulty tiers — they scale the board, not the
+        // tangle — so this should not be tuned per tier.
+        public float turnChance = 0.33f;
 
         public int attempts = 12;   // retries until the carve reaches 100% coverage
     }
@@ -147,23 +153,34 @@ public static class LevelCarver
                     continue;
                 }
 
-                // Lower score is better: still avoid creating near-isolated pockets, but pay a
-                // penalty for continuing straight, so the body actually bends.
-                float bestScore = float.MaxValue;
+                // Not-stranding-cells comes first and is not negotiable: only the options that
+                // leave the fewest near-isolated neighbours behind are considered at all. Shape
+                // preference is applied strictly within that safe set, so pursuing a nicer body
+                // can never cost coverage.
+                int bestDegree = int.MaxValue;
                 foreach (Vector2Int n in options)
                 {
-                    float s = GrowthScore(n, tail, lastDir, remaining, path, prm);
-                    if (s < bestScore) bestScore = s;
+                    int d = DegreeAfter(n, remaining, path);
+                    if (d < bestDegree) bestDegree = d;
                 }
+
+                Vector2Int straightCell = tail + lastDir;
+                bool straightSafe = false;
 
                 best.Clear();
                 foreach (Vector2Int n in options)
                 {
-                    if (Mathf.Approximately(GrowthScore(n, tail, lastDir, remaining, path, prm), bestScore))
-                        best.Add(n);
+                    if (DegreeAfter(n, remaining, path) != bestDegree) continue;
+                    if (n == straightCell) straightSafe = true;
+                    else best.Add(n);          // the turning options
                 }
 
-                path.Add(best[Random.Range(0, best.Count)]);
+                // Straight by default; turn only turnChance of the time. This is what makes a body
+                // read as a shape — a run of several cells in one direction, then a corner.
+                if (straightSafe && (best.Count == 0 || Random.value >= prm.turnChance))
+                    path.Add(straightCell);
+                else
+                    path.Add(best[Random.Range(0, best.Count)]);
             }
 
             path.Reverse();   // now [tail ... head]
@@ -198,19 +215,11 @@ public static class LevelCarver
         return arrows;
     }
 
-    static float GrowthScore(Vector2Int n, Vector2Int tail, Vector2Int lastDir,
-                             HashSet<Vector2Int> remaining, List<Vector2Int> path, Params prm)
-    {
-        float s = DegreeAfter(n, remaining, path);
-        if (n - tail == lastDir) s += prm.straightPenalty;
-        return s;
-    }
-
     static int PickLength(Params prm)
     {
-        if (Random.value < prm.longChance)
-            return Random.Range(prm.longMinLength, prm.longMaxLength + 1);
-        return Random.Range(prm.minLength, prm.maxLength + 1);
+        int len = prm.minLength;
+        while (len < prm.maxLength && Random.value < prm.lengthDecay) len++;
+        return len;
     }
 
     static bool RayIsClear(Vector2Int head, Vector2Int dir, HashSet<Vector2Int> remaining, int width, int height)
