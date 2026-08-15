@@ -353,7 +353,8 @@ MonoBehaviour:
   minStepTime: 0.028
   minFramesPerStep: 1.5
   revertStepTime: 0.028
-  activeColor: {r: 0, g: 0.898, b: 1, a: 1}
+  baseColor: {r: 1, g: 1, b: 1, a: 1}
+  activeBoost: 0.35
   hintPulseScale: 1.25
   hintPulseTime: 0.2
   hintColor: {r: 1, g: 0.85, b: 0.2, a: 1}

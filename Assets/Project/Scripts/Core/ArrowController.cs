@@ -50,9 +50,24 @@ public class ArrowController : MonoBehaviour
     // not something the player needs pointed at, and it can't be pulsed safely either.
     public bool IsBusy => isMoving;
 
-    // Worn while the arrow is actually travelling. BlockedBounce puts white back when a run
-    // ends against another arrow; a run that ends off-grid destroys the arrow instead.
-    public Color activeColor = new Color(0f, 0.898f, 1f);   // Neon Cyan #00E5FF
+    // This arrow's own neon colour, handed out by LevelLoader at spawn. White is only the
+    // fallback for an arrow dropped into the scene by hand, so the Editor still shows something.
+    public Color baseColor = Color.white;
+
+    // A travelling arrow lifts towards white instead of switching to one shared "active" colour —
+    // that used to be cyan, which would wipe out the arrow's identity the moment it moved.
+    // Set to 0 in the Inspector to make a run keep the base colour exactly.
+    [Range(0f, 1f)] public float activeBoost = 0.35f;
+
+    Color ActiveColor() => Color.Lerp(baseColor, Color.white, activeBoost);
+
+    // Safe before or after Init() — Awake() has already cached the renderers by the time
+    // Instantiate() returns, so the colour lands whichever order LevelLoader calls in.
+    public void SetBaseColor(Color c)
+    {
+        baseColor = c;
+        SetLineColor(c);
+    }
 
     [Header("Hint pulse")]
     public float hintPulseScale = 1.25f;   // how far the body swells at the peak
@@ -299,7 +314,7 @@ public class ArrowController : MonoBehaviour
 
     void MoveStep(Vector2Int nextPos)
     {
-        SetLineColor(activeColor);
+        SetLineColor(ActiveColor());
         int n = path.Count;
 
         // Capture old tail/head BEFORE shifting path (needed for the grow/shrink animation)
@@ -396,7 +411,7 @@ public class ArrowController : MonoBehaviour
         {
             // Back where the tap found it. Occupancy is identical to the tap-time board too,
             // because every step's claim was undone one at a time on the way here.
-            SetLineColor(Color.white);
+            SetLineColor(baseColor);
             isMoving = false;
 
             // Only now is it safe to end the level: ShowLose() destroys this arrow.
@@ -453,7 +468,7 @@ public class ArrowController : MonoBehaviour
     void StartExit(Vector3 exitStep)
     {
         AudioManager.Instance.PlayArrowClickSuccess();
-        SetLineColor(activeColor);   // an arrow one cell from the edge exits without ever calling MoveStep
+        SetLineColor(ActiveColor());   // an arrow one cell from the edge exits without ever calling MoveStep
 
         foreach (Vector2Int pos in path)
             gridBuilder.ClearOccupant(pos);
@@ -603,7 +618,7 @@ public class ArrowController : MonoBehaviour
 
     void ApplyHintPulse(float v)
     {
-        SetLineColor(Color.Lerp(Color.white, hintColor, v));
+        SetLineColor(Color.Lerp(baseColor, hintColor, v));
 
         float scale = Mathf.Lerp(1f, hintPulseScale, v);
         for (int i = 0; i < hintBasePoints.Length; i++)
@@ -623,7 +638,7 @@ public class ArrowController : MonoBehaviour
         hintTween.Stop();
         hintBasePoints = null;
 
-        SetLineColor(Color.white);
+        SetLineColor(baseColor);
         if (headVisual != null) headVisual.localScale = hintHeadScale;
         if (tailVisual != null) tailVisual.localScale = hintTailScale;
 

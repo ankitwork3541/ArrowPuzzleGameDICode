@@ -112,6 +112,10 @@ public class LevelLoader : MonoBehaviour
         if (TryGetArrowBounds(levelData, out min, out max))
             gridBuilder.CenterOnContent(min, max);
 
+        // Seeded on the level index, so a level always dresses its arrows the same way — a restart
+        // never reshuffles the board — while each level still gets its own mix of the palette.
+        ArrowPalette.Dealer colors = new ArrowPalette.Dealer(currentLevelIndex);
+
         foreach (ArrowPathData arrowData in levelData.arrows)
         {
             if (arrowData.path == null || arrowData.path.Count < 2)
@@ -122,6 +126,7 @@ public class LevelLoader : MonoBehaviour
 
             ArrowController newArrow = Instantiate(arrowPrefab);
             newArrow.Init(new List<Vector2Int>(arrowData.path), gridBuilder);
+            newArrow.SetBaseColor(colors.Next());
             spawnedArrows.Add(newArrow);
         }
 
