@@ -65,8 +65,18 @@ public class GameFlowManager : MonoBehaviour
     // Both result cards are scrims over the level the player just played, and clearing it would
     // leave them dimming an empty screen. Teardown happens on the way out instead — see the four
     // exit methods below, which are the only routes off these screens.
+    // The number the win card shows. Needed because beating a level advances the campaign right
+    // here, so by the time the card is drawn CurrentLevelNumber() is already the NEXT level.
+    public int LastCompletedLevelNumber { get; private set; }
+
     public void ShowWin()
     {
+        // Banked immediately, not when the player leaves the card. Quitting the app while the win
+        // card is still up used to throw the win away — AdvanceLevel() lived in the exit handlers,
+        // so closing the game there reopened it on the level that had just been beaten.
+        LastCompletedLevelNumber = levelLoader.CurrentLevelNumber();
+        levelLoader.AdvanceLevel();
+
         CameraController.Instance.SuspendInput();
         gameplayRoot.SetActive(false);
         winRoot.SetActive(true);
@@ -79,22 +89,18 @@ public class GameFlowManager : MonoBehaviour
         loseRoot.SetActive(true);
     }
 
-    // Beating a level advances the campaign whichever way the player leaves the win card, so both
-    // win exits call AdvanceLevel() and neither of the lose exits does. Advancing is left until
-    // here rather than done in ShowWin() so the card can still show the number of the level that
-    // was just completed.
+    // Neither win exit advances anything — ShowWin() already did, the moment the level was beaten.
+    // These only decide where the player goes next.
     public void OnNextLevelClicked()
     {
         winRoot.SetActive(false);
         levelLoader.ClearLevel();
-        levelLoader.AdvanceLevel();
         StartLevel();
     }
 
     public void OnWinHomeClicked()
     {
         winRoot.SetActive(false);
-        levelLoader.AdvanceLevel();
         GoHome();
     }
 

@@ -71,7 +71,13 @@ public class ResultScreenController : MonoBehaviour
     private void Refresh()
     {
         if (root == null || levelLabel == null) return;
-        levelLabel.text = "LEVEL " + levelLoader.CurrentLevelNumber().ToString("00");
+
+        // Win shows the level just beaten, which is NOT the current one: the campaign advances the
+        // instant the level is won, so that quitting on this card cannot undo it.
+        int number = mode == Mode.Win ? gameFlowManager.LastCompletedLevelNumber
+                                      : levelLoader.CurrentLevelNumber();
+
+        levelLabel.text = "LEVEL " + number.ToString("00");
     }
 
     private void StartConfetti()
@@ -83,7 +89,7 @@ public class ResultScreenController : MonoBehaviour
         // spawn in a stack at x=0 — hence the wait for geometry.
         if (confetti.resolvedStyle.width > 0f)
         {
-            confetti.Burst(levelLoader.CurrentLevelNumber());
+            confetti.Burst(gameFlowManager.LastCompletedLevelNumber);
             return;
         }
 
@@ -94,7 +100,7 @@ public class ResultScreenController : MonoBehaviour
     private void OnConfettiGeometry(GeometryChangedEvent evt)
     {
         confetti.UnregisterCallback<GeometryChangedEvent>(OnConfettiGeometry);
-        confetti.Burst(levelLoader.CurrentLevelNumber());
+        confetti.Burst(gameFlowManager.LastCompletedLevelNumber);
     }
 
     // Stepped from here rather than from a UI scheduler so the simulation advances exactly once

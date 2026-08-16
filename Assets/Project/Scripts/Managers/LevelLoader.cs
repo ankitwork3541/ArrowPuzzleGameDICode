@@ -38,6 +38,30 @@ public class LevelLoader : MonoBehaviour
 
     private int totalLevels;
 
+    // Picked up before anything asks what level we are on — Home reads the number as soon as it
+    // draws. Not validated here on purpose: totalLevels is unknown until a chunk has been read,
+    // so a save pointing past the end of the campaign is caught in EnsureCurrent() instead.
+    void Awake()
+    {
+        currentLevelIndex = Mathf.Max(0, SaveSystem.Data.currentLevelIndex);
+    }
+
+    void SaveProgress()
+    {
+        SaveSystem.Data.currentLevelIndex = currentLevelIndex;
+        SaveSystem.Save();
+    }
+
+    // The campaign in a build can be shorter than the one a save was written against — levels get
+    // re-baked. Rather than error on every frame from then on, drop the player back to the start.
+    LevelData RestartCampaign(string reason)
+    {
+        Debug.LogWarning($"[LevelLoader] {reason} Starting again from the first level.");
+        currentLevelIndex = 0;
+        SaveProgress();
+        return EnsureCurrent();   // terminates: the index is 0 now, so this path cannot repeat
+    }
+
     public int TotalLevels
     {
         get
@@ -62,6 +86,10 @@ public class LevelLoader : MonoBehaviour
 
             if (asset == null)
             {
+                if (currentLevelIndex != 0)
+                    return RestartCampaign($"saved level {currentLevelIndex} needs chunk "
+                                           + $"{wantChunk}, which this build does not have.");
+
                 Debug.LogError($"[LevelLoader] no level chunk at Resources/{path}. "
                                + "Run ArrowPuzzle > Campaign > Bake to create it.");
                 return current;
@@ -86,6 +114,10 @@ public class LevelLoader : MonoBehaviour
         int withinChunk = LevelBinary.IndexWithinChunk(currentLevelIndex);
         if (withinChunk >= LevelBinary.LevelCountIn(chunkBytes))
         {
+            if (currentLevelIndex != 0)
+                return RestartCampaign($"saved level {currentLevelIndex} is past the end of "
+                                       + $"chunk {loadedChunkIndex}.");
+
             Debug.LogError($"[LevelLoader] level {currentLevelIndex} is past the end of chunk {loadedChunkIndex}.");
             return current;
         }
@@ -293,6 +325,11 @@ public class LevelLoader : MonoBehaviour
         currentLevelIndex++;
         if (totalLevels > 0 && currentLevelIndex >= totalLevels)
             currentLevelIndex = 0; // abhi mate: badha levels puri thay etle pachu 1st thi
+
+        // The only place the index ever moves, so the only place progress needs writing. Written
+        // immediately rather than on quit: Android can kill the app without ever running OnApp-
+        // licationQuit, and a level's worth of progress is not worth risking to save one write.
+        SaveProgress();
     }
 
     public void GoToNextLevel()
