@@ -19,6 +19,14 @@ public static class LevelCampaignGenerator
     // Tutorial, outside the sawtooth — the reference game's own early progression.
     static readonly int[] OnboardingArrows = { 3, 6, 8, 10, 16, 20, 24, 28, 32, 36 };
 
+    // The campaign the RAMP is shaped for, regardless of how many levels are baked right now.
+    //
+    // This is deliberately not the bake count. Shaping the ramp by the count would make a 50-level
+    // bake reach 160 arrows by level 50, while the first 50 of the real campaign should still be
+    // around 37 — so every test bake would be thrown away the moment the full campaign was built.
+    // Baking fewer levels now simply produces a PREFIX of the final campaign.
+    const int CampaignLength = 1000;
+
     // Where the peaks travel. 160 arrows on ~40x50 matches the reference's hardest bucket.
     const int PeakArrowsStart = 36;
     const int PeakArrowsEnd = 160;
@@ -44,6 +52,9 @@ public static class LevelCampaignGenerator
 
     [MenuItem("ArrowPuzzle/Campaign/Bake 15 Levels (test)")]
     static void Bake15() { Bake(15); }
+
+    [MenuItem("ArrowPuzzle/Campaign/Bake 50 Levels (test)")]
+    static void Bake50() { Bake(50); }
 
     [MenuItem("ArrowPuzzle/Campaign/Bake 1000 Levels")]
     static void Bake1000() { Bake(1000); }
@@ -72,7 +83,7 @@ public static class LevelCampaignGenerator
                     break;
                 }
 
-                int wantArrows = TargetArrows(i, totalLevels);
+                int wantArrows = TargetArrows(i, CampaignLength);
                 int width, height;
                 BoardFor(wantArrows, out width, out height);
 
@@ -156,12 +167,12 @@ public static class LevelCampaignGenerator
 
     // ---------- the ramp ----------
 
-    static int TargetArrows(int levelIndex, int totalLevels)
+    static int TargetArrows(int levelIndex, int campaignLength)
     {
         if (levelIndex < OnboardingArrows.Length) return OnboardingArrows[levelIndex];
 
         int postOnboarding = levelIndex - OnboardingArrows.Length;
-        int span = Mathf.Max(1, totalLevels - OnboardingArrows.Length - 1);
+        int span = Mathf.Max(1, campaignLength - OnboardingArrows.Length - 1);
         float u = Mathf.Clamp01(postOnboarding / (float)span);
 
         float peak = Mathf.Lerp(PeakArrowsStart, PeakArrowsEnd, Mathf.Pow(u, PeakCurvePower));
