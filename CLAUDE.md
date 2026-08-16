@@ -81,8 +81,8 @@ Known open items:
 Keep this updated as work progresses — add an entry after each meaningful step, don't wait to be asked.
 
 - **2026-08-15** — Context/memory reset. This file rewritten minimal.
-- **2026-08-15** — Neon arrow colours, step 1 of the multi-colour + glow work (**not yet tested in
-  the Editor**). Reference: `~/Downloads/stitch_neon_route_ui_design`.
+- **2026-08-15** — Neon arrow colours, step 1 of the multi-colour + glow work. Verified in the
+  Editor. Reference: `~/Downloads/stitch_neon_route_ui_design`.
   - New `Scripts/Data/ArrowPalette.cs` — seven LDR neon colours spread over hues 157°-340° (green
     `#00FF9D`, cyan `#00E5FF`, blue `#2979FF`, purple `#8B5CFF`, violet `#C24DFF`, magenta
     `#FF2BD6`, pink `#FF4D8D`). The red/yellow side of the wheel is left empty on purpose — those
@@ -99,8 +99,29 @@ Keep this updated as work progresses — add an entry after each meaningful step
     five-arrow level, which read as a bug on small boards. Deck order is *spawn* order, so two
     spatially adjacent arrows can still match on a large board; a spatial fix would need graph
     colouring and is not worth it unless it actually shows.
-  - Still to do: **step 2** URP Bloom (Global Volume + camera post-processing, threshold ~0.55,
-    Half downscale, 4 iterations); head/tail sprite atlas batching; optional Settings "Glow" toggle.
+- **2026-08-16** — Step 2, glow + backdrop. Verified in the Editor.
+  - URP Bloom is live: a `Global Volume` in the scene (threshold 0.55, intensity 0.9, scatter 0.75)
+    plus Post Processing enabled on the camera. Threshold sits *below* 1.0 on purpose — see the
+    LDR note above; at 1.0 nothing would ever bloom.
+  - New `Scripts/Managers/BackdropArrows.cs` on a `Backdrop` child of the Main Camera. Scatters a
+    few huge filled arrow silhouettes (`Sprites/BackdropArrow{Straight,Bend,Zigzag}.png`, generated,
+    `Mesh Type: Tight`) and drifts them on slow sine paths.
+    - It is a camera child *and* rescales itself from `orthographicSize` every `LateUpdate`. Being
+      a child alone is not enough: an orthographic camera's zoom **is** its world-to-screen scale,
+      so a child still grows and shrinks under a pinch unless its own scale cancels that out.
+    - Placement is a jittered grid (one arrow per cell, centre cells left empty), not free random.
+      Independent random positions clump, and every overlap is paid for twice in alpha blending.
+    - Tint lives or dies on contrast. `#080C1C` is about 1.5% above the `#050816` base. The failure
+      mode is always "too visible" — three passes were needed to get it low enough.
+  - The `Starfield` / `ShootingStars` particle backdrop is gone, along with `GameFlowManager.spaceFx`
+    and its six `SetActive()` calls. `CameraController.FrameMenu()` stays: its starfield reason is
+    obsolete, but it also clears `hasContent`, which is what stops pan/zoom working on menu screens.
+  - `Scripts/Managers/ScreenBackdrop.cs` is written but **unused** — it was for a full-screen
+    backdrop image, an approach that was abandoned. Delete it if no base gradient is ever added.
+  - Still to do: head/tail sprite atlas batching; a Settings "Effects" toggle covering bloom *and*
+    the backdrop together (both are comparable cost and both are decoration, not gameplay);
+    blocked-bounce red is still pure `Color.red`, which is dull against neon and barely blooms —
+    something like `#FF1744` would sit in the palette better.
   - Open perf question, not yet measured: `LineRenderer` is not SRP-Batcher compatible (Unity
     supports meshes only, "not lines and trails"), so each arrow is its own draw call. Measure
     batches on the biggest level before considering the real fix — one procedural mesh for all

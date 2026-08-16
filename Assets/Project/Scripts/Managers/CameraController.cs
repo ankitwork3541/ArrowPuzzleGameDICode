@@ -109,8 +109,8 @@ public class CameraController : MonoBehaviour
     private float pinchPrevDistance;
 
     // The framing the scene was authored with. Menus are drawn over the same world the board
-    // lives in, so the starfield behind them is only positioned correctly while the camera sits
-    // where it started — a level leaves it somewhere else entirely.
+    // lives in, and a level leaves the camera somewhere else entirely, so anything world-space
+    // behind them only lines up while the camera sits where it started.
     private Vector3 menuPosition;
     private float menuZoom;
 
@@ -126,7 +126,8 @@ public class CameraController : MonoBehaviour
     // Put the camera back where the scene started. Called whenever gameplay ends, because
     // FrameLevel() moves and zooms the camera to the board and nothing else ever undoes that:
     // returning to Home left the menu looking at whatever framing the last level happened to
-    // need, which showed up as the starfield reading differently on Home than on Splash.
+    // need. (BackdropArrows no longer cares — it hangs off the camera and refits itself — but
+    // the reset still has to happen for the reason below.)
     //
     // Clearing hasContent matters just as much: Update() gates all pan/zoom input on it, so
     // leaving it set let the player drag and pinch the camera around on the menu screens.

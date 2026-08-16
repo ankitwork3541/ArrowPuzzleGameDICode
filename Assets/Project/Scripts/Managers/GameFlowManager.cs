@@ -7,8 +7,10 @@ public class GameFlowManager : MonoBehaviour
     public GameObject gameplayRoot;
     public GameObject settingsRoot;
 
-    [Header("Background FX")]
-    public GameObject spaceFx;   // Starfield + ShootingStars parent — Splash/Home only
+    // The Starfield / ShootingStars particle backdrop used to be toggled from here, on for the
+    // menus and off for gameplay. It has been replaced by BackdropArrows, which hangs off the
+    // camera, costs nothing to leave running, and is quiet enough to stay up on every screen —
+    // so there is no longer anything for the flow to switch.
 
     [Header("Systems")]
     public LevelLoader levelLoader;
@@ -20,7 +22,6 @@ public class GameFlowManager : MonoBehaviour
 
     public void OnPlayButtonClicked()
     {
-        spaceFx.SetActive(false);       // the board needs a clean, undistracted background
         homeRoot.SetActive(false);
         gameplayRoot.SetActive(true);   // activate before loading, so the HUD is
         livesManager.ResetLives();      // subscribed when SetArrowCount fires
@@ -33,7 +34,6 @@ public class GameFlowManager : MonoBehaviour
         CameraController.Instance.FrameMenu();
         gameplayRoot.SetActive(false);
         homeRoot.SetActive(true);
-        spaceFx.SetActive(true);
     }
 
     public void OnRestartLevelClicked()
@@ -47,13 +47,10 @@ public class GameFlowManager : MonoBehaviour
         levelLoader.PlayHint();
     }
 
-    // Home <-> Settings. Settings kills the starfield the same way gameplay does: it is a dense
-    // reading screen, and the drifting particles behind the text are a distraction. Turning the FX
-    // off rather than covering it also stops the particles simulating while they cannot be seen —
-    // the panel itself stays transparent, so what shows through is the camera's solid colour.
+    // Home <-> Settings. The panels themselves are transparent, so what shows through either way
+    // is the camera's solid colour with the backdrop arrows drifting behind it.
     public void OnSettingsNavClicked()
     {
-        spaceFx.SetActive(false);
         homeRoot.SetActive(false);
         settingsRoot.SetActive(true);
     }
@@ -62,7 +59,6 @@ public class GameFlowManager : MonoBehaviour
     {
         settingsRoot.SetActive(false);
         homeRoot.SetActive(true);
-        spaceFx.SetActive(true);
     }
 
     // TODO: Win panel is not rebuilt in UI Toolkit yet — for now the flow advances
@@ -75,7 +71,6 @@ public class GameFlowManager : MonoBehaviour
         CameraController.Instance.FrameMenu();
         gameplayRoot.SetActive(false);
         homeRoot.SetActive(true);
-        spaceFx.SetActive(true);
     }
 
     // TODO: Lose panel is not rebuilt in UI Toolkit yet — same temporary behaviour.
@@ -86,7 +81,6 @@ public class GameFlowManager : MonoBehaviour
         CameraController.Instance.FrameMenu();
         gameplayRoot.SetActive(false);
         homeRoot.SetActive(true);
-        spaceFx.SetActive(true);
     }
 
     // Reads what the generator measured. It used to bucket by arrow count, which said nothing
