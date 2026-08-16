@@ -28,10 +28,10 @@ public class LivesManager : MonoBehaviour
         lives--;
         OnLivesChanged?.Invoke(lives, maxLives);
 
-        // Game over is deliberately NOT fired here. ShowLose() clears the level, which destroys
-        // the very arrow that is still mid-bump, so the player would never see the bump or the
-        // rewind that explains why they lost — the board would just vanish on a red flash.
-        // The arrow calls ResolveBlockedTap() once its animation has finished playing.
+        // Game over is deliberately NOT fired here. ShowLose() drops the Lose card over the board
+        // and freezes input, so firing it mid-bump would cut off the bump and the rewind that
+        // explain why the player lost — the card would land on a red flash instead of on a
+        // finished move. The arrow calls ResolveBlockedTap() once its animation has played out.
         if (lives <= 0) gameOverPending = true;
     }
 

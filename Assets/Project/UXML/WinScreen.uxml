@@ -1,0 +1,27 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Project/Themes/ResultScreen.uss" />
+
+    <!-- The board behind this panel is world-space and stays on screen; the scrim dims it rather
+         than hiding it, so the player still sees the level they just cleared. The confetti is not
+         here — ResultScreenController adds it in code, on top of everything. -->
+
+    <ui:VisualElement name="screen-root" class="result-root">
+        <ui:VisualElement class="result-scrim" picking-mode="Ignore" />
+
+        <ui:VisualElement name="result-card" class="result-card">
+            <ui:VisualElement class="result-card__frame result-card__frame--win" picking-mode="Ignore" />
+
+            <ui:Label name="level-label" text="LEVEL 01" class="result-card__level" picking-mode="Ignore" />
+            <ui:Label text="LEVEL COMPLETE" class="result-card__title" picking-mode="Ignore" />
+
+            <ui:Button name="primary-button" class="result-primary">
+                <ui:VisualElement picking-mode="Ignore" class="result-primary__inner">
+                    <ui:Label text="NEXT" picking-mode="Ignore" class="result-primary__label" />
+                    <ui:Label text="&gt;" picking-mode="Ignore" class="result-primary__chevron" />
+                </ui:VisualElement>
+            </ui:Button>
+
+            <ui:Button name="home-button" text="HOME" class="result-home" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

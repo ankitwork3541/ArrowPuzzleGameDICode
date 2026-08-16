@@ -6,6 +6,8 @@ public class GameFlowManager : MonoBehaviour
     public GameObject homeRoot;
     public GameObject gameplayRoot;
     public GameObject settingsRoot;
+    public GameObject winRoot;
+    public GameObject loseRoot;
 
     // The Starfield / ShootingStars particle backdrop used to be toggled from here, on for the
     // menus and off for gameplay. It has been replaced by BackdropArrows, which hangs off the
@@ -23,9 +25,7 @@ public class GameFlowManager : MonoBehaviour
     public void OnPlayButtonClicked()
     {
         homeRoot.SetActive(false);
-        gameplayRoot.SetActive(true);   // activate before loading, so the HUD is
-        livesManager.ResetLives();      // subscribed when SetArrowCount fires
-        levelLoader.LoadLevel();
+        StartLevel();
     }
 
     public void OnBackToHomeClicked()
@@ -61,25 +61,67 @@ public class GameFlowManager : MonoBehaviour
         homeRoot.SetActive(true);
     }
 
-    // TODO: Win panel is not rebuilt in UI Toolkit yet — for now the flow advances
-    // a level and returns to Home so the loop stays playable.
+    // The board is deliberately NOT cleared here, and the camera is deliberately NOT reframed.
+    // Both result cards are scrims over the level the player just played, and clearing it would
+    // leave them dimming an empty screen. Teardown happens on the way out instead — see the four
+    // exit methods below, which are the only routes off these screens.
     public void ShowWin()
     {
-        Debug.Log("LEVEL WON (Win panel not rebuilt in UI Toolkit yet)");
-        levelLoader.ClearLevel();
-        levelLoader.AdvanceLevel();   // advance only — the level loads when Play is pressed
-        CameraController.Instance.FrameMenu();
+        CameraController.Instance.SuspendInput();
         gameplayRoot.SetActive(false);
-        homeRoot.SetActive(true);
+        winRoot.SetActive(true);
     }
 
-    // TODO: Lose panel is not rebuilt in UI Toolkit yet — same temporary behaviour.
     public void ShowLose()
     {
-        Debug.Log("LEVEL LOST (Lose panel not rebuilt in UI Toolkit yet)");
+        CameraController.Instance.SuspendInput();
+        gameplayRoot.SetActive(false);
+        loseRoot.SetActive(true);
+    }
+
+    // Beating a level advances the campaign whichever way the player leaves the win card, so both
+    // win exits call AdvanceLevel() and neither of the lose exits does. Advancing is left until
+    // here rather than done in ShowWin() so the card can still show the number of the level that
+    // was just completed.
+    public void OnNextLevelClicked()
+    {
+        winRoot.SetActive(false);
+        levelLoader.ClearLevel();
+        levelLoader.AdvanceLevel();
+        StartLevel();
+    }
+
+    public void OnWinHomeClicked()
+    {
+        winRoot.SetActive(false);
+        levelLoader.AdvanceLevel();
+        GoHome();
+    }
+
+    public void OnRetryLevelClicked()
+    {
+        loseRoot.SetActive(false);
+        levelLoader.ClearLevel();
+        StartLevel();
+    }
+
+    public void OnLoseHomeClicked()
+    {
+        loseRoot.SetActive(false);
+        GoHome();
+    }
+
+    private void StartLevel()
+    {
+        gameplayRoot.SetActive(true);   // activate before loading, so the HUD is
+        livesManager.ResetLives();      // subscribed when SetArrowCount fires
+        levelLoader.LoadLevel();
+    }
+
+    private void GoHome()
+    {
         levelLoader.ClearLevel();
         CameraController.Instance.FrameMenu();
-        gameplayRoot.SetActive(false);
         homeRoot.SetActive(true);
     }
 

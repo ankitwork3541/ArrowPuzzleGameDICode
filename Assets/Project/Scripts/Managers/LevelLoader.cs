@@ -153,7 +153,7 @@ public class LevelLoader : MonoBehaviour
         if (CameraController.Instance == null) return;
 
         // Out of lives: the losing arrow is still rewinding, so taps must not start fresh runs
-        // that would still be animating when ShowLose() tears the level down.
+        // that would still be animating when ShowLose() freezes the board under the Lose card.
         if (LivesManager.Instance != null && LivesManager.Instance.lives <= 0) return;
 
         Vector2 screenPos;

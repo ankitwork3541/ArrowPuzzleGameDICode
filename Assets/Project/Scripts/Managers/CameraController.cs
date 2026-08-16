@@ -144,6 +144,20 @@ public class CameraController : MonoBehaviour
         cam.orthographicSize = menuZoom;
     }
 
+    // Freeze board input without moving the camera. The Win and Lose cards are scrims over the
+    // level that was just played, so the board has to stay exactly where it is AND stop responding
+    // — otherwise the player can still drag, pinch and tap arrows through the dimmed overlay.
+    // FrameMenu() cannot be used for this: it would snap the camera back to the menu framing and
+    // throw away the very view the card is sitting on top of.
+    //
+    // No matching Resume(): every route off a result card either loads a level (FrameLevel sets
+    // hasContent again) or goes Home (FrameMenu, which wants it off anyway).
+    public void SuspendInput()
+    {
+        hasContent = false;
+        panVelocity = Vector2.zero;   // or a fling in progress keeps coasting under the card
+    }
+
     // bounds = ACTUAL rendered content ni bounding box (LineRenderer + head/tail sprites saathe).
     public void FrameLevel(Bounds bounds, float spacing)
     {

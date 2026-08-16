@@ -1,0 +1,158 @@
+/* Shared by WinScreen.uxml and LoseScreen.uxml — the two differ only in wording and accent colour.
+
+   The octagon chrome is redefined here rather than shared with GameplayScreen.uss: USS has no
+   import, and pulling the HUD's whole stylesheet into these screens to reuse ten lines would drag
+   its layout rules along with it. */
+
+.result-root {
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-Bold%20SDF.asset?fileID=11400000&guid=2d8208c2123c041daaecd4a4cf0d1ae2&type=2#Oxanium-Bold SDF");
+}
+
+/* Dims the board rather than covering it. The level stays readable behind the card, which is what
+   makes the result feel attached to what just happened instead of being a separate screen. */
+.result-scrim {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(5, 8, 22, 0.84);
+}
+
+/* ============ Card ============
+   Same two-layer octagon as the HUD: the element carries the dark fill, a `__frame` child carries
+   the neon edge. Two elements because they need opposite tints and the tint property applies to a
+   whole image. Sliced at 44px — the sprite's 24px chamfer plus its 16px glow margin both fit
+   inside that, so the card stretches without deforming its corners. */
+.result-card {
+    width: 860px;
+    padding-top: 74px;
+    padding-bottom: 66px;
+    padding-left: 60px;
+    padding-right: 60px;
+    align-items: center;
+
+    background-image: url("../Sprites/UIOctagonFill.png");
+    -unity-background-image-tint-color: rgba(12, 18, 42, 0.96);
+    -unity-slice-left: 44;
+    -unity-slice-top: 44;
+    -unity-slice-right: 44;
+    -unity-slice-bottom: 44;
+}
+
+.result-card__frame {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("../Sprites/UIOctagonFrame.png");
+    -unity-slice-left: 44;
+    -unity-slice-top: 44;
+    -unity-slice-right: 44;
+    -unity-slice-bottom: 44;
+}
+
+.result-card__frame--win  { -unity-background-image-tint-color: rgb(0, 229, 255); }
+.result-card__frame--lose { -unity-background-image-tint-color: rgb(255, 43, 214); }
+
+.result-card__level {
+    font-size: 34px;
+    letter-spacing: 8px;
+    color: rgb(0, 218, 243);
+    text-shadow: 0 0 18px rgba(0, 218, 243, 0.6);
+    margin: 0;
+    margin-bottom: 18px;
+}
+
+.result-card__level--lose {
+    color: rgb(255, 90, 200);
+    text-shadow: 0 0 18px rgba(255, 43, 214, 0.6);
+}
+
+.result-card__title {
+    font-size: 72px;
+    letter-spacing: 4px;
+    color: rgb(255, 255, 255);
+    margin: 0;
+    margin-bottom: 68px;
+    -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-ExtraBold%20SDF.asset?fileID=11400000&guid=a1b658a48c21246d783d8c4f4c297d45&type=2#Oxanium-ExtraBold SDF");
+}
+
+/* ============ Primary action ============
+   Deliberately the same shape and gradient as Home's PLAY button. This is the "go forward" control
+   on every screen that has one, and it should be recognisable as the same thing each time. */
+.result-primary {
+    width: 620px;
+    height: 150px;
+    border-radius: 75px;
+    border-width: 0;
+    margin: 0;
+    padding: 0;
+
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url("../Sprites/NeonGradient.png");
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+}
+
+.result-primary__inner {
+    position: absolute;
+    left: 5px;
+    top: 5px;
+    right: 5px;
+    bottom: 5px;
+    border-radius: 70px;
+    background-color: rgba(16, 25, 54, 0.94);
+
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.result-primary__label {
+    font-size: 48px;
+    letter-spacing: 6px;
+    color: rgb(255, 255, 255);
+}
+
+.result-primary__chevron {
+    font-size: 40px;
+    color: rgb(0, 229, 255);
+    margin-left: 22px;
+}
+
+.result-primary:hover .result-primary__inner {
+    background-color: rgba(22, 36, 81, 0.96);
+}
+
+.result-primary:active {
+    scale: 0.96;
+}
+
+/* ============ Secondary action ============ */
+.result-home {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    margin: 0;
+    margin-top: 34px;
+    padding: 18px;
+
+    font-size: 32px;
+    letter-spacing: 6px;
+    color: rgba(226, 232, 246, 0.7);
+}
+
+.result-home:hover {
+    color: rgb(255, 255, 255);
+}
+
+.result-home:active {
+    scale: 0.94;
+}
