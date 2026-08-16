@@ -1,34 +1,76 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/Project/Themes/GameplayScreen.uss?fileID=7433441132597879392&amp;guid=b4369a12a23684b82832b80a76b589b0&amp;type=3#GameplayScreen" />
+
+    <!-- Every octagonal container is TWO layers: the element itself carries the dark fill sprite,
+         and a `__frame` child laid over it carries the neon edge. They are separate because they
+         need opposite tints, and -unity-background-image-tint-color applies to the whole image.
+         Frames are picking-mode="Ignore" so they never swallow a tap meant for their button. -->
+
     <ui:VisualElement name="gameplay-root" class="gameplay-root">
 
         <ui:VisualElement name="top-panel" class="top-panel">
-            <ui:VisualElement name="top-bar" class="top-bar">
-                <ui:VisualElement name="top-bar-left" class="top-bar__left">
-                    <ui:Button name="back-button" class="icon-button icon-button--back" />
-                    <ui:Button name="restart-button" class="icon-button icon-button--restart" />
+
+            <ui:VisualElement name="top-row" class="top-row">
+
+                <ui:VisualElement name="level-badge" class="level-badge oct">
+                    <ui:VisualElement class="oct__frame oct__frame--magenta" picking-mode="Ignore" />
+                    <ui:Label text="LEVEL" class="level-badge__caption" picking-mode="Ignore" />
+                    <ui:Label name="level-number" text="1" class="level-badge__number" picking-mode="Ignore" />
                 </ui:VisualElement>
 
-                <ui:VisualElement name="top-bar-center" class="top-bar__center">
-                    <ui:Label name="difficulty-label" text="HARD" class="hud-difficulty" />
-                    <ui:VisualElement name="hearts" class="hearts">
-                        <ui:VisualElement name="heart-0" class="heart" />
-                        <ui:VisualElement name="heart-1" class="heart" />
-                        <ui:VisualElement name="heart-2" class="heart" />
+                <ui:VisualElement name="top-centre" class="top-centre">
+                    <ui:Label name="difficulty-label" text="EASY" class="hud-difficulty" />
+                    <ui:VisualElement name="progress-track" class="progress-track">
+                        <ui:VisualElement name="progress-fill" class="progress-fill" />
                     </ui:VisualElement>
                 </ui:VisualElement>
 
-                <ui:Button name="hint-button" class="hint-pill">
-                    <ui:VisualElement class="hint-pill__icon" picking-mode="Ignore" />
-                    <ui:Label text="Hint" class="hint-pill__label" picking-mode="Ignore" />
+                <ui:Button name="back-button" class="oct-button oct-button--small oct">
+                    <ui:VisualElement class="oct__frame oct__frame--purple" picking-mode="Ignore" />
+                    <ui:VisualElement class="oct-button__icon oct-button__icon--back" picking-mode="Ignore" />
                 </ui:Button>
+
             </ui:VisualElement>
 
-            <ui:VisualElement name="progress-track" class="progress-track">
-                <ui:VisualElement name="progress-fill" class="progress-fill" />
+            <ui:VisualElement name="lives-pill" class="lives-pill">
+                <ui:VisualElement class="lives-pill__frame" picking-mode="Ignore" />
+                <ui:Label text="LIVES" class="lives-pill__caption" picking-mode="Ignore" />
+                <ui:VisualElement name="hearts" class="hearts" picking-mode="Ignore">
+                    <ui:VisualElement name="heart-0" class="heart" />
+                    <ui:VisualElement name="heart-1" class="heart" />
+                    <ui:VisualElement name="heart-2" class="heart" />
+                </ui:VisualElement>
             </ui:VisualElement>
+
         </ui:VisualElement>
 
-        <ui:Button name="grid-button" class="grid-button" />
+        <ui:VisualElement name="bottom-bar" class="bottom-bar">
+
+            <ui:VisualElement class="action">
+                <ui:Button name="hint-button" class="oct-button oct">
+                    <ui:VisualElement class="oct__frame oct__frame--cyan" picking-mode="Ignore" />
+                    <ui:VisualElement class="oct-button__icon oct-button__icon--hint oct-button__icon--cyan" picking-mode="Ignore" />
+                </ui:Button>
+                <ui:Label text="HINT" class="action__label" picking-mode="Ignore" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="action">
+                <ui:Button name="grid-button" class="oct-button oct">
+                    <ui:VisualElement class="oct__frame oct__frame--magenta" picking-mode="Ignore" />
+                    <ui:VisualElement class="oct-button__icon oct-button__icon--grid oct-button__icon--magenta" picking-mode="Ignore" />
+                </ui:Button>
+                <ui:Label text="GRID" class="action__label" picking-mode="Ignore" />
+            </ui:VisualElement>
+
+            <ui:VisualElement class="action">
+                <ui:Button name="restart-button" class="oct-button oct">
+                    <ui:VisualElement class="oct__frame oct__frame--purple" picking-mode="Ignore" />
+                    <ui:VisualElement class="oct-button__icon oct-button__icon--restart oct-button__icon--purple" picking-mode="Ignore" />
+                </ui:Button>
+                <ui:Label text="RESTART" class="action__label" picking-mode="Ignore" />
+            </ui:VisualElement>
+
+        </ui:VisualElement>
+
     </ui:VisualElement>
 </ui:UXML>

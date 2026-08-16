@@ -19,7 +19,9 @@ public class GameplayHUDController : MonoBehaviour
     private VisualElement root;
     private VisualElement hudRoot;   // the .gameplay-root element itself, not the panel wrapper
     private VisualElement topPanel;
+    private VisualElement bottomBar;
     private Label difficultyLabel;
+    private Label levelNumberLabel;
     private VisualElement progressFill;
     private List<VisualElement> hearts;
     private Button gridButton;
@@ -75,7 +77,9 @@ public class GameplayHUDController : MonoBehaviour
 
         hudRoot = root.Q<VisualElement>("gameplay-root") ?? root;
         topPanel = root.Q<VisualElement>("top-panel");
+        bottomBar = root.Q<VisualElement>("bottom-bar");
         difficultyLabel = root.Q<Label>("difficulty-label");
+        levelNumberLabel = root.Q<Label>("level-number");
         progressFill = root.Q<VisualElement>("progress-fill");
         hearts = root.Query<VisualElement>(className: "heart").ToList();
         gridButton = root.Q<Button>("grid-button");
@@ -122,6 +126,7 @@ public class GameplayHUDController : MonoBehaviour
         hudRoot.EnableInClassList("gameplay-root--hidden", !hudVisible);
 
         difficultyLabel.text = GameFlowManager.GetDifficultyLabel(levelLoader.CurrentLevel());
+        levelNumberLabel.text = levelLoader.CurrentLevelNumber().ToString();
 
         for (int i = 0; i < hearts.Count; i++)
             hearts[i].EnableInClassList("heart--empty", i >= lives);
@@ -143,6 +148,11 @@ public class GameplayHUDController : MonoBehaviour
     //
     // `.top-panel` is checked as a whole, not just its buttons, because it is deliberately opaque
     // (it hides arrows panned up behind the progress line), so there is no board to tap up there.
+    //
+    // `.bottom-bar` is NOT opaque, so its worldBound is wider than what the player can actually
+    // see — it spans the full screen width to keep its three buttons centred. Blocking that whole
+    // strip is still the right call: it is only ~250px tall at the bottom of the screen, and the
+    // alternative is that a tap next to Hint slides whichever arrow happens to sit behind it.
     public bool IsPointerOverUI(Vector2 screenPos)
     {
         // A hidden HUD must not eat board taps — during the entrance the whole root is
@@ -154,7 +164,7 @@ public class GameplayHUDController : MonoBehaviour
         Vector2 panelPos = RuntimePanelUtils.ScreenToPanel(
             root.panel, new Vector2(screenPos.x, Screen.height - screenPos.y));
 
-        return HitTest(topPanel, panelPos) || HitTest(gridButton, panelPos);
+        return HitTest(topPanel, panelPos) || HitTest(bottomBar, panelPos);
     }
 
     private static bool HitTest(VisualElement element, Vector2 panelPos)

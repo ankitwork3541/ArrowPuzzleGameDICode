@@ -18,136 +18,207 @@
     visibility: hidden;
 }
 
+/* ============ Octagon chrome ============
+   The design's chamfered corners and neon outer glow have no USS equivalent —
+   there is border-radius but no clip-path, and text-shadow but no box-shadow —
+   so both are baked into sprites. The sprites are drawn white and recoloured
+   here, which is why three neon variants cost one file instead of three.
+
+   `.oct` carries the dark interior; `.oct__frame` is an overlay child carrying
+   the edge. Two elements, because the two need opposite tints and the tint
+   property applies to a whole image.
+
+   Sliced at 44px: the sprite's 24px chamfer plus its 16px glow margin both sit
+   inside that, so a stretched badge keeps its corners undistorted. */
+.oct {
+    background-image: url("../Sprites/UIOctagonFill.png");
+    -unity-background-image-tint-color: rgba(12, 18, 42, 0.88);
+    -unity-slice-left: 44;
+    -unity-slice-top: 44;
+    -unity-slice-right: 44;
+    -unity-slice-bottom: 44;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+}
+
+.oct__frame {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("../Sprites/UIOctagonFrame.png");
+    -unity-slice-left: 44;
+    -unity-slice-top: 44;
+    -unity-slice-right: 44;
+    -unity-slice-bottom: 44;
+}
+
+.oct__frame--cyan    { -unity-background-image-tint-color: rgb(0, 229, 255); }
+.oct__frame--magenta { -unity-background-image-tint-color: rgb(255, 43, 214); }
+.oct__frame--purple  { -unity-background-image-tint-color: rgb(139, 92, 255); }
+
 /* ============ Top panel ============
    OPAQUE on purpose, and it must match the camera's Solid Color background
-   exactly. This is what stops arrows from showing above the progress line
-   when the board is panned up — no camera clipping or masking needed. */
+   exactly. That is what stops arrows showing through the HUD when the board is
+   panned up — no camera clipping or masking needed. Because the two colours are
+   identical the panel has no visible edge of its own, so its height is set by
+   padding rather than by any drawn boundary. */
 .top-panel {
     background-color: rgb(5, 8, 22);
-    padding-top: 60px;
+    padding-top: 56px;
+    padding-bottom: 34px;
 }
 
-.top-bar {
+.top-row {
     flex-direction: row;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
+    height: 170px;
 }
 
-/* Both side groups are taken out of the flow so the centre group stays truly
-   centred regardless of how wide they are. */
-.top-bar__left {
+.top-centre {
+    align-items: center;
+}
+
+/* ============ LEVEL badge (top-left) ============ */
+.level-badge {
     position: absolute;
-    left: 40px;
+    left: 36px;
     top: 0;
-    flex-direction: row;
-}
-
-.top-bar__center {
-    align-items: center;
-}
-
-/* ============ Circle icon buttons (back / restart) ============ */
-.icon-button {
-    width: 110px;
-    height: 110px;
-    border-radius: 55px;              /* half the height */
-    margin: 0;
-    padding: 0;
-
-    background-color: rgba(16, 25, 54, 0.85);
-    border-width: 2px;
-    border-color: rgba(0, 229, 255, 0.25);
-
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 50px 50px;
-    -unity-background-image-tint-color: rgba(220, 226, 240, 0.9);
-}
-
-.icon-button:hover {
-    background-color: rgba(22, 36, 81, 0.95);
-}
-
-.icon-button:active {
-    scale: 0.92;
-}
-
-.icon-button--back {
-    background-image: url("../Sprites/IconBack.png");
-    margin-right: 24px;
-}
-
-.icon-button--restart {
-    background-image: url("../Sprites/IconRestart.png");
-}
-
-/* ============ Hint pill (top-right, flush to the screen edge) ============ */
-.hint-pill {
-    position: absolute;
-    right: 0;
-    top: 17px;                        /* vertically centred against the 110px circles */
-    height: 76px;
-
-    /* flush right: only the left corners are rounded */
-    border-top-left-radius: 38px;
-    border-bottom-left-radius: 38px;
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-
-    border-width: 0;
-    margin: 0;
-    padding-left: 28px;
+    height: 150px;
+    min-width: 190px;
+    padding-left: 34px;
     padding-right: 34px;
-
-    flex-direction: row;
     align-items: center;
-
-    background-color: rgba(0, 0, 0, 0);
-    background-image: url("../Sprites/NeonGradient.png");
-    background-repeat: no-repeat;
-    background-size: 100% 100%;
+    justify-content: center;
 }
 
-.hint-pill:active {
-    scale: 0.95;
+.level-badge__caption {
+    font-size: 26px;
+    letter-spacing: 4px;
+    color: rgba(220, 228, 245, 0.75);
+    margin: 0;
 }
 
-.hint-pill__icon {
-    width: 42px;
-    height: 42px;
-    margin-right: 14px;
-    background-image: url("../Sprites/IconAd.png");
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: contain;
-    -unity-background-image-tint-color: rgb(255, 255, 255);
-}
-
-.hint-pill__label {
-    font-size: 40px;
-    letter-spacing: 1px;
+.level-badge__number {
+    font-size: 62px;
     color: rgb(255, 255, 255);
+    margin: 0;
+    margin-top: -6px;
 }
 
-/* ============ Difficulty + hearts ============ */
+/* ============ Difficulty (top centre) ============ */
 .hud-difficulty {
     font-size: 44px;
-    letter-spacing: 2px;
+    letter-spacing: 3px;
     color: rgb(0, 218, 243);
     text-shadow: 0 0 18px rgba(0, 218, 243, 0.6);
     margin: 0;
 }
 
+/* ============ Octagon icon buttons ============ */
+.oct-button {
+    width: 176px;
+    height: 176px;
+    margin: 0;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Back sits in the top row against the 150px badge, so it runs smaller than the
+   bottom bar's action buttons. */
+.oct-button--small {
+    position: absolute;
+    right: 36px;
+    top: 15px;
+    width: 120px;
+    height: 120px;
+}
+
+.oct-button:active {
+    scale: 0.93;
+}
+
+.oct-button__icon {
+    width: 68px;
+    height: 68px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    -unity-background-image-tint-color: rgba(226, 232, 246, 0.92);
+}
+
+.oct-button--small .oct-button__icon {
+    width: 48px;
+    height: 48px;
+}
+
+.oct-button__icon--back    { background-image: url("../Sprites/IconBack.png"); }
+.oct-button__icon--restart { background-image: url("../Sprites/IconRestart.png"); }
+.oct-button__icon--grid    { background-image: url("../Sprites/IconGrid.png"); }
+.oct-button__icon--hint    { background-image: url("../Sprites/IconAd.png"); }
+
+/* Bottom-bar icons wear their button's neon colour; the small back icon stays
+   neutral so the top row has exactly one accent in it. */
+.oct-button__icon--cyan    { -unity-background-image-tint-color: rgb(0, 229, 255); }
+.oct-button__icon--magenta { -unity-background-image-tint-color: rgb(255, 43, 214); }
+.oct-button__icon--purple  { -unity-background-image-tint-color: rgb(139, 92, 255); }
+
+/* ============ LIVES pill ============
+   Sliced left/right only. The sprite's middle section is a straight bar top and
+   bottom, so stretching it vertically as well as horizontally stays correct —
+   only the two pointed ends must keep their native width. */
+.lives-pill {
+    align-self: center;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    height: 104px;
+    padding-left: 46px;
+    padding-right: 46px;
+    margin-top: 24px;
+
+    background-image: url("../Sprites/UIHexPillFill.png");
+    -unity-background-image-tint-color: rgba(12, 18, 42, 0.88);
+    -unity-slice-left: 56;
+    -unity-slice-right: 56;
+    -unity-slice-top: 0;
+    -unity-slice-bottom: 0;
+}
+
+.lives-pill__frame {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("../Sprites/UIHexPillFrame.png");
+    -unity-background-image-tint-color: rgb(255, 43, 214);
+    -unity-slice-left: 56;
+    -unity-slice-right: 56;
+    -unity-slice-top: 0;
+    -unity-slice-bottom: 0;
+}
+
+.lives-pill__caption {
+    font-size: 30px;
+    letter-spacing: 4px;
+    color: rgba(220, 228, 245, 0.8);
+    margin: 0;
+    margin-right: 22px;
+}
+
 .hearts {
     flex-direction: row;
-    margin-top: 10px;
 }
 
 .heart {
-    width: 54px;
-    height: 54px;
-    margin-left: 6px;
-    margin-right: 6px;
+    width: 50px;
+    height: 50px;
+    margin-left: 7px;
+    margin-right: 7px;
     background-image: url("../Sprites/IconHeart.png");
     background-repeat: no-repeat;
     background-position: center;
@@ -156,61 +227,66 @@
 }
 
 .heart--empty {
-    -unity-background-image-tint-color: rgba(255, 255, 255, 0.12);
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.14);
 }
 
-/* ============ Level progress line ============
-   Last child of the opaque top panel, so it reads as the boundary between
-   the HUD and the board — exactly like the reference. */
+/* ============ Level progress bar ============
+   Sits directly under the difficulty label, small, and glowing to match the rest
+   of the chrome. Track and fill are both capsule sprites sliced left/right only,
+   so the fill animates to any width while its rounded ends keep their shape.
+
+   Deliberately NO overflow:hidden on the track. It would clip the fill's glow off
+   at both ends, which is the whole reason the fill is a sprite and not a plain
+   background-color — USS has no box-shadow to glow with. */
 .progress-track {
-    height: 8px;
-    border-radius: 4px;
-    margin-top: 34px;
-    margin-left: 40px;
-    margin-right: 40px;
-    background-color: rgba(255, 255, 255, 0.08);
-    overflow: hidden;
+    width: 400px;
+    height: 24px;
+    margin-top: 16px;
+    background-image: url("../Sprites/UIBarTrack.png");
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.10);
+    -unity-slice-left: 26;
+    -unity-slice-right: 26;
+    -unity-slice-top: 0;
+    -unity-slice-bottom: 0;
 }
 
 .progress-fill {
     width: 0;
     height: 100%;
-    border-radius: 4px;
-    background-color: rgb(0, 229, 255);
+    background-image: url("../Sprites/UIBarFill.png");
+    -unity-background-image-tint-color: rgb(0, 229, 255);
+    -unity-slice-left: 26;
+    -unity-slice-right: 26;
+    -unity-slice-top: 0;
+    -unity-slice-bottom: 0;
 }
 
-/* ============ Grid toggle (bottom-right, rounded square) ============ */
-.grid-button {
+/* ============ Bottom action bar ============ */
+.bottom-bar {
     position: absolute;
-    right: 40px;
-    bottom: 60px;
-    width: 130px;
-    height: 130px;
-    border-radius: 40px;              /* rounded square, not a circle */
+    left: 0;
+    right: 0;
+    bottom: 70px;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.action {
+    align-items: center;
+    margin-left: 34px;
+    margin-right: 34px;
+}
+
+.action__label {
+    font-size: 28px;
+    letter-spacing: 3px;
+    color: rgba(226, 232, 246, 0.85);
     margin: 0;
-    padding: 0;
-
-    background-color: rgba(16, 25, 54, 0.85);
-    border-width: 2px;
-    border-color: rgba(0, 229, 255, 0.2);
-
-    background-image: url("../Sprites/IconGrid.png");
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 62px 62px;
-    -unity-background-image-tint-color: rgba(220, 226, 240, 0.85);
-}
-
-.grid-button:hover {
-    background-color: rgba(22, 36, 81, 0.95);
-}
-
-.grid-button:active {
-    scale: 0.92;
+    margin-top: 16px;
 }
 
 /* Set by the controller when the guide lines are on. */
-.grid-button--on {
-    border-color: rgb(0, 229, 255);
-    -unity-background-image-tint-color: rgb(0, 229, 255);
+.grid-button--on .oct-button__icon {
+    -unity-background-image-tint-color: rgb(255, 255, 255);
 }
