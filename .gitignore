@@ -106,8 +106,3 @@ InitTestScene*.unity*
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
 
-/Assets/MultiTech Studio/
-/Assets/MultiTech Studio.meta
-
-/Assets/Lana Studio/
-/Assets/Lana Studio.meta

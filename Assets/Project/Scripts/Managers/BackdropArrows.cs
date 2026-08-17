@@ -228,6 +228,18 @@ public class BackdropArrows : MonoBehaviour
     {
         // Layout inputs are baked at build time and need a rebuild to take effect. Colour and
         // sorting are reapplied every frame above and deliberately do not trigger one.
-        if (isActiveAndEnabled && arrows != null && arrows.Length != count) Build();
+        if (!isActiveAndEnabled || arrows == null || arrows.Length == count) return;
+
+#if UNITY_EDITOR
+        // Build() creates GameObjects and AddComponents, which Unity forbids calling
+        // synchronously from inside OnValidate (it uses SendMessage for component callbacks
+        // internally). Deferring one frame via delayCall sidesteps that restriction.
+        UnityEditor.EditorApplication.delayCall += () =>
+        {
+            if (this != null) Build();
+        };
+#else
+        Build();
+#endif
     }
 }
