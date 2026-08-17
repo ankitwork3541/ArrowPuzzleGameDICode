@@ -320,13 +320,40 @@ public static class LevelCampaignGenerator
         return levelNumber >= ShapeEveryNLevels && levelNumber % ShapeEveryNLevels == 0;
     }
 
+    // Which silhouette the nth shaped level gets.
+    //
+    // Every shape is used exactly once per pass through the set, so none is over-used — but the
+    // ORDER is re-permuted each pass. Plain cycling would replay the same sequence every time:
+    // with 20 shapes across 1,000 levels a player would see the identical horse-cat-dog order eight
+    // times over. Stepping by a stride coprime with the count visits every index exactly once, and
+    // picking a fresh stride and offset per pass gives a different order each time.
+    static int ShapeIndexFor(int shapedOrdinal)
+    {
+        int n = shapeFiles.Length;
+        if (n <= 1) return 0;
+
+        int pass = shapedOrdinal / n;
+        int slot = shapedOrdinal % n;
+
+        int stride = 1 + (int)(Hash01(pass * 31 + 7) * (n - 1));
+        while (Gcd(stride, n) != 1) stride++;
+
+        int offset = (int)(Hash01(pass * 131 + 17) * n);
+        return (offset + slot * stride) % n;
+    }
+
+    static int Gcd(int a, int b)
+    {
+        while (b != 0) { int t = a % b; a = b; b = t; }
+        return a;
+    }
+
     // Sized so the silhouette holds roughly the arrows this slot wants. Built twice: the first
     // build reveals the shape's real coverage, the second scales the grid to match.
     static HashSet<Vector2Int> BuildShapeMask(int shapedOrdinal, int wantArrows,
                                               out int width, out int height, out string shapeName)
     {
-        // Cycle rather than pick at random, so every silhouette gets used the same number of times.
-        string file = shapeFiles[shapedOrdinal % shapeFiles.Length];
+        string file = shapeFiles[ShapeIndexFor(shapedOrdinal)];
         shapeName = System.IO.Path.GetFileNameWithoutExtension(file);
 
         float wantCells = wantArrows * CellsPerArrow(wantArrows);
