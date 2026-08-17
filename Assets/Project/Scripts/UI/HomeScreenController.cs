@@ -31,6 +31,8 @@ public class HomeScreenController : MonoBehaviour
         difficultyText = root.Q<Label>("difficulty-text");
         playButton = root.Q<Button>("play-button");
 
+        UIClickSound.Attach(playButton);
+
         // Unregister first so a second UI reload can't stack a duplicate handler.
         playButton.clicked -= gameFlowManager.OnPlayButtonClicked;
         playButton.clicked += gameFlowManager.OnPlayButtonClicked;

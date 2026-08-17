@@ -110,6 +110,8 @@ public class GameFlowManager : MonoBehaviour
         LastCompletedLevelNumber = levelLoader.CurrentLevelNumber();
         levelLoader.AdvanceLevel();
 
+        AudioManager.Instance.PlayLevelComplete();
+
         CameraController.Instance.SuspendInput();
         gameplayRoot.SetActive(false);
         winRoot.SetActive(true);
@@ -117,6 +119,8 @@ public class GameFlowManager : MonoBehaviour
 
     public void ShowLose()
     {
+        AudioManager.Instance.PlayLevelFailed();
+
         CameraController.Instance.SuspendInput();
         gameplayRoot.SetActive(false);
         loseRoot.SetActive(true);

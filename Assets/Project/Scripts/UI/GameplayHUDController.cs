@@ -95,6 +95,8 @@ public class GameplayHUDController : MonoBehaviour
     // Unregister before registering so a second UI reload can't stack duplicates.
     private static void Bind(Button button, System.Action handler)
     {
+        UIClickSound.Attach(button);
+
         button.clicked -= handler;
         button.clicked += handler;
     }

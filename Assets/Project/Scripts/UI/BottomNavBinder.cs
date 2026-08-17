@@ -22,7 +22,9 @@ public static class BottomNavBinder
         item.EnableInClassList("nav-item--active", active);
         item.EnableInClassList("nav-item--dim", !active);
 
-        if (handler == null) return;
+        if (handler == null) return;   // the current screen's own item: highlight, no sound, no move
+
+        UIClickSound.Attach(item);
 
         // Unregister first so a second UI reload cannot stack a duplicate. Only works because the
         // caller passes a method group — a fresh lambda would never match.

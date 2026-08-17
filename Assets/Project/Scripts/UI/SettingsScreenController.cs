@@ -58,6 +58,7 @@ public class SettingsScreenController : MonoBehaviour
     // `clicked` event to lean on — a raw ClickEvent callback it is.
     private static void BindSwitch(VisualElement element, EventCallback<ClickEvent> handler)
     {
+        UIClickSound.Attach(element);
         element.UnregisterCallback(handler);
         element.RegisterCallback(handler);
     }
@@ -70,6 +71,7 @@ public class SettingsScreenController : MonoBehaviour
         // The URL rides on the element itself, so all four rows can share one
         // handler and still be unregistered by method group.
         element.userData = url;
+        UIClickSound.Attach(element);
         element.UnregisterCallback<ClickEvent>(OnLinkClicked);
         element.RegisterCallback<ClickEvent>(OnLinkClicked);
     }

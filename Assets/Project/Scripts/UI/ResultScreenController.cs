@@ -63,6 +63,8 @@ public class ResultScreenController : MonoBehaviour
     // Unregister before registering so a second UI reload cannot stack duplicate handlers.
     private static void Bind(Button button, System.Action handler)
     {
+        UIClickSound.Attach(button);
+
         if (button == null) return;
         button.clicked -= handler;
         button.clicked += handler;

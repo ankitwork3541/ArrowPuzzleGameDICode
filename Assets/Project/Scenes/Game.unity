@@ -260,8 +260,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AudioManager
   sfxSource: {fileID: 313712118}
   sfxMixerGroup: {fileID: -8116236422334216219, guid: 054ec06159bde457d85ed47d6cdcfdee, type: 2}
-  arrowClickSuccessClip: {fileID: 8300000, guid: fb528bc37711146119b3452232d09d80, type: 3}
+  arrowClickSuccessClip: {fileID: 8300000, guid: 4d98b823037fd4e34aa9eaae789dda30, type: 3}
   arrowClickBlockedClip: {fileID: 8300000, guid: ab238a461cd364974901329f77a10bad, type: 3}
+  uiClickClip: {fileID: 8300000, guid: cfac7bbffe9fc42d38f0740b6bdad43d, type: 3}
+  levelCompleteClip: {fileID: 8300000, guid: 17e3bc12be01c45c2a3312cd1a404d00, type: 3}
+  levelFailedClip: {fileID: 8300000, guid: 57193a6a909b446c2b2d939e418a783a, type: 3}
 --- !u!82 &313712118
 AudioSource:
   m_ObjectHideFlags: 0
