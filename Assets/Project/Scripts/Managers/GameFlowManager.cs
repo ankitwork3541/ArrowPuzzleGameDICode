@@ -22,6 +22,39 @@ public class GameFlowManager : MonoBehaviour
     // player can turn it off — two Awake()s both writing Application.targetFrameRate would race,
     // and Unity does not define which one wins.
 
+    void Update()
+    {
+        if (BackPressedThisFrame()) HandleBackPressed();
+    }
+
+    // Android's hardware/gesture back button.
+    //
+    // This deliberately uses the LEGACY Input class, which is the only way to read it. The Input
+    // System package has no Android keyboard layout at all — its Android plugin is gamepad, axis
+    // and sensor devices only — and Android reports back as KEYCODE_BACK (4), which is a different
+    // key from Escape (111). So `Keyboard.current.escapeKey` never fires for it, whatever the
+    // forum answers say. Needs Project Settings > Player > Active Input Handling = Both.
+    //
+    // Also depends on androidPredictiveBackSupport staying OFF: with predictive back enabled
+    // Android stops delivering KEYCODE_BACK entirely and expects an OnBackInvokedCallback instead.
+    static bool BackPressedThisFrame()
+    {
+        return Input.GetKeyDown(KeyCode.Escape);
+    }
+
+    // One step back per press, checked innermost screen first. Home is the root, so back there
+    // leaves the app — which is what Android expects of a root activity.
+    void HandleBackPressed()
+    {
+        if (settingsRoot.activeSelf) { OnHomeNavClicked(); return; }
+        if (winRoot.activeSelf) { OnWinHomeClicked(); return; }
+        if (loseRoot.activeSelf) { OnLoseHomeClicked(); return; }
+        if (gameplayRoot.activeSelf) { OnBackToHomeClicked(); return; }
+        if (homeRoot.activeSelf) { Application.Quit(); return; }
+
+        // Splash is the only screen left, and it has nowhere to go back to — it advances by itself.
+    }
+
     public void OnPlayButtonClicked()
     {
         homeRoot.SetActive(false);
