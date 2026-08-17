@@ -170,8 +170,9 @@ PlayerSettings:
   androidMaxAspectRatio: 2.4
   androidMinAspectRatio: 1
   applicationIdentifier:
-    Android: com.test.arrowpuzzle
+    Android: com.arrow.puzzle.playneonarrows.escape.out
     Standalone: com.DefaultCompany.2D-URP
+    iPhone: com.arrow.puzzle.playneonarrows.escape.out
   buildNumber:
     Standalone: 0
     VisionOS: 0
