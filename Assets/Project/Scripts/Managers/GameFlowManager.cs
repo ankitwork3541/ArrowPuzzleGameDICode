@@ -130,6 +130,7 @@ public class GameFlowManager : MonoBehaviour
     // These only decide where the player goes next.
     public void OnNextLevelClicked()
     {
+        AudioManager.Instance.StopJingle();
         winRoot.SetActive(false);
         levelLoader.ClearLevel();
         StartLevel();
@@ -137,12 +138,14 @@ public class GameFlowManager : MonoBehaviour
 
     public void OnWinHomeClicked()
     {
+        AudioManager.Instance.StopJingle();
         winRoot.SetActive(false);
         GoHome();
     }
 
     public void OnRetryLevelClicked()
     {
+        AudioManager.Instance.StopJingle();
         loseRoot.SetActive(false);
         levelLoader.ClearLevel();
         StartLevel();
@@ -150,6 +153,7 @@ public class GameFlowManager : MonoBehaviour
 
     public void OnLoseHomeClicked()
     {
+        AudioManager.Instance.StopJingle();
         loseRoot.SetActive(false);
         GoHome();
     }

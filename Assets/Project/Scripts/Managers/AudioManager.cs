@@ -6,6 +6,10 @@ public class AudioManager : MonoBehaviour
     public static AudioManager Instance;
 
     public AudioSource sfxSource;
+
+    // Win/lose jingles only, so they can be stopped when the card is dismissed. PlayOneShot sounds
+    // cannot be stopped individually, and stopping sfxSource would cut the button click too.
+    public AudioSource jingleSource;
     public AudioMixerGroup sfxMixerGroup;
 
     public AudioClip arrowClickSuccessClip;
@@ -25,6 +29,7 @@ public class AudioManager : MonoBehaviour
     {
         Instance = this;
         sfxSource.outputAudioMixerGroup = sfxMixerGroup;
+        if (jingleSource != null) jingleSource.outputAudioMixerGroup = sfxMixerGroup;
     }
 
     public void PlayArrowClickSuccess()
@@ -44,12 +49,27 @@ public class AudioManager : MonoBehaviour
 
     public void PlayLevelComplete()
     {
-        PlaySfx(levelCompleteClip);
+        PlayJingle(levelCompleteClip);
     }
 
     public void PlayLevelFailed()
     {
-        PlaySfx(levelFailedClip);
+        PlayJingle(levelFailedClip);
+    }
+
+    public void StopJingle()
+    {
+        if (jingleSource != null) jingleSource.Stop();
+    }
+
+    void PlayJingle(AudioClip clip)
+    {
+        if (clip == null || jingleSource == null) return;
+        if (!SettingsManager.Instance.SoundEnabled) return;
+
+        jingleSource.Stop();
+        jingleSource.clip = clip;
+        jingleSource.Play();
     }
 
     void PlaySfx(AudioClip clip)
