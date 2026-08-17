@@ -36,6 +36,20 @@ public static class LevelCampaignGenerator
 
     // Tooth height: each run drops to this fraction of the peak, then climbs back. 1.0 = monotone.
     const float RunFloorFraction = 0.55f;
+
+    // Runs must not all peak at the same height, or every tooth is identical and the campaign reads
+    // as one 7-level loop repeated forever — hard, back to easy, the same hard, again. Measured on
+    // the reference campaign: 1,806 levels spanning 16 to 229 arrows around a mean of 88, a spread a
+    // uniform tooth could not produce. So each run's peak is nudged up or down by this fraction:
+    // some runs top out harder than the one before, some easier.
+    const float PeakJitter = 0.22f;
+
+    // How the count climbs WITHIN a run. At 1 it is a straight line, which meant only the first
+    // level of each run was actually easy and every one after it was harder than the last — one
+    // breather, then a grind. Above 1 the bottom of the run stays flat for two to four levels before
+    // it ramps, so a hard peak is followed by a CLUSTER of easy levels, not a single one. Longer runs
+    // get longer clusters for free, since the flat part is a fraction of the run.
+    const float RunClimbPower = 2.2f;
     const int RunLengthMin = 5;
     const int RunLengthMax = 9;
 
@@ -49,6 +63,30 @@ public static class LevelCampaignGenerator
     const float ArrowTolerance = 0.12f;
 
     const float BoardAspect = 1.25f;    // portrait, height / width
+
+    // ---------- shaped levels ----------
+
+    // Every Nth level is shaped, counting from level 1 — so the first one lands inside onboarding,
+    // which is where the reference puts its first shaped board too (around its sixth level). It
+    // cycles through whatever silhouettes are in LevelShapeSources/. 0 disables shapes; so does an
+    // empty source folder, so the bake still works before any art exists.
+    const int ShapeEveryNLevels = 7;
+
+    // Shapes cover only part of their bounding box, so the box has to be bigger than a rectangle
+    // holding the same arrows. The first build measures the real coverage and the second corrects
+    // for it — one refinement lands close enough that the seed search absorbs the rest.
+    const float ShapeFirstGuessFill = 0.55f;
+
+    // A shaped level is a SHOWCASE: its board is sized to make the silhouette readable, not to hit
+    // the ramp's arrow count. How big that has to be is measured from the shape itself — see
+    // LevelShapeMask, which sizes the grid from the shape's thinnest limb — so nothing here needs a
+    // hand-picked minimum.
+    //
+    // The reference game does the same thing. Its onboarding runs 12x14/16 arrows, then 30x30/36 for
+    // the shaped one, then straight back down to 10x13/12: a deliberate size spike, not a level that
+    // obeys the surrounding ramp.
+
+    static string[] shapeFiles = new string[0];
 
     [MenuItem("ArrowPuzzle/Campaign/Bake 15 Levels (test)")]
     static void Bake15() { Bake(15); }
@@ -68,7 +106,13 @@ public static class LevelCampaignGenerator
         ramp.AppendLine("level |   grid  | cells | arrows want/got | avgLen | bends/seg | score | band");
 
         int arrowMisses = 0;
+        int shapedLevels = 0;
         bool cancelled = false;
+
+        shapeFiles = LevelShapeMask.ListShapes();
+        Debug.Log(shapeFiles.Length > 0
+            ? $"[Campaign] {shapeFiles.Length} silhouette(s) found — a shaped board every {ShapeEveryNLevels} levels."
+            : $"[Campaign] no silhouettes in {LevelShapeMask.FolderPath} — every level will be a rectangle.");
 
         try
         {
@@ -84,14 +128,30 @@ public static class LevelCampaignGenerator
                 }
 
                 int wantArrows = TargetArrows(i, CampaignLength);
-                int width, height;
-                BoardFor(wantArrows, out width, out height);
+
+                // Initialised because the compiler cannot see that a null mask always falls through
+                // to the rectangle branch below, which assigns both.
+                int width = 0, height = 0;
+                HashSet<Vector2Int> mask = null;
+                string shapeName = null;
+
+                if (WantsShape(i))
+                {
+                    mask = BuildShapeMask(shapedLevels, wantArrows, out width, out height, out shapeName);
+                    if (mask != null) shapedLevels++;
+                }
+
+                if (mask == null)
+                {
+                    BoardFor(wantArrows, out width, out height);
+                    mask = LevelCarver.Rectangle(width, height);
+                }
 
                 LevelCarver.Params prm = ParamsFor(i, wantArrows);
 
                 List<List<Vector2Int>> arrows;
                 LevelDifficulty.Result result;
-                CarveBest(i, wantArrows, width, height, prm, out arrows, out result);
+                CarveBest(i, wantArrows, mask, width, height, prm, out arrows, out result);
 
                 if (arrows == null)
                 {
@@ -112,8 +172,8 @@ public static class LevelCampaignGenerator
                     arrowMisses++;
 
                 // Only the head is logged — Unity truncates a thousand rows anyway.
-                if (i < 20 || (i + 1) % 100 == 0)
-                    ramp.AppendLine(RampRow(i, width, height, wantArrows, arrows, result));
+                if (i < 20 || (i + 1) % 100 == 0 || shapeName != null)
+                    ramp.AppendLine(RampRow(i, width, height, wantArrows, arrows, result, shapeName));
             }
         }
         finally
@@ -149,6 +209,8 @@ public static class LevelCampaignGenerator
         summary.AppendLine($"CAMPAIGN BAKED — {records.Count} levels, {chunks} chunk(s), "
                            + $"{bytes / 1024f:F0} KB total ({bytes / (float)records.Count:F0} bytes/level)");
         summary.AppendLine($"round-trip verified cell-for-cell   |   baked in {clock.Elapsed.TotalSeconds:F1}s");
+        if (shapedLevels > 0)
+            summary.AppendLine($"{shapedLevels} shaped level(s) from {shapeFiles.Length} silhouette(s)");
         if (arrowMisses > 0)
             summary.AppendLine($"{arrowMisses} level(s) outside the {ArrowTolerance:P0} arrow-count tolerance "
                                + "(harmless for the ramp, worth a look if it is most of them)");
@@ -178,16 +240,29 @@ public static class LevelCampaignGenerator
         float peak = Mathf.Lerp(PeakArrowsStart, PeakArrowsEnd, Mathf.Pow(u, PeakCurvePower));
 
         // Where in the current tooth this level sits. Lengths vary so it is not a mechanical pulse.
-        int runStart, runLength;
-        RunAt(postOnboarding, out runStart, out runLength);
+        int runStart, runLength, runIndex;
+        RunAt(postOnboarding, out runStart, out runLength, out runIndex);
         float withinRun = runLength <= 1 ? 1f : (postOnboarding - runStart) / (float)(runLength - 1);
 
-        float arrows = Mathf.Lerp(peak * RunFloorFraction, peak, withinRun);
+        // Per-run peak nudge, deterministic so a re-bake reproduces the same campaign.
+        peak *= 1f + PeakJitter * (Hash01(runIndex + 1) * 2f - 1f);
+
+        float arrows = Mathf.Lerp(peak * RunFloorFraction, peak, Mathf.Pow(withinRun, RunClimbPower));
         return Mathf.Max(3, Mathf.RoundToInt(arrows));
     }
 
+    // Deterministic 0..1 from an integer, so run lengths and peaks vary without any stored state.
+    static float Hash01(int n)
+    {
+        uint h = (uint)n * 2654435761u;
+        h ^= h >> 15;
+        h *= 2246822519u;
+        h ^= h >> 13;
+        return (h % 100000u) / 100000f;
+    }
+
     // Walked from the start rather than stored — deterministic, and cheap at these counts.
-    static void RunAt(int postOnboardingIndex, out int runStart, out int runLength)
+    static void RunAt(int postOnboardingIndex, out int runStart, out int runLength, out int runIndex)
     {
         int at = 0;
         int run = 0;
@@ -201,6 +276,7 @@ public static class LevelCampaignGenerator
             {
                 runStart = at;
                 runLength = length;
+                runIndex = run;
                 return;
             }
 
@@ -234,6 +310,44 @@ public static class LevelCampaignGenerator
         return FitCellsPerArrow[FitCellsPerArrow.Length - 1];
     }
 
+    // Levels 7, 14, 21, ... — the very first level stays a plain 4x4, since level 1 has three
+    // arrows and a silhouette at that size is unreadable anyway.
+    static bool WantsShape(int levelIndex)
+    {
+        if (ShapeEveryNLevels <= 0 || shapeFiles.Length == 0) return false;
+
+        int levelNumber = levelIndex + 1;
+        return levelNumber >= ShapeEveryNLevels && levelNumber % ShapeEveryNLevels == 0;
+    }
+
+    // Sized so the silhouette holds roughly the arrows this slot wants. Built twice: the first
+    // build reveals the shape's real coverage, the second scales the grid to match.
+    static HashSet<Vector2Int> BuildShapeMask(int shapedOrdinal, int wantArrows,
+                                              out int width, out int height, out string shapeName)
+    {
+        // Cycle rather than pick at random, so every silhouette gets used the same number of times.
+        string file = shapeFiles[shapedOrdinal % shapeFiles.Length];
+        shapeName = System.IO.Path.GetFileNameWithoutExtension(file);
+
+        float wantCells = wantArrows * CellsPerArrow(wantArrows);
+
+        // Ask for the size the ramp would like. Build() gives us that or more — it upgrades the grid
+        // whenever the silhouette needs more cells to survive, so an over-detailed shape on an early
+        // level comes out bigger rather than coming out a blob.
+        int fromRamp = Mathf.RoundToInt(Mathf.Sqrt(wantCells / ShapeFirstGuessFill / BoardAspect));
+
+        string report;
+        HashSet<Vector2Int> mask = LevelShapeMask.Build(file, fromRamp, out width, out height, out report);
+        if (mask == null)
+        {
+            Debug.LogWarning($"[Campaign] shape '{shapeName}' unusable ({report}) — falling back to a rectangle.");
+            return null;
+        }
+
+        Debug.Log($"[Campaign] shaped level: {shapeName} — {report}");
+        return mask;
+    }
+
     static void BoardFor(int wantArrows, out int width, out int height)
     {
         float area = wantArrows * CellsPerArrow(wantArrows);
@@ -262,18 +376,24 @@ public static class LevelCampaignGenerator
         {
             lengthDecay = decay,
             turnChance = 0.33f,
-            attempts = levelIndex < OnboardingArrows.Length ? 12 : CarveAttemptsBulk
+            attempts = (!WantsShape(levelIndex) && levelIndex < OnboardingArrows.Length) ? 12 : CarveAttemptsBulk
         };
     }
 
-    static void CarveBest(int levelIndex, int wantArrows, int width, int height, LevelCarver.Params prm,
+    static void CarveBest(int levelIndex, int wantArrows, HashSet<Vector2Int> mask,
+                          int width, int height, LevelCarver.Params prm,
                           out List<List<Vector2Int>> bestArrows, out LevelDifficulty.Result bestResult)
     {
         bestArrows = null;
         bestResult = default;
         int bestMiss = int.MaxValue;
 
-        int attempts = levelIndex < OnboardingArrows.Length ? SeedAttemptsOnboarding : SeedAttemptsBulk;
+        // A shaped level's arrow count follows its silhouette, so searching seeds for the ramp's
+        // count is chasing a number it can never reach — and on a big mask that search costs
+        // minutes. Shapes always use the cheap budget, wherever they land in the campaign.
+        bool shaped = WantsShape(levelIndex);
+        int attempts = (!shaped && levelIndex < OnboardingArrows.Length)
+            ? SeedAttemptsOnboarding : SeedAttemptsBulk;
         int tolerance = Mathf.Max(1, Mathf.RoundToInt(wantArrows * ArrowTolerance));
 
         // Deterministic per level, so re-baking reproduces the same campaign byte for byte unless
@@ -285,8 +405,7 @@ public static class LevelCampaignGenerator
             Random.InitState(baseSeed + attempt);
 
             int stranded;
-            List<List<Vector2Int>> arrows = LevelCarver.CarveFull(
-                LevelCarver.Rectangle(width, height), width, height, prm, out stranded);
+            List<List<Vector2Int>> arrows = LevelCarver.CarveFull(mask, width, height, prm, out stranded);
 
             if (arrows == null || stranded > 0) continue;   // never ship unreachable cells
 
@@ -354,7 +473,8 @@ public static class LevelCampaignGenerator
     }
 
     static string RampRow(int levelIndex, int width, int height, int wantArrows,
-                          List<List<Vector2Int>> arrows, LevelDifficulty.Result result)
+                          List<List<Vector2Int>> arrows, LevelDifficulty.Result result,
+                          string shapeName)
     {
         int cells = 0, segments = 0, bends = 0;
         foreach (List<Vector2Int> p in arrows)
@@ -368,6 +488,6 @@ public static class LevelCampaignGenerator
         return string.Format("{0,5} | {1,3}x{2,-3} | {3,5} | {4,7}/{5,-7} | {6,6:F1} | {7,9:F2} | {8,5} | {9}",
             levelIndex + 1, width, height, cells, wantArrows, arrows.Count,
             cells / (float)arrows.Count, bends / (float)segments,
-            result.score, result.band.ToString().ToUpper());
+            result.score, result.band.ToString().ToUpper()) + (shapeName != null ? "  [" + shapeName + "]" : "");
     }
 }
