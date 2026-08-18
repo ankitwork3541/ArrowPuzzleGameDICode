@@ -81,10 +81,10 @@
     align-items: center;
 }
 
-/* ============ LEVEL badge (top-left) ============ */
+/* ============ LEVEL badge (top-right) ============ */
 .level-badge {
     position: absolute;
-    left: 36px;
+    right: 36px;
     top: 0;
     height: 150px;
     min-width: 190px;
@@ -131,7 +131,7 @@
    bottom bar's action buttons. */
 .oct-button--small {
     position: absolute;
-    right: 36px;
+    left: 36px;
     top: 15px;
     width: 120px;
     height: 120px;
