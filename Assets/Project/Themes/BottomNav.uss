@@ -60,6 +60,10 @@
     background-image: url("project://database/Assets/Project/Sprites/SettingsIcon.png?fileID=5904627132653970092&guid=6212eb57667724539859a170f6e04832&type=3#SettingsIcon_0");
 }
 
+.nav-icon--star {
+    background-image: url("project://database/Assets/Project/Sprites/IconStar.png?fileID=461939252480258482&guid=f2339d4101f61414e890ee55ce24ee1a&type=3#IconStar_0");
+}
+
 /* ---- states ---- */
 
 .nav-item--active {
@@ -84,6 +88,20 @@
 
 .nav-item--locked .nav-label {
     color: rgb(57, 65, 95);
+}
+
+/* Gold, not the nav's cyan: cyan already means "this is the screen you are on",
+   and an earned milestone is a different thing than the current tab. */
+.nav-item--unlocked {
+    opacity: 1;
+}
+
+.nav-item--unlocked .nav-icon {
+    -unity-background-image-tint-color: rgb(255, 199, 44);
+}
+
+.nav-item--unlocked .nav-label {
+    color: rgba(255, 220, 130, 0.95);
 }
 
 .nav-item--dim {

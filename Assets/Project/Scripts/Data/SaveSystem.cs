@@ -9,7 +9,7 @@ using UnityEngine;
 public static class SaveSystem
 {
     // Bump this when the shape of SaveData changes, and teach Migrate() how to get there.
-    public const int Version = 1;
+    public const int Version = 2;
 
     private const string FileName = "progress.json";
 
@@ -47,9 +47,8 @@ public static class SaveSystem
         return new SaveData { version = Version };
     }
 
-    // Nothing to do yet — there has only ever been one format. It exists so that the day the shape
-    // changes, the upgrade path is an edit here rather than a decision about whether to just wipe
-    // everyone's progress.
+    // Brings an older save up to the current shape rather than wiping progress that is already out
+    // on players' phones.
     private static SaveData Migrate(SaveData loaded)
     {
         if (loaded.version > Version)
@@ -60,6 +59,12 @@ public static class SaveSystem
                              + $"understands {Version}. Leaving it alone and starting fresh.");
             return new SaveData { version = Version };
         }
+
+        // v1 -> v2: highestLevelCompleted did not exist, so it reads back as 0 and every milestone
+        // would look unearned. currentLevelIndex is the count of levels already beaten (index 10 =
+        // playing level 11 = ten done), which is exactly the number to backfill.
+        if (loaded.version < 2)
+            loaded.highestLevelCompleted = Mathf.Max(0, loaded.currentLevelIndex);
 
         loaded.version = Version;
         return loaded;

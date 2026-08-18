@@ -322,6 +322,11 @@ public class LevelLoader : MonoBehaviour
     {
         EnsureCurrent();        // so totalLevels is known before it is compared against
 
+        // Banked before the index moves — the level just beaten is the one we are still on. Max()
+        // so replaying an old level cannot walk progress backwards.
+        SaveSystem.Data.highestLevelCompleted =
+            Mathf.Max(SaveSystem.Data.highestLevelCompleted, CurrentLevelNumber());
+
         currentLevelIndex++;
         if (totalLevels > 0 && currentLevelIndex >= totalLevels)
             currentLevelIndex = 0; // abhi mate: badha levels puri thay etle pachu 1st thi

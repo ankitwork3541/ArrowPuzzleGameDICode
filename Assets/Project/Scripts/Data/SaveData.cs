@@ -18,4 +18,8 @@ public class SaveData
 
     // Zero-based, matching LevelLoader. The player sees index + 1.
     public int currentLevelIndex;
+
+    // Highest level NUMBER (1-based) ever beaten; 0 = none. Kept separate from currentLevelIndex,
+    // which wraps back to 0 at the end of the campaign — an unlocked milestone must never re-lock.
+    public int highestLevelCompleted;
 }

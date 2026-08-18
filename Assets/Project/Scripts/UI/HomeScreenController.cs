@@ -56,5 +56,7 @@ public class HomeScreenController : MonoBehaviour
 
         levelLabel.text = "LEVEL " + levelLoader.CurrentLevelNumber().ToString("00");
         difficultyText.text = GameFlowManager.GetDifficultyLabel(levelLoader.CurrentLevel());
+
+        BottomNavBinder.RefreshMilestones(root);
     }
 }
