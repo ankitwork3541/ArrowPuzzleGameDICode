@@ -34,21 +34,13 @@
                     </ui:VisualElement>
                 </ui:VisualElement>
 
-                <ui:VisualElement name="card-feedback" class="card">
+                <ui:VisualElement name="card-links" class="card">
                     <ui:VisualElement name="link-rate" class="row row--link">
                         <ui:VisualElement class="row__icon row__icon--star" picking-mode="Ignore" />
                         <ui:Label text="Rate us" class="row__label" picking-mode="Ignore" />
                         <ui:Label text="&gt;" class="row__chevron" picking-mode="Ignore" />
                     </ui:VisualElement>
-                    <ui:VisualElement name="link-write" class="row row--link row--sep">
-                        <ui:VisualElement class="row__icon row__icon--pencil" picking-mode="Ignore" />
-                        <ui:Label text="Write us" class="row__label" picking-mode="Ignore" />
-                        <ui:Label text="&gt;" class="row__chevron" picking-mode="Ignore" />
-                    </ui:VisualElement>
-                </ui:VisualElement>
-
-                <ui:VisualElement name="card-legal" class="card">
-                    <ui:VisualElement name="link-privacy" class="row row--link">
+                    <ui:VisualElement name="link-privacy" class="row row--link row--sep">
                         <ui:VisualElement class="row__icon row__icon--document" picking-mode="Ignore" />
                         <ui:Label text="Privacy" class="row__label" picking-mode="Ignore" />
                         <ui:Label text="&gt;" class="row__chevron" picking-mode="Ignore" />

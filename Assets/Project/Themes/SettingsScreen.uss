@@ -116,10 +116,6 @@
     background-image: url("../Sprites/IconStar.png");
 }
 
-.row__icon--pencil {
-    background-image: url("../Sprites/IconPencil.png");
-}
-
 .row__icon--document {
     background-image: url("../Sprites/IconDocument.png");
 }

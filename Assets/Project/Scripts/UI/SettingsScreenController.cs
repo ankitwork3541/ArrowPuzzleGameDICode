@@ -12,7 +12,6 @@ public class SettingsScreenController : MonoBehaviour
     // is an Inspector change with no code change.
     [Header("Links (fill in when the real pages exist)")]
     [SerializeField] private string rateUsUrl;
-    [SerializeField] private string writeUsUrl;
     [SerializeField] private string privacyUrl;
     [SerializeField] private string termsUrl;
 
@@ -43,7 +42,6 @@ public class SettingsScreenController : MonoBehaviour
         BindSwitch(refreshSwitch, OnRefreshClicked);
 
         BindLink("link-rate", rateUsUrl);
-        BindLink("link-write", writeUsUrl);
         BindLink("link-privacy", privacyUrl);
         BindLink("link-terms", termsUrl);
 
@@ -68,7 +66,7 @@ public class SettingsScreenController : MonoBehaviour
         VisualElement element = root.Q<VisualElement>(elementName);
         if (element == null) return;
 
-        // The URL rides on the element itself, so all four rows can share one
+        // The URL rides on the element itself, so all the link rows can share one
         // handler and still be unregistered by method group.
         element.userData = url;
         UIClickSound.Attach(element);
