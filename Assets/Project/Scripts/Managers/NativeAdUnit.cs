@@ -4,8 +4,19 @@ using GoogleMobileAds.Api;
 using GoogleMobileAds.Common;
 using UnityEngine;
 
-// Where Android should draw the overlay: anchored to a screen edge, or at explicit screen pixels so
-// it can sit inside a dialog card rather than at the bottom of the display.
+// Where Android should draw the overlay: anchored to a screen edge, or at an explicit offset so it
+// can be lined up with a box the game's own UI reserved for it.
+//
+// x and y are DP, not pixels. The plugin runs convertDpToPixel over the offsets it is handed, so
+// passing pixels multiplies them by the display density and puts the ad off screen. Undocumented;
+// established by measuring on device.
+//
+// There is deliberately no width here. Requesting a custom size through the AdSize overloads is a
+// path Google has acknowledged as broken — a developer reporting
+// RenderTemplate(style, new AdSize(600, 500), AdPosition.Bottom) rendering "with the bottom part cut
+// off" was answered with "we are able to reproduce the issue", and the thread was never resolved.
+// Measurements here agree: with no AdSize the template comes out cleanly at full width, and with one
+// it comes out the requested pixel box and clips its own contents.
 public struct NativeAdPlacement
 {
     public bool anchored;
@@ -13,18 +24,14 @@ public struct NativeAdPlacement
     public int x;
     public int y;
 
-    // Requested template width in dp. Zero lets it span the screen, which is right for an ad
-    // anchored to a screen edge and wrong for one sitting inside a card.
-    public int widthDp;
-
     public static NativeAdPlacement Bottom()
     {
         return new NativeAdPlacement { anchored = true, anchor = AdPosition.Bottom };
     }
 
-    public static NativeAdPlacement At(int x, int y, int widthDp = 0)
+    public static NativeAdPlacement At(int xDp, int yDp)
     {
-        return new NativeAdPlacement { anchored = false, x = x, y = y, widthDp = widthDp };
+        return new NativeAdPlacement { anchored = false, x = xDp, y = yDp };
     }
 }
 
@@ -35,10 +42,9 @@ public class NativeAdUnit : MonoBehaviour
 {
     const float MeasureTimeoutSeconds = 2f;
 
-    // Upper bounds for the container when a width is requested but no height is configured. Only
-    // ceilings — the template still sizes itself by its own aspect ratio inside them.
-    const int SmallHeightCapDp = 150;
-    const int MediumHeightCapDp = 450;
+    // Read off the template layouts in googlemobileads-unity.aar, not chosen.
+    const int MediumTemplateHeightDp = 350;
+    const int SmallTemplateMarginDp = 10;
 
     NativeOverlayAd currentAd;
     NativeOverlayAd preloadedAd;
@@ -260,20 +266,8 @@ public class NativeAdUnit : MonoBehaviour
     {
         NativeStyleMapping mapping = Settings != null ? Settings.NativeStyle(styleNumber) : null;
         NativeTemplateStyle style = BuildStyle(mapping);
-        AdSize size = BuildSize(mapping, placement);
 
-        if (size != null)
-        {
-            if (placement.anchored)
-            {
-                ad.RenderTemplate(style, size, placement.anchor);
-            }
-            else
-            {
-                ad.RenderTemplate(style, size, placement.x, placement.y);
-            }
-        }
-        else if (placement.anchored)
+        if (placement.anchored)
         {
             ad.RenderTemplate(style, placement.anchor);
         }
@@ -285,16 +279,25 @@ public class NativeAdUnit : MonoBehaviour
         ad.Show();
         StartMeasure();
 
-        Debug.Log("[NativeAd] Rendered style " + styleNumber + " as template '" + style.TemplateId + "'.");
+        Debug.Log("[NativeAd] Rendered style " + styleNumber + " as '" + style.TemplateId + "'"
+                  + (placement.anchored
+                      ? " anchored " + placement.anchor
+                      : " at " + placement.x + "," + placement.y + "dp")
+                  + " default size.");
     }
 
     // Colours come from the game's own palette so the ad reads as part of the screen rather than a
     // white slab dropped onto it. The arrangement is fixed by the template and cannot be changed.
+    // The card tint from ResultScreen.uss, so an ad beside the result card reads as the same
+    // material rather than a lighter or darker slab.
+    static readonly Color Panel = new Color(0.047f, 0.071f, 0.165f);
+    static readonly Color Ink = new Color(0.02f, 0.03f, 0.086f);
+    static readonly Color Muted = new Color(0.65f, 0.70f, 0.80f);
+    static readonly Color Accent = new Color(0f, 0.898f, 1f);
+
     static NativeTemplateStyle BuildStyle(NativeStyleMapping mapping)
     {
         NativeTemplateSize template = mapping != null ? mapping.template : NativeTemplateSize.Small;
-        Color ink = new Color(0.02f, 0.03f, 0.086f);
-        Color muted = new Color(0.65f, 0.70f, 0.80f);
 
         return new NativeTemplateStyle
         {
@@ -302,74 +305,77 @@ public class NativeAdUnit : MonoBehaviour
                 ? NativeTemplateId.Medium
                 : NativeTemplateId.Small,
 
-            MainBackgroundColor = ink,
+            MainBackgroundColor = Panel,
 
-            PrimaryText = new NativeTemplateTextStyle
-            {
-                TextColor = Color.white,
-                FontSize = 15,
-                Style = NativeTemplateFontStyle.Bold
-            },
-            SecondaryText = new NativeTemplateTextStyle
-            {
-                TextColor = muted,
-                FontSize = 12,
-                Style = NativeTemplateFontStyle.Normal
-            },
-            TertiaryText = new NativeTemplateTextStyle
-            {
-                TextColor = muted,
-                FontSize = 12,
-                Style = NativeTemplateFontStyle.Normal
-            },
+            PrimaryText = TextStyle(Color.white, 15, NativeTemplateFontStyle.Bold),
+            SecondaryText = TextStyle(Muted, 12, NativeTemplateFontStyle.Normal),
+            TertiaryText = TextStyle(Muted, 12, NativeTemplateFontStyle.Normal),
+
             CallToActionText = new NativeTemplateTextStyle
             {
-                BackgroundColor = new Color(0f, 0.898f, 1f),
-                TextColor = ink,
+                BackgroundColor = Accent,
+                TextColor = Ink,
                 FontSize = 14,
                 Style = NativeTemplateFontStyle.Bold
             }
         };
     }
 
-    // Null means "let the template size itself" — correct for a screen-edge ad. A width only has to
-    // be requested when the ad must fit inside something narrower, such as a dialog card.
-    //
-    // The height passed alongside it is a container bound, not a layout guess: the templates keep a
-    // fixed aspect ratio and scale to the width they are given, and the height the UI reserves
-    // still comes from measuring the result afterwards.
-    static AdSize BuildSize(NativeStyleMapping mapping, NativeAdPlacement placement)
+    // BackgroundColor has to be set on every text row, not left at the struct default. The plugin's
+    // applyStyles() pushes each row's background onto its TextView unconditionally, so an unset
+    // value paints a box in whatever colour the default happens to be — which is what made the
+    // headline, the rating row and the body each sit on a different shade.
+    static NativeTemplateTextStyle TextStyle(Color color, int size, NativeTemplateFontStyle style)
     {
-        int width = placement.widthDp > 0
-            ? placement.widthDp
-            : (mapping != null && mapping.widthDp > 0 ? mapping.widthDp : 0);
-
-        int height = mapping != null && mapping.heightDp > 0 ? mapping.heightDp : 0;
-
-        if (width <= 0 && height <= 0)
+        return new NativeTemplateTextStyle
         {
-            return null;
-        }
-
-        if (width <= 0)
-        {
-            width = AdSize.FullWidth;
-        }
-
-        if (height <= 0)
-        {
-            bool medium = mapping != null && mapping.template == NativeTemplateSize.Medium;
-            height = medium ? MediumHeightCapDp : SmallHeightCapDp;
-        }
-
-        return new AdSize(width, height);
+            BackgroundColor = Panel,
+            TextColor = color,
+            FontSize = size,
+            Style = style
+        };
     }
+
+    // How tall the ad will come out for a given width. Public because the UI needs it BEFORE the ad
+    // exists: opening the reserved box at its final height means the layout settles once, and the ad
+    // can then be requested at a position that is already correct — no repositioning afterwards.
+    public static int ExpectedHeightPx(int styleNumber)
+    {
+        AdSettings settings = Settings;
+        NativeStyleMapping mapping = settings != null ? settings.NativeStyle(styleNumber) : null;
+
+        if (mapping != null && mapping.heightPx > 0)
+        {
+            return mapping.heightPx;
+        }
+
+        return NaturalHeightPx(mapping, Screen.width);
+    }
+
+    // A container shorter than the template's own height does not scale the ad down — it clips and
+    // overlaps it. Both figures are read off the template layouts inside googlemobileads-unity.aar:
+    //
+    //   medium  the root NativeAdView is a fixed 350dp tall
+    //   small   the inner box is constrained to a 4:1 ratio, inside 10dp of margin each side
+    static int NaturalHeightPx(NativeStyleMapping mapping, int widthPx)
+    {
+        bool medium = mapping != null && mapping.template == NativeTemplateSize.Medium;
+
+        return medium
+            ? Mathf.RoundToInt(MediumTemplateHeightDp * Density)
+            : Mathf.RoundToInt(widthPx / 4f + SmallTemplateMarginDp * 2f * Density);
+    }
+
+    // Same source the placement maths uses, so a dp figure means the same thing on both sides.
+    static float Density => NativeAdSpace.DisplayDensity;
 
     static NativeAdOptions BuildOptions()
     {
         return new NativeAdOptions
         {
-            MediaAspectRatio = MediaAspectRatio.Landscape,
+            // Any, not Landscape: the media area is a fixed 190dp tall, so demanding a landscape
+            // creative just letterboxes square artwork and leaves bands above and below it.
+            MediaAspectRatio = MediaAspectRatio.Any,
             AdChoicesPlacement = AdChoicesPlacement.TopRightCorner
         };
     }
@@ -412,6 +418,8 @@ public class NativeAdUnit : MonoBehaviour
             float height = currentAd.GetTemplateHeightInPixels();
             if (height > 0f)
             {
+                Debug.Log("[NativeAd] Measured " + currentAd.GetTemplateWidthInPixels()
+                          + " x " + height + " px (screen is " + Screen.width + " x " + Screen.height + ").");
                 SetHeight(height);
                 measureRoutine = null;
                 yield break;

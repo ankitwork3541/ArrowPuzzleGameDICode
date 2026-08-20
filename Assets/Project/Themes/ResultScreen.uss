@@ -157,8 +157,9 @@
     scale: 0.94;
 }
 
-/* In-flow inside the card, so giving it a height grows the card around the ad. Height comes from
-   the measured template; display stays none until an ad actually exists. */
+/* A sibling of the card, not a child: .result-root centres its children as a column, so the card
+   and the ad end up centred together as one group on any screen size. Width matches the card so the
+   two line up. Height comes from the measured template; display stays none until an ad exists. */
 .dialog-ad-space {
     width: 100%;
     flex-shrink: 0;

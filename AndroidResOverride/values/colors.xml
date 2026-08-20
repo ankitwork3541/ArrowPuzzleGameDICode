@@ -17,8 +17,10 @@
     <!-- Proof the folder made it into the build. Referenced by nothing. -->
     <color name="neon_ad_theme_marker">#FF00FF00</color>
 
-    <!-- The card behind the ad. In the small template a 10dp margin lets this show as a frame. -->
-    <color name="gnt_white">#0C122A</color>
+    <!-- Transparent, not a colour. This name backs both the card behind the whole ad AND the
+         hardcoded background on the text rows, so any solid value paints visible boxes on top of
+         whatever MainBackgroundColor already drew. Letting it through leaves one clean surface. -->
+    <color name="gnt_white">#00000000</color>
 
     <!-- The 2dp outline. Dim on purpose: a neon edge here fights the game's own card frames. -->
     <color name="gnt_outline">#1B2A4A</color>

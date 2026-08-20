@@ -17,11 +17,10 @@ public class NativeStyleMapping
 
     public NativeTemplateSize template = NativeTemplateSize.Small;
 
-    [Tooltip("Requested width in dp. 0 leaves it to the template.")]
-    public int widthDp;
-
-    [Tooltip("Requested height in dp. 0 leaves it to the template.")]
-    public int heightDp;
+    [Tooltip("Overrides how much room the UI reserves for this style, in PIXELS. 0 uses the "
+             + "template's own height, which is almost always right. The ad itself always renders "
+             + "at its natural size — asking the SDK for a custom size is a known-broken path.")]
+    public int heightPx;
 }
 
 // Baked fallback ad settings, shipped inside the build. The backend config overrides these at

@@ -233,6 +233,13 @@ public class AdsManager : MonoBehaviour
         }
     }
 
+    // What the level-end ad will measure, so a screen can open its reserved box at the right height
+    // first and lay out only once.
+    public int ExpectedLevelEndNativeHeightPx()
+    {
+        return Settings != null ? NativeAdUnit.ExpectedHeightPx(Settings.SuccessScreenStyle) : 0;
+    }
+
     // Called again after the ad's height has grown the card and shifted the reserved box.
     public void MoveNativeAd(int x, int y)
     {

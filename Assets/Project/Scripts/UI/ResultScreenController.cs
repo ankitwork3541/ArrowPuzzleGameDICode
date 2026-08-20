@@ -53,6 +53,12 @@ public class ResultScreenController : MonoBehaviour
             placeRoutine = null;
         }
 
+        if (settleRoutine != null)
+        {
+            StopCoroutine(settleRoutine);
+            settleRoutine = null;
+        }
+
         VisualElement space = AdSpace;
         if (space != null)
         {
@@ -110,40 +116,55 @@ public class ResultScreenController : MonoBehaviour
     private System.Collections.IEnumerator PlaceAdWhenLaidOut()
     {
         VisualElement space = AdSpace;
-        float deadline = Time.realtimeSinceStartup + 2f;
-
-        while (Time.realtimeSinceStartup < deadline)
+        if (space == null || AdsManager.Instance == null)
         {
+            placeRoutine = null;
+            yield break;
+        }
+
+        // The ad renders at its own natural size — full screen width — so only its height has to be
+        // reserved, and that is known from the template before the ad exists. Opening the box at that
+        // height up front means the group settles into its final centred position once, and the
+        // position handed to the plugin is right first time with nothing to correct afterwards.
+        int expectedHeightPx = AdsManager.Instance.ExpectedLevelEndNativeHeightPx();
+        NativeAdSpace.Apply(space, expectedHeightPx);
+
+        // Two frames: one for the box's own height, one for the re-centred group around it. Then wait
+        // for a resolved rect, because worldBound reads NaN until UI Toolkit has laid the panel out.
+        float deadline = Time.realtimeSinceStartup + 2f;
+        Vector2Int topLeftDp;
+
+        do
+        {
+            yield return null;
+
             if (space == null || AdsManager.Instance == null)
             {
                 placeRoutine = null;
                 yield break;
             }
+        }
+        while (!NativeAdSpace.TryTopLeftDp(space, out topLeftDp)
+               && Time.realtimeSinceStartup < deadline);
 
-            Rect bounds = space.worldBound;
-            if (!float.IsNaN(bounds.width) && bounds.width > 0f)
-            {
-                Vector2Int topLeft = NativeAdSpace.ScreenTopLeft(space);
-                int widthDp = NativeAdSpace.PanelToDp(space, bounds.width);
-
-                adRequested = true;
-                Debug.Log("[NativeAd] Result card ready: " + widthDp + "dp wide at "
-                          + topLeft.x + "," + topLeft.y + " — requesting ad.");
-
-                // Consumes the ad preloaded when the level started, so the card does not wait on a
-                // network round trip.
-                AdsManager.Instance.ShowLevelEndNative(
-                    NativeAdPlacement.At(topLeft.x, topLeft.y, widthDp));
-
-                placeRoutine = null;
-                yield break;
-            }
-
-            yield return null;
+        if (!NativeAdSpace.TryTopLeftDp(space, out topLeftDp))
+        {
+            placeRoutine = null;
+            Debug.LogWarning("[NativeAd] Result card never laid out; no ad requested.");
+            yield break;
         }
 
+        adRequested = true;
+        Debug.Log("[NativeAd] Ad box reserved " + expectedHeightPx + "px tall, ad at "
+                  + topLeftDp.x + "," + topLeftDp.y + "dp"
+                  + " (screen " + Screen.width + "x" + Screen.height
+                  + ", density " + NativeAdSpace.DisplayDensity + ").");
+
+        // Consumes the ad preloaded when the level started, so the card does not wait on a network
+        // round trip.
+        AdsManager.Instance.ShowLevelEndNative(NativeAdPlacement.At(topLeftDp.x, topLeftDp.y));
+
         placeRoutine = null;
-        Debug.LogWarning("[NativeAd] Result card never laid out; no ad requested.");
     }
 
     // Every later layout pass — including the one caused by the ad's measured height — nudges the
@@ -155,8 +176,10 @@ public class ResultScreenController : MonoBehaviour
             return;
         }
 
-        Vector2Int topLeft = NativeAdSpace.ScreenTopLeft(AdSpace);
-        AdsManager.Instance.MoveNativeAd(topLeft.x, topLeft.y);
+        if (NativeAdSpace.TryTopLeftDp(AdSpace, out Vector2Int topLeftDp))
+        {
+            AdsManager.Instance.MoveNativeAd(topLeftDp.x, topLeftDp.y);
+        }
     }
 
     // Reserves exactly the ad's measured height. Zero collapses the box completely, so no ad leaves
@@ -167,6 +190,41 @@ public class ResultScreenController : MonoBehaviour
         if (space == null) return;
 
         NativeAdSpace.Apply(space, heightPixels);
+
+        // Growing the box re-centres the card-and-ad group, which moves the box. GeometryChangedEvent
+        // is supposed to catch that, but it fires only when UI Toolkit decides the rect changed — and
+        // on a second visit the panel can hand back last visit's rect for a frame or two, so the
+        // event either arrives with stale numbers or not at all. Nudging the ad for a short run of
+        // frames converges no matter when the layout actually settles.
+        if (settleRoutine != null)
+        {
+            StopCoroutine(settleRoutine);
+        }
+
+        settleRoutine = StartCoroutine(SettlePosition());
+    }
+
+    private Coroutine settleRoutine;
+
+    private System.Collections.IEnumerator SettlePosition()
+    {
+        for (int frame = 0; frame < 12; frame++)
+        {
+            yield return null;
+
+            if (!adRequested || AdsManager.Instance == null)
+            {
+                settleRoutine = null;
+                yield break;
+            }
+
+            if (NativeAdSpace.TryTopLeftDp(AdSpace, out Vector2Int topLeftDp))
+            {
+                AdsManager.Instance.MoveNativeAd(topLeftDp.x, topLeftDp.y);
+            }
+        }
+
+        settleRoutine = null;
     }
 
     private void OnUIReload(PanelRenderer renderer, VisualElement rootElement)
