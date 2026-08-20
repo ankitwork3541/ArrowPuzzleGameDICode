@@ -111,6 +111,8 @@ public class NativeAdUnit : MonoBehaviour
         // Covers both "ads switched off" and "enabled but the unit ID came back blank".
         if (!IsAllowed(adUnitId))
         {
+            Debug.Log("[NativeAd] Show refused for style " + styleNumber
+                      + " — ads disabled or unit ID blank.");
             Hide();
             return;
         }
@@ -118,6 +120,7 @@ public class NativeAdUnit : MonoBehaviour
         AdsManager manager = AdsManager.Instance;
         if (manager == null || !manager.Ready)
         {
+            Debug.Log("[NativeAd] Show for style " + styleNumber + " parked until the SDK is ready.");
             return;
         }
 
@@ -188,6 +191,7 @@ public class NativeAdUnit : MonoBehaviour
 
         if (preloadedAd == null)
         {
+            Debug.Log("[NativeAd] No preloaded ad in hand — loading style " + styleNumber + " live.");
             Show(adUnitId, styleNumber, placement, autoRefresh: false);
             return;
         }
@@ -196,6 +200,7 @@ public class NativeAdUnit : MonoBehaviour
         currentAd = preloadedAd;
         preloadedAd = null;
 
+        Debug.Log("[NativeAd] Using the preloaded ad for style " + styleNumber + ".");
         Render(currentAd, styleNumber, placement);
         Preload(adUnitId);
     }

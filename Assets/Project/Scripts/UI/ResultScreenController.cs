@@ -47,6 +47,12 @@ public class ResultScreenController : MonoBehaviour
             AdsManager.Instance.HideNativeAd();
         }
 
+        if (placeRoutine != null)
+        {
+            StopCoroutine(placeRoutine);
+            placeRoutine = null;
+        }
+
         VisualElement space = AdSpace;
         if (space != null)
         {
@@ -59,16 +65,27 @@ public class ResultScreenController : MonoBehaviour
 
     private bool adRequested;
 
-    // The ad has to be positioned over the reserved box, but that box has no width until it is laid
-    // out and no height until the ad has been measured. So the box is opened to a sliver first,
-    // which resolves its width, and every later layout pass nudges the ad to the box's new position.
+    // The ad has to be positioned over the reserved box, but that box has no width until UI Toolkit
+    // has laid it out, and worldBound reads NaN until then. Polling for that layout is deliberate:
+    // relying on GeometryChangedEvent alone silently never fired, and the ad was simply never asked
+    // for.
     private void HookAdSpace()
     {
         VisualElement space = AdSpace;
-        if (space == null || AdsManager.Instance == null || AdsManager.Instance.Settings == null) return;
+        if (space == null)
+        {
+            return;
+        }
+
+        if (AdsManager.Instance == null || AdsManager.Instance.Settings == null)
+        {
+            Debug.Log("[NativeAd] Result card: no AdsManager yet.");
+            return;
+        }
 
         if (!AdsManager.Instance.Settings.CanShowPreloadNative)
         {
+            Debug.Log("[NativeAd] Result card: ads off or no unit ID — leaving no space.");
             NativeAdSpace.Collapse(space);
             return;
         }
@@ -76,40 +93,70 @@ public class ResultScreenController : MonoBehaviour
         space.UnregisterCallback<GeometryChangedEvent>(OnAdSpaceGeometryChanged);
         space.RegisterCallback<GeometryChangedEvent>(OnAdSpaceGeometryChanged);
 
-        float known = AdsManager.Instance.NativeHeightPixels;
+        // Opened to a sliver so the box gets a width. Its real height arrives from the measurement.
         space.style.display = DisplayStyle.Flex;
-        space.style.height = known > 0f ? NativeAdSpace.PixelsToPanel(space, known) : 1f;
+        space.style.height = 1f;
 
-        PlaceOrMoveAd();
+        if (placeRoutine != null)
+        {
+            StopCoroutine(placeRoutine);
+        }
+
+        placeRoutine = StartCoroutine(PlaceAdWhenLaidOut());
     }
 
-    private void OnAdSpaceGeometryChanged(GeometryChangedEvent evt)
-    {
-        PlaceOrMoveAd();
-    }
+    private Coroutine placeRoutine;
 
-    private void PlaceOrMoveAd()
+    private System.Collections.IEnumerator PlaceAdWhenLaidOut()
     {
         VisualElement space = AdSpace;
-        if (space == null || AdsManager.Instance == null) return;
+        float deadline = Time.realtimeSinceStartup + 2f;
 
-        Rect bounds = space.worldBound;
-        if (float.IsNaN(bounds.width) || bounds.width <= 0f) return;
-
-        Vector2Int topLeft = NativeAdSpace.ScreenTopLeft(space);
-
-        if (adRequested)
+        while (Time.realtimeSinceStartup < deadline)
         {
-            AdsManager.Instance.MoveNativeAd(topLeft.x, topLeft.y);
+            if (space == null || AdsManager.Instance == null)
+            {
+                placeRoutine = null;
+                yield break;
+            }
+
+            Rect bounds = space.worldBound;
+            if (!float.IsNaN(bounds.width) && bounds.width > 0f)
+            {
+                Vector2Int topLeft = NativeAdSpace.ScreenTopLeft(space);
+                int widthDp = NativeAdSpace.PanelToDp(space, bounds.width);
+
+                adRequested = true;
+                Debug.Log("[NativeAd] Result card ready: " + widthDp + "dp wide at "
+                          + topLeft.x + "," + topLeft.y + " — requesting ad.");
+
+                // Consumes the ad preloaded when the level started, so the card does not wait on a
+                // network round trip.
+                AdsManager.Instance.ShowLevelEndNative(
+                    NativeAdPlacement.At(topLeft.x, topLeft.y, widthDp));
+
+                placeRoutine = null;
+                yield break;
+            }
+
+            yield return null;
+        }
+
+        placeRoutine = null;
+        Debug.LogWarning("[NativeAd] Result card never laid out; no ad requested.");
+    }
+
+    // Every later layout pass — including the one caused by the ad's measured height — nudges the
+    // ad to the box's new position.
+    private void OnAdSpaceGeometryChanged(GeometryChangedEvent evt)
+    {
+        if (!adRequested || AdsManager.Instance == null)
+        {
             return;
         }
 
-        adRequested = true;
-
-        // Consumes the ad preloaded when the level started, so the card does not wait on a network
-        // round trip. Width is the card's own content width, or the ad would overhang the card.
-        int widthDp = NativeAdSpace.PanelToDp(space, bounds.width);
-        AdsManager.Instance.ShowLevelEndNative(NativeAdPlacement.At(topLeft.x, topLeft.y, widthDp));
+        Vector2Int topLeft = NativeAdSpace.ScreenTopLeft(AdSpace);
+        AdsManager.Instance.MoveNativeAd(topLeft.x, topLeft.y);
     }
 
     // Reserves exactly the ad's measured height. Zero collapses the box completely, so no ad leaves
