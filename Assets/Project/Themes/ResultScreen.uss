@@ -156,3 +156,12 @@
 .result-home:active {
     scale: 0.94;
 }
+
+/* In-flow inside the card, so giving it a height grows the card around the ad. Height comes from
+   the measured template; display stays none until an ad actually exists. */
+.dialog-ad-space {
+    width: 100%;
+    flex-shrink: 0;
+    margin-top: 24px;
+    display: none;
+}

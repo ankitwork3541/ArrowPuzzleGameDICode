@@ -22,6 +22,9 @@
             </ui:Button>
 
             <ui:Button name="home-button" text="HOME" class="result-home" />
+
+
+            <ui:VisualElement name="dialog-ad-space" class="dialog-ad-space" />
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

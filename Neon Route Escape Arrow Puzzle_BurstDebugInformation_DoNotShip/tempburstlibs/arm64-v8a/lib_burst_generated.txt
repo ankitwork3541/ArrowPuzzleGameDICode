@@ -10,6 +10,7 @@ Library: /Users/shiftxinfotech/ShiftXWorkSpace/Unity/ArrowPuzzleGame/Temp/BurstO
 --target-framework=NetFramework
 --generate-link-xml=Temp/burst.link.xml
 --temp-folder=/Users/shiftxinfotech/ShiftXWorkSpace/Unity/ArrowPuzzleGame/Temp/Burst
+--debug=Full
 --key-folder=/Applications/Unity/Hub/Editor/6000.5.2f1/PlaybackEngines/AndroidPlayer
 --decode-folder=/Users/shiftxinfotech/ShiftXWorkSpace/Unity/ArrowPuzzleGame/Library/Burst
 --output=/Users/shiftxinfotech/ShiftXWorkSpace/Unity/ArrowPuzzleGame/Temp/BurstOutput/tempburstlibs/arm64-v8a/lib_burst_generated
@@ -128,6 +129,7 @@ Library: /Users/shiftxinfotech/ShiftXWorkSpace/Unity/ArrowPuzzleGame/Temp/BurstO
 --float-mode=Fast
 --generate-link-xml=Temp/burst.link.xml
 --temp-folder=/Users/shiftxinfotech/ShiftXWorkSpace/Unity/ArrowPuzzleGame/Temp/Burst
+--debug=Full
 --key-folder=/Applications/Unity/Hub/Editor/6000.5.2f1/PlaybackEngines/AndroidPlayer
 --decode-folder=/Users/shiftxinfotech/ShiftXWorkSpace/Unity/ArrowPuzzleGame/Library/Burst
 --output=/Users/shiftxinfotech/ShiftXWorkSpace/Unity/ArrowPuzzleGame/Temp/BurstOutput/tempburstlibs/arm64-v8a/lib_burst_generated
@@ -146,6 +148,7 @@ Library: /Users/shiftxinfotech/ShiftXWorkSpace/Unity/ArrowPuzzleGame/Temp/BurstO
 --target-framework=NetFramework
 --generate-link-xml=Temp/burst.link.xml
 --temp-folder=/Users/shiftxinfotech/ShiftXWorkSpace/Unity/ArrowPuzzleGame/Temp/Burst
+--debug=Full
 --key-folder=/Applications/Unity/Hub/Editor/6000.5.2f1/PlaybackEngines/AndroidPlayer
 --decode-folder=/Users/shiftxinfotech/ShiftXWorkSpace/Unity/ArrowPuzzleGame/Library/Burst
 --output=/Users/shiftxinfotech/ShiftXWorkSpace/Unity/ArrowPuzzleGame/Temp/BurstOutput/tempburstlibs/arm64-v8a/lib_burst_generated

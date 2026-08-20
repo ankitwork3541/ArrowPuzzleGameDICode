@@ -1,5 +1,4 @@
 using GoogleMobileAds.Api;
-using GoogleMobileAds.Common;
 using GoogleMobileAds.Ump.Api;
 using UnityEngine;
 
@@ -19,6 +18,7 @@ public class AdsManager : MonoBehaviour
     // Null until the matching component is added to this GameObject.
     public InterstitialAdUnit Interstitial { get; private set; }
     public BannerAdUnit Banner { get; private set; }
+    public NativeAdUnit Native { get; private set; }
 
     // Ad formats wait on this instead of polling Ready.
     public event System.Action OnReady;
@@ -45,6 +45,7 @@ public class AdsManager : MonoBehaviour
         fetcher = GetComponent<AdConfigFetcher>();
         Interstitial = GetComponent<InterstitialAdUnit>();
         Banner = GetComponent<BannerAdUnit>();
+        Native = GetComponent<NativeAdUnit>();
 
         // Last launch's payload, so an offline session still runs on real settings rather than
         // whatever shipped in the build months ago.
@@ -87,8 +88,17 @@ public class AdsManager : MonoBehaviour
         return found.Length > 0 ? found[0] : null;
     }
 
-    // Runs every launch: consent can be withdrawn or expire, and the answer decides whether the
-    // SDK may be initialised at all.
+    // UMP raises its callbacks on a background JNI thread, and MobileAds.Initialize creates Unity
+    // objects, which only the main thread may do. Calling it straight from a consent callback dies
+    // inside the plugin's static setup as a TypeInitializationException — with no usable stack,
+    // because the failure is in a static constructor. So callbacks only raise a flag; Update acts
+    // on it. MobileAdsEventExecutor cannot do this job here: it is itself part of the SDK that has
+    // not been initialised yet.
+    volatile bool consentResolved;
+    volatile bool initializationReported;
+    volatile bool initializationSucceeded;
+    bool initializeRequested;
+
     void RequestConsent()
     {
         ConsentInformation.Update(new ConsentRequestParameters(), consentError =>
@@ -96,7 +106,7 @@ public class AdsManager : MonoBehaviour
             if (consentError != null)
             {
                 Debug.LogWarning("[Ads] Consent update failed: " + consentError.Message);
-                InitializeIfAllowed();
+                consentResolved = true;
                 return;
             }
 
@@ -107,12 +117,28 @@ public class AdsManager : MonoBehaviour
                     Debug.LogWarning("[Ads] Consent form failed: " + formError.Message);
                 }
 
-                InitializeIfAllowed();
+                consentResolved = true;
             });
         });
     }
 
-    // Called even when consent errored: a player outside the EEA needs no form, and a returning
+    void Update()
+    {
+        if (consentResolved && !initializeRequested)
+        {
+            consentResolved = false;
+            initializeRequested = true;
+            InitializeIfAllowed();
+        }
+
+        if (initializationReported)
+        {
+            initializationReported = false;
+            FinishInitialization();
+        }
+    }
+
+    // Reached even when consent errored: a player outside the EEA needs no form, and a returning
     // player already has a stored answer, so CanRequestAds can still be true.
     void InitializeIfAllowed()
     {
@@ -122,25 +148,30 @@ public class AdsManager : MonoBehaviour
             return;
         }
 
+        Debug.Log("[Ads] Consent resolved. Initialising SDK on the main thread.");
+
         MobileAds.Initialize(status =>
         {
-            // Plugin callbacks arrive on a background thread; everything below touches Unity state.
-            MobileAdsEventExecutor.ExecuteInUpdate(() =>
-            {
-                if (status == null)
-                {
-                    Debug.LogError("[Ads] SDK initialisation failed.");
-                    return;
-                }
-
-                Ready = true;
-                Debug.Log("[Ads] SDK ready. remote=" + Settings.HasRemote
-                          + " test=" + Settings.UsingTestIds
-                          + " interstitial=" + Settings.InterstitialId
-                          + " levelsPerAd=" + Settings.LevelsPerInterstitial);
-                OnReady?.Invoke();
-            });
+            // Still a background thread, so record the outcome and let Update report it.
+            initializationSucceeded = status != null;
+            initializationReported = true;
         });
+    }
+
+    void FinishInitialization()
+    {
+        if (!initializationSucceeded)
+        {
+            Debug.LogError("[Ads] SDK initialisation failed.");
+            return;
+        }
+
+        Ready = true;
+        Debug.Log("[Ads] SDK ready. remote=" + Settings.HasRemote
+                  + " test=" + Settings.UsingTestIds
+                  + " interstitial=" + Settings.InterstitialId
+                  + " levelsPerAd=" + Settings.LevelsPerInterstitial);
+        OnReady?.Invoke();
     }
 
     // Null-safe one-liner for call sites. False means nothing was shown and the caller should
@@ -165,6 +196,80 @@ public class AdsManager : MonoBehaviour
             Banner.Hide();
         }
     }
+
+    // Home and gameplay put their reserved box at the very bottom of the screen, so the anchored
+    // placement lines up with no coordinate conversion needed.
+    public void ShowHomeNative()
+    {
+        if (Native != null && Settings != null)
+        {
+            Native.Show(Settings.NativeId, Settings.MainScreenStyle, NativeAdPlacement.Bottom());
+        }
+    }
+
+    public void ShowGameplayNative()
+    {
+        if (Native != null && Settings != null)
+        {
+            Native.Show(Settings.NativeId, Settings.PlayScreenStyle, NativeAdPlacement.Bottom());
+        }
+    }
+
+    public void PreloadLevelEndNative()
+    {
+        if (Native != null && Settings != null)
+        {
+            Native.Preload(Settings.PreloadNativeId);
+        }
+    }
+
+    // The win and lose cards are centred, so their ad is placed over the card's own rect.
+    // ResultScreenController owns that rect and calls this once its UI has laid out.
+    public void ShowLevelEndNative(NativeAdPlacement placement)
+    {
+        if (Native != null && Settings != null)
+        {
+            Native.ShowPreloaded(Settings.PreloadNativeId, Settings.SuccessScreenStyle, placement);
+        }
+    }
+
+    // Called again after the ad's height has grown the card and shifted the reserved box.
+    public void MoveNativeAd(int x, int y)
+    {
+        if (Native != null)
+        {
+            Native.MoveTo(x, y);
+        }
+    }
+
+    public void HideNativeAd()
+    {
+        if (Native != null)
+        {
+            Native.Hide();
+        }
+    }
+
+    // Screens subscribe to size their reserved space from the ad's measured height instead of a
+    // hardcoded guess.
+    public void AddNativeHeightListener(System.Action<float> listener)
+    {
+        if (Native != null)
+        {
+            Native.OnHeightChanged += listener;
+            listener(Native.HeightPixels);
+        }
+    }
+
+    public void RemoveNativeHeightListener(System.Action<float> listener)
+    {
+        if (Native != null)
+        {
+            Native.OnHeightChanged -= listener;
+        }
+    }
+
+    public float NativeHeightPixels => Native != null ? Native.HeightPixels : 0f;
 
     // Wire to a Settings-screen button. Only meaningful where a privacy entry point is required.
     public void ShowPrivacyOptions()

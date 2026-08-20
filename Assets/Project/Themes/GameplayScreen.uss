@@ -290,3 +290,11 @@
 .grid-button--on .oct-button__icon {
     -unity-background-image-tint-color: rgb(255, 255, 255);
 }
+
+/* Last child of gameplay-root, so a measured height pushes the flow up. bottom-bar is absolutely
+   positioned and is lifted separately in GameplayHUDController. */
+.gameplay-ad-space {
+    width: 100%;
+    flex-shrink: 0;
+    display: none;
+}

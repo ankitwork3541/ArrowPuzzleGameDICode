@@ -72,5 +72,7 @@
 
         </ui:VisualElement>
 
+        <ui:VisualElement name="native-ad-space" class="gameplay-ad-space" />
+
     </ui:VisualElement>
 </ui:UXML>

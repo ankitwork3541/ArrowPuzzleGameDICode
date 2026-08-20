@@ -84,6 +84,10 @@ public class GameFlowManager : MonoBehaviour
     // is the camera's solid colour with the backdrop arrows drifting behind it.
     public void OnSettingsNavClicked()
     {
+        if (AdsManager.Instance != null)
+        {
+            AdsManager.Instance.HideNativeAd();
+        }
         homeRoot.SetActive(false);
         settingsRoot.SetActive(true);
     }
@@ -92,6 +96,10 @@ public class GameFlowManager : MonoBehaviour
     {
         settingsRoot.SetActive(false);
         homeRoot.SetActive(true);
+        if (AdsManager.Instance != null)
+        {
+            AdsManager.Instance.ShowHomeNative();
+        }
     }
 
     // The board is deliberately NOT cleared here, and the camera is deliberately NOT reframed.
@@ -115,6 +123,7 @@ public class GameFlowManager : MonoBehaviour
         CameraController.Instance.SuspendInput();
         gameplayRoot.SetActive(false);
         winRoot.SetActive(true);
+
     }
 
     public void ShowLose()
@@ -124,6 +133,7 @@ public class GameFlowManager : MonoBehaviour
         CameraController.Instance.SuspendInput();
         gameplayRoot.SetActive(false);
         loseRoot.SetActive(true);
+
     }
 
     // Neither win exit advances anything — ShowWin() already did, the moment the level was beaten.
@@ -163,6 +173,12 @@ public class GameFlowManager : MonoBehaviour
         gameplayRoot.SetActive(true);   // activate before loading, so the HUD is
         livesManager.ResetLives();      // subscribed when SetArrowCount fires
         levelLoader.LoadLevel();
+
+        if (AdsManager.Instance != null)
+        {
+            AdsManager.Instance.ShowGameplayNative();
+            AdsManager.Instance.PreloadLevelEndNative();
+        }
     }
 
     private void GoHome()
@@ -170,6 +186,11 @@ public class GameFlowManager : MonoBehaviour
         levelLoader.ClearLevel();
         CameraController.Instance.FrameMenu();
         homeRoot.SetActive(true);
+
+        if (AdsManager.Instance != null)
+        {
+            AdsManager.Instance.ShowHomeNative();
+        }
     }
 
     // Reads what the generator measured. It used to bucket by arrow count, which said nothing

@@ -100,3 +100,10 @@
 .nav-slot {
     flex-shrink: 0;
 }
+
+.home-ad-space {
+    width: 100%;
+    height: 120px;
+    flex-shrink: 0;
+    display: none;
+}

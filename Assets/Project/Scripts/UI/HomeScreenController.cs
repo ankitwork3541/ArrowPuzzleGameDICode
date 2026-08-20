@@ -16,11 +16,32 @@ public class HomeScreenController : MonoBehaviour
     {
         panelRenderer.RegisterUIReloadCallback(OnUIReload);
         Refresh();
+
+        if (AdsManager.Instance != null)
+        {
+            AdsManager.Instance.AddNativeHeightListener(OnNativeHeightChanged);
+            AdsManager.Instance.ShowHomeNative();
+        }
     }
 
     private void OnDisable()
     {
         panelRenderer.UnregisterUIReloadCallback(OnUIReload);
+
+        if (AdsManager.Instance != null)
+        {
+            AdsManager.Instance.RemoveNativeHeightListener(OnNativeHeightChanged);
+            AdsManager.Instance.HideNativeAd();
+        }
+    }
+
+    // The ad is drawn by Android over the bottom of the screen; this only reserves matching room
+    // above it. A height of zero collapses the box entirely, so no ad means no gap.
+    private void OnNativeHeightChanged(float heightPixels)
+    {
+        if (root == null) return;
+
+        NativeAdSpace.Apply(root.Q<VisualElement>("native-ad-space"), heightPixels);
     }
 
     private void OnUIReload(PanelRenderer renderer, VisualElement rootElement)
@@ -58,5 +79,7 @@ public class HomeScreenController : MonoBehaviour
         difficultyText.text = GameFlowManager.GetDifficultyLabel(levelLoader.CurrentLevel());
 
         BottomNavBinder.RefreshMilestones(root);
+
+        OnNativeHeightChanged(AdsManager.Instance != null ? AdsManager.Instance.NativeHeightPixels : 0f);
     }
 }

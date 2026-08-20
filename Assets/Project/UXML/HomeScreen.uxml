@@ -15,5 +15,6 @@
             </ui:Button>
         </ui:VisualElement>
         <ui:Instance template="BottomNav" name="bottom-nav-slot" class="nav-slot" />
+        <ui:VisualElement name="native-ad-space" class="home-ad-space" />
     </ui:VisualElement>
 </ui:UXML>

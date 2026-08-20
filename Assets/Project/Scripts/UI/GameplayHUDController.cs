@@ -47,6 +47,11 @@ public class GameplayHUDController : MonoBehaviour
         lives = livesManager.lives;
         maxLives = livesManager.maxLives;
         Apply();
+
+        if (AdsManager.Instance != null)
+        {
+            AdsManager.Instance.AddNativeHeightListener(OnNativeHeightChanged);
+        }
     }
 
     private void OnDisable()
@@ -57,6 +62,11 @@ public class GameplayHUDController : MonoBehaviour
         levelManager.OnArrowCountChanged -= OnArrowCountChanged;
         levelLoader.OnEntranceStart -= OnEntranceStart;
         levelLoader.OnEntranceComplete -= OnEntranceComplete;
+
+        if (AdsManager.Instance != null)
+        {
+            AdsManager.Instance.RemoveNativeHeightListener(OnNativeHeightChanged);
+        }
     }
 
     private void OnEntranceStart()
@@ -137,6 +147,29 @@ public class GameplayHUDController : MonoBehaviour
         progressFill.style.width = new Length(solved * 100f, LengthUnit.Percent);
 
         gridButton.EnableInClassList("grid-button--on", guideLines.IsVisible);
+
+        OnNativeHeightChanged(AdsManager.Instance != null ? AdsManager.Instance.NativeHeightPixels : 0f);
+    }
+
+    // bottom-bar is absolutely positioned 70px up in USS. The ad is drawn beneath it, so the bar
+    // lifts by exactly the measured ad height — and by nothing when there is no ad.
+    private const float BottomBarBaseOffset = 70f;
+
+    private void OnNativeHeightChanged(float heightPixels)
+    {
+        if (root == null) return;
+
+        VisualElement adSpace = root.Q<VisualElement>("native-ad-space");
+        NativeAdSpace.Apply(adSpace, heightPixels);
+
+        float lift = heightPixels > 0f && adSpace != null
+            ? NativeAdSpace.PixelsToPanel(adSpace, heightPixels)
+            : 0f;
+
+        if (bottomBar != null)
+        {
+            bottomBar.style.bottom = BottomBarBaseOffset + lift;
+        }
     }
 
     // Did this tap land on the HUD rather than the board? Without this, tapping Hint or the grid

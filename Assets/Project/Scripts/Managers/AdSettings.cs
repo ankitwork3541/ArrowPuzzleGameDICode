@@ -16,18 +16,10 @@ public class AdSettings
     public bool HasRemote => remote != null;
     public bool UsingTestIds => baked.useTestIds;
 
-    // All-or-nothing on purpose: a bad deploy returning empty strings must not be able to blank
-    // out every ad unit one field at a time.
     public bool ApplyRemote(AdRemoteConfig config)
     {
         if (config == null || config.code != 1)
         {
-            return false;
-        }
-
-        if (!IsAdUnit(config.interstitial_adunit_id))
-        {
-            Debug.LogWarning("[Ads] Remote config carries no usable interstitial unit — ignored.");
             return false;
         }
 
@@ -45,10 +37,52 @@ public class AdSettings
     public string NativeId => Id(remote?.native_adunit_id, baked.nativeAd, AdTestIds.Native);
     public string PreloadNativeId => Id(remote?.preload_native_adunit_id, baked.preloadNativeAd, AdTestIds.Native);
 
+    // Lets a screen decide whether to open any room at all. Checking AdsEnabled alone would leave a
+    // gap whenever the backend sends an enabled flag but a blank unit ID.
+    public bool CanShowPreloadNative => AdsEnabled && !string.IsNullOrEmpty(PreloadNativeId);
+
     public int LevelsPerInterstitial => Positive(remote?.ad_level_count, baked.levelsPerInterstitial);
     public int InterstitialCooldownSeconds => Positive(remote?.ad_click_time_sec, baked.interstitialCooldownSeconds);
-    public int NativeRefreshSeconds => Positive(remote?.refresh_native_sec, baked.nativeRefreshSeconds);
     public int MinLevelForAds => baked.minLevelForAds;
+
+    // Clamped to the floor AdMob enforces on banner auto-refresh. The backend currently asks for
+    // 10s, which buys many requests and few viewable impressions.
+    public int NativeRefreshSeconds
+    {
+        get
+        {
+            int requested = Positive(remote?.refresh_native_sec, baked.nativeRefreshSeconds);
+            return Mathf.Max(requested, MinNativeRefreshSeconds);
+        }
+    }
+
+    public const int MinNativeRefreshSeconds = 30;
+
+    public int MainScreenStyle => Positive(remote?.main_screen, baked.defaultMainScreenStyle);
+    public int PlayScreenStyle => Positive(remote?.play_screen, baked.defaultPlayScreenStyle);
+    public int SuccessScreenStyle => Positive(remote?.success_screen, baked.defaultSuccessScreenStyle);
+
+    // The AdConfig table wins so the mapping can be retuned without a code change; the built-in
+    // fallback keeps a freshly created asset working.
+    public NativeStyleMapping NativeStyle(int styleNumber)
+    {
+        if (baked.nativeStyles != null)
+        {
+            foreach (NativeStyleMapping entry in baked.nativeStyles)
+            {
+                if (entry != null && entry.styleNumber == styleNumber)
+                {
+                    return entry;
+                }
+            }
+        }
+
+        return new NativeStyleMapping
+        {
+            styleNumber = styleNumber,
+            template = styleNumber >= 3 ? NativeTemplateSize.Medium : NativeTemplateSize.Small
+        };
+    }
 
     // Returns null rather than falling back to a test unit: showing test ads to real players earns
     // nothing and reads as a broken game.
