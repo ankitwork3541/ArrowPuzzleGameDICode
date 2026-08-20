@@ -16,6 +16,10 @@ public class AdsManager : MonoBehaviour
     public AdSettings Settings { get; private set; }
     public bool Ready { get; private set; }
 
+    // Null until the matching component is added to this GameObject.
+    public InterstitialAdUnit Interstitial { get; private set; }
+    public BannerAdUnit Banner { get; private set; }
+
     // Ad formats wait on this instead of polling Ready.
     public event System.Action OnReady;
 
@@ -39,6 +43,8 @@ public class AdsManager : MonoBehaviour
 
         Settings = new AdSettings(adConfig);
         fetcher = GetComponent<AdConfigFetcher>();
+        Interstitial = GetComponent<InterstitialAdUnit>();
+        Banner = GetComponent<BannerAdUnit>();
 
         // Last launch's payload, so an offline session still runs on real settings rather than
         // whatever shipped in the build months ago.
@@ -135,6 +141,29 @@ public class AdsManager : MonoBehaviour
                 OnReady?.Invoke();
             });
         });
+    }
+
+    // Null-safe one-liner for call sites. False means nothing was shown and the caller should
+    // carry on immediately.
+    public bool ShowInterstitial()
+    {
+        return Interstitial != null && Interstitial.Show();
+    }
+
+    public void ShowBanner()
+    {
+        if (Banner != null)
+        {
+            Banner.Show();
+        }
+    }
+
+    public void HideBanner()
+    {
+        if (Banner != null)
+        {
+            Banner.Hide();
+        }
     }
 
     // Wire to a Settings-screen button. Only meaningful where a privacy entry point is required.
