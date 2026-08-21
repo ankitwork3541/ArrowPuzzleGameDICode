@@ -98,10 +98,7 @@ public class BannerAdUnit : MonoBehaviour
 
         DestroyBanner();
 
-        // Anchored adaptive rather than the fixed 320x50: it takes the device's real width, so wide
-        // phones do not get a small banner floating in a bar of background.
-        AdSize size = AdSize.GetCurrentOrientationAnchoredAdaptiveBannerAdSizeWithWidth(AdSize.FullWidth);
-        banner = new BannerView(unitId, size, position);
+        banner = new BannerView(unitId, AnchoredAdaptiveSize(), position);
 
         banner.OnBannerAdLoaded += () => MobileAdsEventExecutor.ExecuteInUpdate(() =>
         {
@@ -125,6 +122,23 @@ public class BannerAdUnit : MonoBehaviour
 
         banner.LoadAd(new AdRequest());
     }
+
+    // Anchored adaptive rather than the fixed 320x50: it takes the device's real width, so wide
+    // phones do not get a small banner floating in a bar of background.
+    //
+    // The width is the screen's real dp width, NOT AdSize.FullWidth. FullWidth is -1, and the
+    // next-generation Ads SDK this plugin now depends on (ads-mobile-sdk) rejects it outright —
+    // "java.lang.IllegalArgumentException: Invalid width for AdSize -1" the moment the BannerView is
+    // constructed. Google's own Unity sample still shows FullWidth; it no longer works here.
+    public static AdSize AnchoredAdaptiveSize()
+    {
+        return AdSize.GetCurrentOrientationAnchoredAdaptiveBannerAdSizeWithWidth(ScreenWidthDp);
+    }
+
+    // Same density source the native ad's placement maths uses, so dp means the same thing on both
+    // sides of the plugin boundary.
+    public static int ScreenWidthDp =>
+        Mathf.Max(1, Mathf.RoundToInt(Screen.width / NativeAdSpace.DisplayDensity));
 
     void DestroyBanner()
     {

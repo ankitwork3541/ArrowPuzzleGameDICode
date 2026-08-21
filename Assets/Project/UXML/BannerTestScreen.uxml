@@ -1,0 +1,54 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Project/Themes/BannerTestScreen.uss"/>
+    <ui:VisualElement name="screen-root" class="screen-root">
+
+        <ui:VisualElement class="header">
+            <ui:Label text="BANNER AD PLACEMENT TEST" class="title"/>
+            <ui:Label name="device-info" text="..." class="device-info"/>
+        </ui:VisualElement>
+
+        <ui:ScrollView name="scroll" class="scroll">
+
+            <!-- Each slot is full screen width. Only the text is padded: the ad box itself must run
+                 edge to edge, because that is how wide the banner actually is. -->
+            <ui:VisualElement name="slot-1" class="slot">
+                <ui:VisualElement class="slot__text">
+                    <ui:Label text="1  ADAPTIVE BANNER" class="slot__title"/>
+                    <ui:Label text="Screen width, height chosen by Google for this device. Google's recommended type." class="slot__note"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="ad-space-1" class="slot__space"/>
+                <ui:VisualElement class="slot__text">
+                    <ui:Label name="result-1" text="loading..." class="slot__result"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="slot-2" class="slot">
+                <ui:VisualElement class="slot__text">
+                    <ui:Label text="2  SMART BANNER  50 dp" class="slot__title"/>
+                    <ui:Label text="Screen width x 50 dp. Smart banner picks this when screen height is 400-720 dp." class="slot__note"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="ad-space-2" class="slot__space"/>
+                <ui:VisualElement class="slot__text">
+                    <ui:Label name="result-2" text="loading..." class="slot__result"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="slot-3" class="slot">
+                <ui:VisualElement class="slot__text">
+                    <ui:Label text="3  SMART BANNER  90 dp" class="slot__title"/>
+                    <ui:Label text="Screen width x 90 dp. Smart banner picks this when screen height is above 720 dp." class="slot__note"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="ad-space-3" class="slot__space"/>
+                <ui:VisualElement class="slot__text">
+                    <ui:Label name="result-3" text="loading..." class="slot__result"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:Label name="footer" text="" class="footer"/>
+
+        </ui:ScrollView>
+
+        <ui:Button name="close-button" text="CLOSE" class="close-button"/>
+
+    </ui:VisualElement>
+</ui:UXML>
