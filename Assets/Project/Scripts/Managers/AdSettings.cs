@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 // The single place the rest of the game reads ad settings from. Resolves remote over baked, so no
 // caller ever has to know whether the backend answered.
@@ -64,6 +65,12 @@ public class AdSettings
     public int InterstitialCooldownSeconds => Positive(remote?.ad_click_time_sec, baked.interstitialCooldownSeconds);
 
     public int NativeRefreshSeconds => Positive(remote?.refresh_native_sec, baked.nativeRefreshSeconds);
+
+    // Not a backend value: staleness is about the SDK's cache, not about how often the publisher
+    // wants a new creative.
+    public float AdMaxAgeSeconds => Math.Max(60, baked.adMaxAgeMinutes * 60);
+
+    public List<string> TestDeviceIds => baked.testDeviceIds;
 
     public int MainScreenStyle => Positive(remote?.main_screen, baked.defaultMainScreenStyle);
     public int PlayScreenStyle => Positive(remote?.play_screen, baked.defaultPlayScreenStyle);

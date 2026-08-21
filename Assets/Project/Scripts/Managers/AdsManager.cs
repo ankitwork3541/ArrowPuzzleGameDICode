@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using GoogleMobileAds.Api;
 using GoogleMobileAds.Ump.Api;
 using UnityEngine;
@@ -150,12 +151,35 @@ public class AdsManager : MonoBehaviour
 
         Debug.Log("[Ads] Consent resolved. Initialising SDK on the main thread.");
 
+        RegisterTestDevices();
+
         MobileAds.Initialize(status =>
         {
             // Still a background thread, so record the outcome and let Update report it.
             initializationSucceeded = status != null;
             initializationReported = true;
         });
+    }
+
+    // Registered before Initialize, so even the first request is a test request. A device that is
+    // not on this list gets live ads: requesting them, and above all clicking them, is invalid
+    // activity by AdMob's policy and is attributed to this account.
+    void RegisterTestDevices()
+    {
+        List<string> ids = Settings.TestDeviceIds;
+        if (ids == null || ids.Count == 0)
+        {
+            if (!Settings.UsingTestIds)
+            {
+                Debug.LogWarning("[Ads] Live ad unit IDs with no test devices registered. Add this "
+                                 + "device's ID to AdConfig.testDeviceIds before testing on it.");
+            }
+
+            return;
+        }
+
+        MobileAds.SetRequestConfiguration(new RequestConfiguration { TestDeviceIds = ids });
+        Debug.Log("[Ads] Registered " + ids.Count + " test device(s).");
     }
 
     void FinishInitialization()

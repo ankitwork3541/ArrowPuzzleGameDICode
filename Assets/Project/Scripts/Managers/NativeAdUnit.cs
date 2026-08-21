@@ -36,19 +36,34 @@ public struct NativeAdPlacement
 }
 
 // Owns the native overlay ad. Android draws it on top of the game, in screen pixels, while the
-// game's own layout lives in panel units — so the only honest way to reserve room for it is to
-// measure the rendered template and publish that height. Nothing is reserved until an ad exists.
+// game's own layout lives in panel units — so room has to be opened before the overlay appears and
+// corrected from the template's real height once it exists. Nothing is reserved without an ad.
 public class NativeAdUnit : MonoBehaviour
 {
     const float MeasureTimeoutSeconds = 2f;
+
+    // How long to let a request settle before deciding whether it failed. Only used to pace the
+    // retry loop; the load callback itself is not on a timer.
+    const float LoadSettleTimeoutSeconds = 30f;
 
     // Read off the template layouts in googlemobileads-unity.aar, not chosen.
     const int MediumTemplateHeightDp = 350;
     const int SmallTemplateMarginDp = 10;
 
+    // Retry floor and ceiling. The floor is deliberately independent of refresh_native_sec: a
+    // backend asking for a 10s refresh must not turn a no-fill region into 360 failed requests an
+    // hour, which is exactly the request-to-impression ratio that earns an ad serving limit.
+    const int MinBackoffSeconds = 30;
+    const int MaxBackoffSeconds = 300;
+
     NativeOverlayAd currentAd;
     NativeOverlayAd preloadedAd;
     bool isPreloading;
+
+    // Realtime stamp, used for staleness. Google treats a cached ad as stale after roughly an hour.
+    // Only the preloaded ad needs one: the visible ad is destroyed on every screen exit and replaced
+    // on every refresh, so it never gets old enough to matter.
+    float preloadedAt = -1f;
 
     bool wantVisible;
     string activeUnitId;
@@ -56,13 +71,25 @@ public class NativeAdUnit : MonoBehaviour
     NativeAdPlacement activePlacement;
     bool activeAutoRefresh;
 
-    Coroutine refreshRoutine;
+    int consecutiveFailures;
+    bool loadInFlight;
+
+    Coroutine loadRoutine;
     Coroutine measureRoutine;
+    Coroutine presentRoutine;
+
+    // Session counters. Requests versus impressions is the ratio that predicts a serving limit, and
+    // there is no way to see it from inside the game without counting it here.
+    public int RequestCount { get; private set; }
+    public int FillCount { get; private set; }
+    public int ImpressionCount { get; private set; }
+    public int ClickCount { get; private set; }
+    public double RevenueMicros { get; private set; }
 
     // Lets the result card decide whether to reserve room before it opens anything. Without this it
     // would open the box, discover on the next frame that no ad was preloaded, and collapse again —
     // a visible jump in the card's layout.
-    public bool HasPreloadedAd => preloadedAd != null;
+    public bool HasPreloadedAd => preloadedAd != null && !IsStale(preloadedAt);
 
     // Screen pixels. Zero means nothing is on screen, which is the signal for the UI to collapse
     // its reserved space completely rather than leave a hole.
@@ -70,6 +97,10 @@ public class NativeAdUnit : MonoBehaviour
     public event Action<float> OnHeightChanged;
 
     static AdSettings Settings => AdsManager.Instance != null ? AdsManager.Instance.Settings : null;
+
+    static float AdMaxAgeSeconds => Settings != null ? Settings.AdMaxAgeSeconds : 1800f;
+
+    static int RefreshSeconds => Settings != null ? Settings.NativeRefreshSeconds : 0;
 
     void Start()
     {
@@ -96,8 +127,9 @@ public class NativeAdUnit : MonoBehaviour
             AdsManager.Instance.OnReady -= OnAdsReady;
         }
 
-        StopRefresh();
+        StopLoadLoop();
         StopMeasure();
+        StopPresent();
         DestroyActive();
         DestroyPreloaded();
     }
@@ -134,16 +166,10 @@ public class NativeAdUnit : MonoBehaviour
             return;
         }
 
-        LoadAndRender(adUnitId, styleNumber, placement);
-
-        if (autoRefresh)
-        {
-            StartRefresh();
-        }
-        else
-        {
-            StopRefresh();
-        }
+        // A fresh, player-driven show starts the backoff ladder over. Only a failing retry loop is
+        // meant to back off; opening a screen is not evidence that fill is unavailable.
+        consecutiveFailures = 0;
+        StartLoadLoop(0f);
     }
 
     // Called when a level starts, so the win or lose card has an ad in hand instead of a wait. This
@@ -156,12 +182,21 @@ public class NativeAdUnit : MonoBehaviour
             return;
         }
 
+        // A preloaded ad that has gone stale is not worth holding on to, and holding it would also
+        // block this fresh attempt.
+        if (preloadedAd != null && IsStale(preloadedAt))
+        {
+            Debug.Log("[NativeAd] Dropping a preloaded ad that went stale before it was shown.");
+            DestroyPreloaded();
+        }
+
         if (isPreloading || preloadedAd != null)
         {
             return;
         }
 
         isPreloading = true;
+        RequestCount++;
 
         NativeOverlayAd.Load(adUnitId, new AdRequest(), BuildOptions(), (ad, error) =>
         {
@@ -177,7 +212,10 @@ public class NativeAdUnit : MonoBehaviour
                 }
 
                 DestroyPreloaded();
+                FillCount++;
                 preloadedAd = ad;
+                preloadedAt = Time.realtimeSinceStartup;
+                WireEvents(ad);
                 Debug.Log("[NativeAd] Preloaded and waiting.");
             });
         });
@@ -196,7 +234,7 @@ public class NativeAdUnit : MonoBehaviour
         activeStyle = styleNumber;
         activePlacement = placement;
         activeAutoRefresh = false;
-        StopRefresh();
+        StopLoadLoop();
 
         if (!IsAllowed(adUnitId, styleNumber))
         {
@@ -211,50 +249,125 @@ public class NativeAdUnit : MonoBehaviour
             return;
         }
 
+        if (IsStale(preloadedAt))
+        {
+            Debug.Log("[NativeAd] Preloaded ad is "
+                      + Mathf.RoundToInt(Time.realtimeSinceStartup - preloadedAt)
+                      + "s old — too stale to show. Result card shows no ad.");
+            DestroyPreloaded();
+            Hide();
+            return;
+        }
+
         DestroyActive();
         currentAd = preloadedAd;
         preloadedAd = null;
 
         Debug.Log("[NativeAd] Using the preloaded ad for style " + styleNumber + ".");
-        Render(currentAd, styleNumber, placement);
+        StartPresent(currentAd, styleNumber, placement, needsTemplate: true);
     }
 
+    // Full teardown. The ad object goes with it, so the next Show pays for a new request.
     public void Hide()
     {
         wantVisible = false;
-        StopRefresh();
+        StopLoadLoop();
         StopMeasure();
+        StopPresent();
         DestroyActive();
         SetHeight(0f);
     }
 
-    void LoadAndRender(string adUnitId, int styleNumber, NativeAdPlacement placement)
+    static bool IsStale(float loadedAt)
     {
+        return loadedAt < 0f || Time.realtimeSinceStartup - loadedAt >= AdMaxAgeSeconds;
+    }
+
+    void Load(string adUnitId, int styleNumber, NativeAdPlacement placement)
+    {
+        loadInFlight = true;
+        RequestCount++;
+
         NativeOverlayAd.Load(adUnitId, new AdRequest(), BuildOptions(), (ad, error) =>
         {
             MobileAdsEventExecutor.ExecuteInUpdate(() =>
             {
+                loadInFlight = false;
+
                 if (error != null || ad == null)
                 {
-                    Debug.LogWarning("[NativeAd] Load failed: "
+                    consecutiveFailures++;
+                    Debug.LogWarning("[NativeAd] Load failed (" + consecutiveFailures + " in a row): "
                                      + (error != null ? error.GetMessage() : "no ad returned"));
-                    SetHeight(0f);
+
+                    // Counted here too, not only on impression: a unit that requests plenty and
+                    // never fills would otherwise produce no ratio to look at at all, and that is
+                    // the exact shape of a serving-limit problem.
+                    LogCounters("load failed");
+
+                    // Only collapse when there is nothing on screen to keep room for. A failed
+                    // refresh must not pull the floor out from under an ad that is still showing.
+                    if (currentAd == null)
+                    {
+                        SetHeight(0f);
+                    }
+
                     return;
                 }
+
+                FillCount++;
+                consecutiveFailures = 0;
 
                 // The player may have left the screen while the request was in flight.
                 if (!wantVisible || !IsAllowed(adUnitId, styleNumber))
                 {
                     ad.Destroy();
-                    SetHeight(0f);
                     return;
                 }
 
                 DestroyActive();
                 currentAd = ad;
-                Render(currentAd, styleNumber, placement);
+                WireEvents(ad);
+                StartPresent(ad, styleNumber, placement, needsTemplate: true);
             });
         });
+    }
+
+    // Impression and click are the only honest measure of whether the requests are worth anything.
+    // Wrapped in ExecuteInUpdate because the plugin raises these from the JNI thread.
+    void WireEvents(NativeOverlayAd ad)
+    {
+        ad.OnAdImpressionRecorded += () => MobileAdsEventExecutor.ExecuteInUpdate(() =>
+        {
+            ImpressionCount++;
+            LogCounters("impression");
+        });
+
+        ad.OnAdClicked += () => MobileAdsEventExecutor.ExecuteInUpdate(() =>
+        {
+            ClickCount++;
+            LogCounters("click");
+        });
+
+        ad.OnAdPaid += value => MobileAdsEventExecutor.ExecuteInUpdate(() =>
+        {
+            if (value != null)
+            {
+                RevenueMicros += value.Value;
+            }
+        });
+    }
+
+    void LogCounters(string what)
+    {
+        float matchRate = RequestCount > 0 ? 100f * FillCount / RequestCount : 0f;
+        float showRate = FillCount > 0 ? 100f * ImpressionCount / FillCount : 0f;
+
+        Debug.Log("[NativeAd] " + what + " — requests " + RequestCount
+                  + ", filled " + FillCount + " (" + matchRate.ToString("F0") + "% match)"
+                  + ", impressions " + ImpressionCount + " (" + showRate.ToString("F0") + "% shown)"
+                  + ", clicks " + ClickCount
+                  + ", est. revenue " + (RevenueMicros / 1000000d).ToString("F4"));
     }
 
     // Repositions a template that is already on screen. This is what makes an in-card ad possible:
@@ -270,39 +383,88 @@ public class NativeAdUnit : MonoBehaviour
         currentAd.SetTemplatePosition(x, y);
     }
 
-    void Render(NativeOverlayAd ad, int styleNumber, NativeAdPlacement placement)
+    void StartPresent(NativeOverlayAd ad, int styleNumber, NativeAdPlacement placement, bool needsTemplate)
+    {
+        StopPresent();
+        presentRoutine = StartCoroutine(PresentRoutine(ad, styleNumber, placement, needsTemplate));
+    }
+
+    void StopPresent()
+    {
+        if (presentRoutine != null)
+        {
+            StopCoroutine(presentRoutine);
+            presentRoutine = null;
+        }
+    }
+
+    // Room is opened BEFORE the overlay appears, not after it has been measured. The overlay is an
+    // Android view drawn above Unity: showing it while the game's own layout still ends at the
+    // bottom of the screen puts it straight over whatever is there — on the gameplay screen, the
+    // Hint and Restart buttons. A tap meant for a button then lands on the ad, and an accidental
+    // click is invalid traffic, which is the fastest route to an ad serving limit.
+    //
+    // The expected height comes from the template's own layout, so it is known before the ad exists.
+    // The measured height afterwards only corrects it.
+    IEnumerator PresentRoutine(NativeOverlayAd ad, int styleNumber, NativeAdPlacement placement, bool needsTemplate)
     {
         NativeStyleMapping mapping = Settings != null ? Settings.NativeStyle(styleNumber) : null;
 
-        // A fresh config can land between the load and this render — refresh_native_sec is 10s, so
-        // that window is hit often enough to matter. Rendering an unmapped style would put an ad on
-        // screen at a size the backend just withdrew.
+        // A fresh config can land between the load and here. Rendering an unmapped style would put
+        // an ad on screen at a size the backend just withdrew.
         if (mapping == null)
         {
             Debug.Log("[NativeAd] Style " + styleNumber + " has no layout — nothing rendered.");
+            presentRoutine = null;
             Hide();
-            return;
+            yield break;
         }
 
-        NativeTemplateStyle style = BuildStyle(mapping);
-
-        if (placement.anchored)
+        int expectedHeightPx = ExpectedHeightPx(styleNumber);
+        if (expectedHeightPx <= 0)
         {
-            ad.RenderTemplate(style, placement.anchor);
+            Debug.Log("[NativeAd] No expected height for style " + styleNumber + " — nothing rendered.");
+            presentRoutine = null;
+            Hide();
+            yield break;
         }
-        else
+
+        SetHeight(expectedHeightPx);
+
+        // Two frames: one for the reserved box's own height, one for the layout that follows it.
+        yield return null;
+        yield return null;
+
+        if (ad == null || currentAd != ad || !wantVisible)
         {
-            ad.RenderTemplate(style, placement.x, placement.y);
+            presentRoutine = null;
+            yield break;
+        }
+
+        if (needsTemplate)
+        {
+            NativeTemplateStyle style = BuildStyle(mapping);
+
+            if (placement.anchored)
+            {
+                ad.RenderTemplate(style, placement.anchor);
+            }
+            else
+            {
+                ad.RenderTemplate(style, placement.x, placement.y);
+            }
         }
 
         ad.Show();
-        StartMeasure();
+        presentRoutine = null;
 
-        Debug.Log("[NativeAd] Rendered style " + styleNumber + " as '" + style.TemplateId + "'"
+        Debug.Log("[NativeAd] Showing style " + styleNumber
                   + (placement.anchored
                       ? " anchored " + placement.anchor
                       : " at " + placement.x + "," + placement.y + "dp")
-                  + " default size.");
+                  + ", " + expectedHeightPx + "px reserved first.");
+
+        StartMeasure(expectedHeightPx);
     }
 
     // Colours come from the game's own palette so the ad reads as part of the screen rather than a
@@ -418,10 +580,10 @@ public class NativeAdUnit : MonoBehaviour
                && settings.IsSupportedNativeStyle(styleNumber);
     }
 
-    void StartMeasure()
+    void StartMeasure(int fallbackHeightPx)
     {
         StopMeasure();
-        measureRoutine = StartCoroutine(MeasureRoutine());
+        measureRoutine = StartCoroutine(MeasureRoutine(fallbackHeightPx));
     }
 
     void StopMeasure()
@@ -435,7 +597,7 @@ public class NativeAdUnit : MonoBehaviour
 
     // The template reports a height only once Android has laid it out, which is not the frame the
     // render call returned on. Polling is the only signal available.
-    IEnumerator MeasureRoutine()
+    IEnumerator MeasureRoutine(int fallbackHeightPx)
     {
         float deadline = Time.realtimeSinceStartup + MeasureTimeoutSeconds;
 
@@ -451,7 +613,8 @@ public class NativeAdUnit : MonoBehaviour
             if (height > 0f)
             {
                 Debug.Log("[NativeAd] Measured " + currentAd.GetTemplateWidthInPixels()
-                          + " x " + height + " px (screen is " + Screen.width + " x " + Screen.height + ").");
+                          + " x " + height + " px (reserved " + fallbackHeightPx + "px, screen is "
+                          + Screen.width + " x " + Screen.height + ").");
                 SetHeight(height);
                 measureRoutine = null;
                 yield break;
@@ -460,8 +623,11 @@ public class NativeAdUnit : MonoBehaviour
             yield return null;
         }
 
-        // Left collapsed on purpose: an unmeasured ad must not turn into a reserved empty strip.
-        Debug.LogWarning("[NativeAd] Template never reported a height; space stays collapsed.");
+        // The reserved height stays. The ad is on screen whether or not it ever reported a size, so
+        // collapsing here would leave it sitting over the UI underneath — the accidental-click case
+        // the reserve-first order exists to prevent.
+        Debug.LogWarning("[NativeAd] Template never reported a height; keeping the "
+                         + fallbackHeightPx + "px reserved for it.");
         measureRoutine = null;
     }
 
@@ -476,42 +642,77 @@ public class NativeAdUnit : MonoBehaviour
         OnHeightChanged?.Invoke(pixels);
     }
 
-    void StartRefresh()
+    void StartLoadLoop(float firstDelaySeconds)
     {
-        StopRefresh();
+        StopLoadLoop();
+        loadRoutine = StartCoroutine(LoadLoop(firstDelaySeconds));
+    }
 
-        // Whatever refresh_native_sec asks for, unclamped. Zero or negative means never refresh.
-        int seconds = Settings != null ? Settings.NativeRefreshSeconds : 0;
-        if (seconds > 0)
+    void StopLoadLoop()
+    {
+        if (loadRoutine != null)
         {
-            refreshRoutine = StartCoroutine(RefreshRoutine(seconds));
+            StopCoroutine(loadRoutine);
+            loadRoutine = null;
         }
     }
 
-    void StopRefresh()
+    // One loop owns every request for the visible ad: the first one and each refresh. That is what
+    // makes the backoff hold — a retry ladder split across two code paths always ends up with one
+    // path ignoring it.
+    IEnumerator LoadLoop(float firstDelaySeconds)
     {
-        if (refreshRoutine != null)
-        {
-            StopCoroutine(refreshRoutine);
-            refreshRoutine = null;
-        }
-    }
+        float delay = firstDelaySeconds;
 
-    IEnumerator RefreshRoutine(int seconds)
-    {
         while (true)
         {
-            // Realtime, so a dialog that froze Time.timeScale does not stall the cycle.
-            yield return new WaitForSecondsRealtime(seconds);
+            if (delay > 0f)
+            {
+                // Realtime, so a dialog that froze Time.timeScale does not stall the cycle.
+                yield return new WaitForSecondsRealtime(delay);
+            }
 
             if (!wantVisible || !IsAllowed(activeUnitId, activeStyle))
             {
-                refreshRoutine = null;
-                yield break;
+                break;
             }
 
-            LoadAndRender(activeUnitId, activeStyle, activePlacement);
+            Load(activeUnitId, activeStyle, activePlacement);
+
+            // Waiting for the request to settle is what lets the next delay react to a failure.
+            float deadline = Time.realtimeSinceStartup + LoadSettleTimeoutSeconds;
+            while (loadInFlight && Time.realtimeSinceStartup < deadline)
+            {
+                yield return null;
+            }
+
+            delay = NextDelaySeconds();
+            if (delay <= 0f)
+            {
+                break;
+            }
         }
+
+        loadRoutine = null;
+    }
+
+    // A healthy cycle refreshes on the backend's interval. A failing one backs off, doubling from a
+    // 30s floor up to five minutes, so a device that cannot be filled stops asking every few
+    // seconds.
+    float NextDelaySeconds()
+    {
+        if (consecutiveFailures > 0)
+        {
+            int shift = Mathf.Min(consecutiveFailures - 1, 5);
+            int backoff = Mathf.Min(MinBackoffSeconds << shift, MaxBackoffSeconds);
+
+            Debug.Log("[NativeAd] " + consecutiveFailures + " failed load(s) in a row — next attempt in "
+                      + backoff + "s.");
+            return backoff;
+        }
+
+        // Zero or negative disables refreshing entirely, which ends the loop.
+        return activeAutoRefresh ? RefreshSeconds : 0f;
     }
 
     void DestroyActive()
@@ -535,5 +736,6 @@ public class NativeAdUnit : MonoBehaviour
 
         preloadedAd.Destroy();
         preloadedAd = null;
+        preloadedAt = -1f;
     }
 }

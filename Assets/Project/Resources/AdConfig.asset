@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: AdConfig
   m_EditorClassIdentifier: Assembly-CSharp::AdConfig
   useTestIds: 1
+  testDeviceIds: []
   banner: 
   interstitial: 
   rewarded: 
@@ -22,8 +23,9 @@ MonoBehaviour:
   backAdEnabled: 0
   levelsPerInterstitial: 2
   interstitialCooldownSeconds: 30
-  nativeRefreshSeconds: 10
+  nativeRefreshSeconds: 30
   defaultMainScreenStyle: 2
   defaultPlayScreenStyle: 1
   defaultSuccessScreenStyle: 2
   nativeStyles: []
+  adMaxAgeMinutes: 30

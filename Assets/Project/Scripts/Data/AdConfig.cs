@@ -34,6 +34,12 @@ public class AdConfig : ScriptableObject
     [Tooltip("Forces Google's test ad units, ignoring both the IDs below and the backend.")]
     public bool useTestIds = true;
 
+    [Tooltip("AdMob test device IDs. Required before testing with LIVE ad unit IDs: requesting or "
+             + "clicking a live ad on an unregistered device counts as invalid activity. Run once "
+             + "with the real IDs and copy the hash out of the logcat line "
+             + "\"Use RequestConfiguration.Builder.setTestDeviceIds(...)\".")]
+    public List<string> testDeviceIds = new List<string>();
+
     [Header("Ad unit IDs (Android)")]
     public string banner;
     public string interstitial;
@@ -55,7 +61,7 @@ public class AdConfig : ScriptableObject
 
     [Tooltip("Native refresh interval used until the backend answers. The backend's "
              + "refresh_native_sec is taken as-is, unclamped.")]
-    public int nativeRefreshSeconds = 10;
+    public int nativeRefreshSeconds = 30;
 
     [Header("Native style fallbacks")]
     [Tooltip("Only used in test mode — outside it, no backend config means no ads at all. Must be "
@@ -67,4 +73,10 @@ public class AdConfig : ScriptableObject
     [Tooltip("Leave empty to use the built-in mapping: digit 1 renders Small, digit 2 Medium, and "
              + "every other digit renders no ad.")]
     public List<NativeStyleMapping> nativeStyles = new List<NativeStyleMapping>();
+
+    [Header("Ad freshness")]
+    [Tooltip("An ad older than this is never shown, whether it was preloaded for a result card or "
+             + "kept while the player was on another screen. Google treats a cached ad as stale "
+             + "after roughly an hour, so this stays well inside that.")]
+    public int adMaxAgeMinutes = 30;
 }
