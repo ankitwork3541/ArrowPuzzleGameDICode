@@ -1,18 +1,39 @@
+using System;
+using System.Collections;
 using GoogleMobileAds.Api;
 using GoogleMobileAds.Common;
 using UnityEngine;
 
-// Owns the anchored banner. Deliberately says nothing about which screens should carry one —
-// callers decide by calling Show() and Hide().
+// Owns the anchored banner. Says nothing about which screens should carry one — callers decide by
+// calling Show() and Hide().
+//
+// Deliberately never refreshed from code: a banner ad unit carries its own auto-refresh setting in
+// the AdMob dashboard, and driving a second refresh from here would mean two schedules fighting over
+// the same unit. The native ad is the opposite case — it has no dashboard refresh, so
+// refresh_native_sec drives it.
 public class BannerAdUnit : MonoBehaviour
 {
-    [Tooltip("Screen edge the banner sticks to.")]
-    public AdPosition position = AdPosition.Bottom;
+    const float MeasureTimeoutSeconds = 2f;
 
     BannerView banner;
     bool wantVisible;
+    bool wantLarge;
+
+    Coroutine presentRoutine;
 
     public bool IsLoaded { get; private set; }
+
+    // Screen pixels, published for the UI to reserve matching room. Zero means nothing is on screen,
+    // which is the signal to collapse that room completely rather than leave a hole.
+    public float HeightPixels { get; private set; }
+    public event Action<float> OnHeightChanged;
+
+    // Requests versus impressions is the ratio that predicts an ad serving limit.
+    public int RequestCount { get; private set; }
+    public int FillCount { get; private set; }
+    public int ImpressionCount { get; private set; }
+    public int ClickCount { get; private set; }
+    public double RevenueMicros { get; private set; }
 
     void Start()
     {
@@ -39,6 +60,7 @@ public class BannerAdUnit : MonoBehaviour
             AdsManager.Instance.OnReady -= OnAdsReady;
         }
 
+        StopPresent();
         DestroyBanner();
     }
 
@@ -48,79 +70,218 @@ public class BannerAdUnit : MonoBehaviour
     {
         if (wantVisible)
         {
-            Create();
+            Show(wantLarge);
         }
     }
 
-    public void Show()
+    public void Show(bool large)
     {
         wantVisible = true;
+        wantLarge = large;
 
-        if (banner == null)
+        if (!IsAllowed())
         {
-            Create();
+            Debug.Log("[Banner] Show refused — ads disabled or no banner unit ID.");
+            Hide();
             return;
         }
 
-        banner.Show();
+        AdsManager manager = AdsManager.Instance;
+        if (manager == null || !manager.Ready)
+        {
+            Debug.Log("[Banner] Show parked until the SDK is ready.");
+            return;
+        }
+
+        Create(large);
     }
 
     public void Hide()
     {
         wantVisible = false;
+        StopPresent();
+        DestroyBanner();
+        SetHeight(0f);
+    }
 
-        if (banner != null)
+    void Create(bool large)
+    {
+        DestroyBanner();
+
+        AdSize size = large ? LargeAnchoredAdaptiveSize() : AnchoredAdaptiveSize();
+        string unitId = AdsManager.Instance.Settings.BannerId;
+
+        banner = new BannerView(unitId, size, AdPosition.Bottom);
+        BannerView created = banner;
+        RequestCount++;
+
+        // Hidden from the moment it exists. A BannerView puts itself on screen as soon as it loads,
+        // and a banner that appears before the game's layout has opened room for it lands on top of
+        // whatever is at the bottom of the screen — on the gameplay screen, the Hint and Restart
+        // buttons. A tap meant for a button then registers on the ad, and an accidental click is
+        // invalid traffic. PresentRoutine shows it only once the room exists.
+        created.Hide();
+
+        created.OnBannerAdLoaded += () => MobileAdsEventExecutor.ExecuteInUpdate(() =>
         {
-            banner.Hide();
+            if (banner != created)
+            {
+                return;
+            }
+
+            IsLoaded = true;
+            FillCount++;
+
+            if (!wantVisible)
+            {
+                created.Hide();
+                return;
+            }
+
+            StartPresent(created);
+        });
+
+        created.OnBannerAdLoadFailed += error => MobileAdsEventExecutor.ExecuteInUpdate(() =>
+        {
+            if (banner != created)
+            {
+                return;
+            }
+
+            IsLoaded = false;
+            SetHeight(0f);
+
+            // No retry from here. The ad unit's own auto-refresh owns that; without it enabled in
+            // the AdMob dashboard this screen simply carries no banner for this visit, which is the
+            // agreed behaviour.
+            Debug.LogWarning("[Banner] Load failed: "
+                             + (error != null ? error.GetMessage() : "unknown error"));
+            LogCounters("load failed");
+        });
+
+        created.OnAdImpressionRecorded += () => MobileAdsEventExecutor.ExecuteInUpdate(() =>
+        {
+            ImpressionCount++;
+            LogCounters("impression");
+        });
+
+        created.OnAdClicked += () => MobileAdsEventExecutor.ExecuteInUpdate(() =>
+        {
+            ClickCount++;
+            LogCounters("click");
+        });
+
+        created.OnAdPaid += value => MobileAdsEventExecutor.ExecuteInUpdate(() =>
+        {
+            if (value != null)
+            {
+                RevenueMicros += value.Value;
+            }
+        });
+
+        created.LoadAd(new AdRequest());
+    }
+
+    void StartPresent(BannerView target)
+    {
+        StopPresent();
+        presentRoutine = StartCoroutine(PresentRoutine(target));
+    }
+
+    void StopPresent()
+    {
+        if (presentRoutine != null)
+        {
+            StopCoroutine(presentRoutine);
+            presentRoutine = null;
         }
     }
 
-    void Create()
+    // Publishes the banner's real height, waits for the UI to open that much room, and only then puts
+    // the banner on screen. The height is read from the loaded banner rather than guessed: an
+    // adaptive banner's height is chosen by Google per device, so there is no formula to predict it.
+    IEnumerator PresentRoutine(BannerView target)
     {
-        AdsManager manager = AdsManager.Instance;
-        if (manager == null || !manager.Ready)
+        float heightPx = 0f;
+        float deadline = Time.realtimeSinceStartup + MeasureTimeoutSeconds;
+
+        while (Time.realtimeSinceStartup < deadline)
         {
-            return;
-        }
-
-        if (!manager.Settings.AdsEnabled)
-        {
-            Debug.Log("[Ads] Banner skipped — ads disabled by config.");
-            return;
-        }
-
-        string unitId = manager.Settings.BannerId;
-        if (string.IsNullOrEmpty(unitId))
-        {
-            Debug.LogWarning("[Ads] No banner unit available — nothing to create.");
-            return;
-        }
-
-        DestroyBanner();
-
-        banner = new BannerView(unitId, AnchoredAdaptiveSize(), position);
-
-        banner.OnBannerAdLoaded += () => MobileAdsEventExecutor.ExecuteInUpdate(() =>
-        {
-            IsLoaded = true;
-
-            // A BannerView puts itself on screen the moment it loads. Without this, a player who
-            // navigated away mid-load ends up with a banner sitting over the wrong screen.
-            if (!wantVisible)
+            if (banner != target || !wantVisible)
             {
-                banner.Hide();
+                presentRoutine = null;
+                yield break;
             }
 
-            Debug.Log("[Ads] Banner loaded.");
-        });
+            heightPx = target.GetHeightInPixels();
+            if (heightPx > 0f)
+            {
+                break;
+            }
 
-        banner.OnBannerAdLoadFailed += error => MobileAdsEventExecutor.ExecuteInUpdate(() =>
+            yield return null;
+        }
+
+        if (heightPx <= 0f)
         {
-            IsLoaded = false;
-            Debug.LogWarning("[Ads] Banner load failed: " + error.GetMessage());
-        });
+            // Never shown rather than shown over the UI: without a height there is no way to know
+            // how much room to open, and an unplaced banner is exactly the accidental-click case.
+            Debug.LogWarning("[Banner] Never reported a height; not shown.");
+            presentRoutine = null;
+            SetHeight(0f);
+            yield break;
+        }
 
-        banner.LoadAd(new AdRequest());
+        SetHeight(heightPx);
+
+        // Two frames: one for the reserved box's own height, one for the layout that follows it.
+        yield return null;
+        yield return null;
+
+        if (banner != target || !wantVisible)
+        {
+            presentRoutine = null;
+            yield break;
+        }
+
+        target.Show();
+        presentRoutine = null;
+
+        Debug.Log("[Banner] Showing " + (wantLarge ? "large" : "standard") + " adaptive, "
+                  + target.GetWidthInPixels() + " x " + heightPx + " px, room reserved first.");
+        LogCounters("shown");
+    }
+
+    void SetHeight(float pixels)
+    {
+        if (Mathf.Approximately(HeightPixels, pixels))
+        {
+            return;
+        }
+
+        HeightPixels = pixels;
+        OnHeightChanged?.Invoke(pixels);
+    }
+
+    void LogCounters(string what)
+    {
+        float matchRate = RequestCount > 0 ? 100f * FillCount / RequestCount : 0f;
+
+        Debug.Log("[Banner] " + what + " — requests " + RequestCount
+                  + ", filled " + FillCount + " (" + matchRate.ToString("F0") + "% match)"
+                  + ", impressions " + ImpressionCount
+                  + ", clicks " + ClickCount
+                  + ", est. revenue " + (RevenueMicros / 1000000d).ToString("F4"));
+    }
+
+    static bool IsAllowed()
+    {
+        AdsManager manager = AdsManager.Instance;
+
+        return manager != null
+               && manager.Settings != null
+               && manager.Settings.AdsEnabled
+               && !string.IsNullOrEmpty(manager.Settings.BannerId);
     }
 
     // Anchored adaptive rather than the fixed 320x50: it takes the device's real width, so wide
@@ -133,6 +294,13 @@ public class BannerAdUnit : MonoBehaviour
     public static AdSize AnchoredAdaptiveSize()
     {
         return AdSize.GetCurrentOrientationAnchoredAdaptiveBannerAdSizeWithWidth(ScreenWidthDp);
+    }
+
+    // The taller variant: up to 20% of screen height, between 50 and 150dp. Google intends it for
+    // non-scrolling layouts, which is what every screen in this game is.
+    public static AdSize LargeAnchoredAdaptiveSize()
+    {
+        return AdSize.GetCurrentOrientationLargeAnchoredAdaptiveBannerAdSizeWithWidth(ScreenWidthDp);
     }
 
     // Same density source the native ad's placement maths uses, so dp means the same thing on both

@@ -50,7 +50,7 @@ public class GameplayHUDController : MonoBehaviour
 
         if (AdsManager.Instance != null)
         {
-            AdsManager.Instance.AddNativeHeightListener(OnNativeHeightChanged);
+            AdsManager.Instance.AddAdHeightListener(OnAdHeightChanged);
         }
     }
 
@@ -65,11 +65,11 @@ public class GameplayHUDController : MonoBehaviour
 
         if (AdsManager.Instance != null)
         {
-            AdsManager.Instance.RemoveNativeHeightListener(OnNativeHeightChanged);
+            AdsManager.Instance.RemoveAdHeightListener(OnAdHeightChanged);
 
             // Android draws the overlay above everything, so leaving it up follows the player to
             // whatever screen comes next. Whoever opens that screen shows its own ad.
-            AdsManager.Instance.HideNativeAd();
+            AdsManager.Instance.HideScreenAds();
         }
     }
 
@@ -152,14 +152,14 @@ public class GameplayHUDController : MonoBehaviour
 
         gridButton.EnableInClassList("grid-button--on", guideLines.IsVisible);
 
-        OnNativeHeightChanged(AdsManager.Instance != null ? AdsManager.Instance.NativeHeightPixels : 0f);
+        OnAdHeightChanged(AdsManager.Instance != null ? AdsManager.Instance.AdHeightPixels : 0f);
     }
 
     // bottom-bar is absolutely positioned 70px up in USS. The ad is drawn beneath it, so the bar
     // lifts by exactly the measured ad height — and by nothing when there is no ad.
     private const float BottomBarBaseOffset = 70f;
 
-    private void OnNativeHeightChanged(float heightPixels)
+    private void OnAdHeightChanged(float heightPixels)
     {
         if (root == null) return;
 

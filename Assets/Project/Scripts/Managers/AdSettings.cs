@@ -56,10 +56,10 @@ public class AdSettings
     public string PreloadNativeId => Id(remote?.preload_native_adunit_id, baked.preloadNativeAd, AdTestIds.Native);
 
     // Lets a screen decide whether to open any room at all. Checking AdsEnabled alone would leave a
-    // gap whenever the backend sends an enabled flag but a blank unit ID, or a style digit that maps
-    // to no layout.
+    // gap whenever the backend sends an enabled flag but a blank unit ID, or a digit that maps to
+    // nothing this screen can show.
     public bool CanShowPreloadNative =>
-        AdsEnabled && !string.IsNullOrEmpty(PreloadNativeId) && IsSupportedNativeStyle(SuccessScreenStyle);
+        AdsEnabled && !string.IsNullOrEmpty(PreloadNativeId) && IsNative(SuccessScreenSlot);
 
     public int LevelsPerInterstitial => Positive(remote?.ad_level_count, baked.levelsPerInterstitial);
     public int InterstitialCooldownSeconds => Positive(remote?.ad_click_time_sec, baked.interstitialCooldownSeconds);
@@ -72,45 +72,100 @@ public class AdSettings
 
     public List<string> TestDeviceIds => baked.testDeviceIds;
 
-    public int MainScreenStyle => Positive(remote?.main_screen, baked.defaultMainScreenStyle);
-    public int PlayScreenStyle => Positive(remote?.play_screen, baked.defaultPlayScreenStyle);
-    public int SuccessScreenStyle => Positive(remote?.success_screen, baked.defaultSuccessScreenStyle);
+    // Digit 0 is a real answer ("no ad here"), so these cannot use Positive() — that treats 0 as
+    // "unset" and falls back to the baked value, which would turn an ad ON that the backend just
+    // switched off.
+    public int MainScreenStyle => Digit(remote?.main_screen, baked.defaultMainScreenStyle);
+    public int PlayScreenStyle => Digit(remote?.play_screen, baked.defaultPlayScreenStyle);
+    public int SuccessScreenStyle => Digit(remote?.success_screen, baked.defaultSuccessScreenStyle);
 
-    // Only the two layouts the plugin actually ships are supported: digit 1 is the thin strip,
-    // digit 2 the tall one with a media panel. Any other digit returns null, which every caller
-    // treats as "no ad here" — the backend sending an unmapped number must leave the screen exactly
-    // as it looks with ads off, not fall back to a size nobody asked for.
-    //
-    // The AdConfig table is checked first so the mapping can be retuned without a code change.
-    public NativeStyleMapping NativeStyle(int styleNumber)
+    public AdSlotKind MainScreenSlot => SlotFor(MainScreenStyle);
+    public AdSlotKind PlayScreenSlot => SlotFor(PlayScreenStyle);
+
+    // The result cards never carry a banner — that is a product decision, not a technical limit. A
+    // banner digit here resolves to nothing rather than quietly showing one.
+    public AdSlotKind SuccessScreenSlot
     {
+        get
+        {
+            AdSlotKind slot = SlotFor(SuccessScreenStyle);
+            return IsNative(slot) ? slot : AdSlotKind.None;
+        }
+    }
+
+    public static AdSlotKind SlotFor(int digit)
+    {
+        switch (digit)
+        {
+            case 1: return AdSlotKind.BannerStandard;
+            case 2: return AdSlotKind.BannerLarge;
+            case 3: return AdSlotKind.NativeSmall;
+            case 4: return AdSlotKind.NativeBig;
+            default: return AdSlotKind.None;
+        }
+    }
+
+    public static bool IsBanner(AdSlotKind slot)
+    {
+        return slot == AdSlotKind.BannerStandard || slot == AdSlotKind.BannerLarge;
+    }
+
+    public static bool IsNative(AdSlotKind slot)
+    {
+        return slot == AdSlotKind.NativeSmall || slot == AdSlotKind.NativeBig;
+    }
+
+    // Every way a screen's slot can turn out to be nothing: ads off, an unmapped digit, or the digit
+    // asking for a format whose unit ID never arrived.
+    public bool CanShow(AdSlotKind slot)
+    {
+        if (!AdsEnabled)
+        {
+            return false;
+        }
+
+        if (IsBanner(slot))
+        {
+            return !string.IsNullOrEmpty(BannerId);
+        }
+
+        return IsNative(slot) && !string.IsNullOrEmpty(NativeId);
+    }
+
+    // The template a native slot renders as, or null when the slot is not a native one at all.
+    //
+    // SlotFor() is the authority and is checked FIRST. The AdConfig table only refines a slot the
+    // digit scheme already agrees is native — otherwise an Inspector row saying "digit 1 is native"
+    // would contradict SlotFor(1), which says banner, and the two dispatch paths would disagree
+    // about what the same digit means.
+    public NativeStyleMapping NativeStyle(AdSlotKind slot)
+    {
+        if (!IsNative(slot))
+        {
+            return null;
+        }
+
+        // AdSlotKind's values are the backend's digits, so the table can stay keyed by digit.
+        int digit = (int)slot;
+
         if (baked.nativeStyles != null)
         {
             foreach (NativeStyleMapping entry in baked.nativeStyles)
             {
-                if (entry != null && entry.styleNumber == styleNumber)
+                if (entry != null && entry.styleNumber == digit)
                 {
                     return entry;
                 }
             }
         }
 
-        if (styleNumber == 1)
+        return new NativeStyleMapping
         {
-            return new NativeStyleMapping { styleNumber = 1, template = NativeTemplateSize.Small };
-        }
-
-        if (styleNumber == 2)
-        {
-            return new NativeStyleMapping { styleNumber = 2, template = NativeTemplateSize.Medium };
-        }
-
-        return null;
-    }
-
-    public bool IsSupportedNativeStyle(int styleNumber)
-    {
-        return NativeStyle(styleNumber) != null;
+            styleNumber = digit,
+            template = slot == AdSlotKind.NativeBig
+                ? NativeTemplateSize.Medium
+                : NativeTemplateSize.Small
+        };
     }
 
     // Returns null rather than falling back to a test unit: showing test ads to real players earns
@@ -133,6 +188,12 @@ public class AdSettings
     static int Positive(int? remoteValue, int bakedValue)
     {
         return remoteValue.HasValue && remoteValue.Value > 0 ? remoteValue.Value : bakedValue;
+    }
+
+    // Keeps a backend 0, which means "no ad on this screen", instead of reading it as missing.
+    static int Digit(int? remoteValue, int bakedValue)
+    {
+        return remoteValue.HasValue ? remoteValue.Value : bakedValue;
     }
 
     static bool IsAdUnit(string id)

@@ -9,9 +9,8 @@ using UnityEngine.UIElements;
 // compared on a real device before deciding where banners go in the game. Nothing here is production
 // code: the game's own banner is BannerAdUnit, and this screen does not touch it.
 //
-// On a real device AdSize.SmartBanner resolves to ONE height — 50dp or 90dp, by screen height — so
-// the only way to show both is to request the two fixed sizes explicitly. That is what slots 2 and 3
-// do, and it is why they are labelled by dp rather than as "smart banner" outright.
+// The two slots are exactly what backend digits 1 and 2 map to, so what the client approves here is
+// what the game will show. Sizes come from BannerAdUnit so the demo cannot drift from production.
 public class BannerTestScreenController : MonoBehaviour
 {
     [SerializeField] private PanelRenderer panelRenderer;
@@ -111,20 +110,11 @@ public class BannerTestScreenController : MonoBehaviour
 
         slots.Add(new Slot
         {
-            title = "smart 50dp",
-            size = new AdSize(WidthDp, 50),
-            initialHeightDp = 50,
+            title = "large adaptive",
+            size = BannerAdUnit.LargeAnchoredAdaptiveSize(),
+            initialHeightDp = 100,
             spaceName = "ad-space-2",
             resultName = "result-2"
-        });
-
-        slots.Add(new Slot
-        {
-            title = "smart 90dp",
-            size = new AdSize(WidthDp, 90),
-            initialHeightDp = 90,
-            spaceName = "ad-space-3",
-            resultName = "result-3"
         });
 
         SetFooter();
@@ -349,19 +339,16 @@ public class BannerTestScreenController : MonoBehaviour
         }
 
         footer.text =
-            "WHY THE BLACK BARS?  Slots 2 and 3 ask for a size that is not one AdMob sells - "
-            + "\"screen width x 50\" and \"screen width x 90\". So AdMob returns the nearest standard "
-            + "creative (468x60, 320x100) and centres it in the wider box, leaving the background "
-            + "showing on both sides. This is exactly what a smart banner does on a real device, and "
-            + "it is the main reason Google deprecated the format.\n\n"
-            + "Slot 1, the adaptive banner, asks for the device's real width and lets Google choose "
-            + "the height, so the creative fits the box far more often. It is the format Google now "
-            + "recommends.\n\n"
-            + "Also note: on a real device AdSize.SmartBanner picks only ONE of the two heights - "
-            + "50 dp when screen height is 400-720 dp, 90 dp above 720 dp. This screen is "
-            + HeightDp + " dp tall, so a real smart banner here would be the "
-            + (HeightDp > 720 ? "90" : "50") + " dp one. Slots 2 and 3 request both sizes "
-            + "explicitly so they can be compared side by side.";
+            "These are the two banner options the backend can ask for: digit 1 for the standard "
+            + "height, digit 2 for the taller one. Both are ANCHORED ADAPTIVE - they take this "
+            + "device's real width and let Google choose the height, so the creative fills the box "
+            + "instead of sitting in the middle of it.\n\n"
+            + "Smart banner is deliberately not shown. Google has deprecated it, and it centres a "
+            + "standard creative inside a screen-wide box, which leaves visible bars down both "
+            + "sides.\n\n"
+            + "The backend digit also chooses natives: 3 for the small native, 4 for the big one, "
+            + "and 0 for no ad at all. Those two are already live in the game itself.\n\n"
+            + "This device is " + WidthDp + " x " + HeightDp + " dp.";
     }
 
     private void DestroyBanners()

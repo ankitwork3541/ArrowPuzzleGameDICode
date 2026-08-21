@@ -48,6 +48,16 @@ public class AdsManager : MonoBehaviour
         Banner = GetComponent<BannerAdUnit>();
         Native = GetComponent<NativeAdUnit>();
 
+        if (Native != null)
+        {
+            Native.OnHeightChanged += OnUnitHeightChanged;
+        }
+
+        if (Banner != null)
+        {
+            Banner.OnHeightChanged += OnUnitHeightChanged;
+        }
+
         // Last launch's payload, so an offline session still runs on real settings rather than
         // whatever shipped in the build months ago.
         if (Settings.ApplyRemote(fetcher.LoadCached()))
@@ -196,8 +206,9 @@ public class AdsManager : MonoBehaviour
                   + " interstitial=" + Settings.InterstitialId
                   + " levelsPerAd=" + Settings.LevelsPerInterstitial
                   + " native=" + Settings.NativeId
-                  + " styles main/play/success=" + Settings.MainScreenStyle
-                  + "/" + Settings.PlayScreenStyle + "/" + Settings.SuccessScreenStyle
+                  + " home=" + Settings.MainScreenStyle + "(" + Settings.MainScreenSlot + ")"
+                  + " play=" + Settings.PlayScreenStyle + "(" + Settings.PlayScreenSlot + ")"
+                  + " result=" + Settings.SuccessScreenStyle + "(" + Settings.SuccessScreenSlot + ")"
                   + " refresh=" + Settings.NativeRefreshSeconds + "s");
 
         // LogError, not LogWarning: shipping with this on serves Google's test inventory to real
@@ -219,14 +230,6 @@ public class AdsManager : MonoBehaviour
         return Interstitial != null && Interstitial.Show();
     }
 
-    public void ShowBanner()
-    {
-        if (Banner != null)
-        {
-            Banner.Show();
-        }
-    }
-
     public void HideBanner()
     {
         if (Banner != null)
@@ -235,29 +238,73 @@ public class AdsManager : MonoBehaviour
         }
     }
 
-    // Home and gameplay put their reserved box at the very bottom of the screen, so the anchored
-    // placement lines up with no coordinate conversion needed.
-    public void ShowHomeNative()
+    // Home and gameplay reserve their box at the very bottom of the screen, so both an anchored
+    // banner and an anchored native line up with no coordinate conversion needed. The backend's digit
+    // decides which of the two the screen gets; the position is the screen's, not the format's.
+    public void ShowHomeAd()
     {
-        if (Native != null && Settings != null)
+        ShowScreenAd(Settings != null ? Settings.MainScreenSlot : AdSlotKind.None,
+                     Settings != null ? Settings.MainScreenStyle : 0, "home");
+    }
+
+    public void ShowGameplayAd()
+    {
+        ShowScreenAd(Settings != null ? Settings.PlayScreenSlot : AdSlotKind.None,
+                     Settings != null ? Settings.PlayScreenStyle : 0, "gameplay");
+    }
+
+    // digit is carried purely for the log: a slot of None prints as "None" and would not say which
+    // number the backend actually sent, which is the one thing worth knowing when a screen is bare.
+    void ShowScreenAd(AdSlotKind slot, int digit, string screen)
+    {
+        if (Settings == null)
         {
-            Native.Show(Settings.NativeId, Settings.MainScreenStyle, NativeAdPlacement.Bottom());
+            return;
+        }
+
+        // Whichever format is not wanted has to be torn down, or the ad from the previous screen
+        // keeps drawing over this one — an overlay follows the player until something destroys it.
+        if (!AdSettings.IsBanner(slot))
+        {
+            HideBanner();
+        }
+
+        if (!AdSettings.IsNative(slot))
+        {
+            HideNativeAd();
+        }
+
+        if (!Settings.CanShow(slot))
+        {
+            Debug.Log("[Ads] " + screen + " slot " + digit + " (" + slot + ") shows nothing — "
+                      + "ads off, unmapped digit, or no unit ID.");
+            return;
+        }
+
+        if (AdSettings.IsBanner(slot) && Banner != null)
+        {
+            Banner.Show(slot == AdSlotKind.BannerLarge);
+            return;
+        }
+
+        if (AdSettings.IsNative(slot) && Native != null)
+        {
+            Native.Show(Settings.NativeId, slot, NativeAdPlacement.Bottom());
         }
     }
 
-    public void ShowGameplayNative()
+    // Both formats, for a screen on its way out.
+    public void HideScreenAds()
     {
-        if (Native != null && Settings != null)
-        {
-            Native.Show(Settings.NativeId, Settings.PlayScreenStyle, NativeAdPlacement.Bottom());
-        }
+        HideBanner();
+        HideNativeAd();
     }
 
     public void PreloadLevelEndNative()
     {
         if (Native != null && Settings != null)
         {
-            Native.Preload(Settings.PreloadNativeId, Settings.SuccessScreenStyle);
+            Native.Preload(Settings.PreloadNativeId, Settings.SuccessScreenSlot);
         }
     }
 
@@ -267,7 +314,7 @@ public class AdsManager : MonoBehaviour
     {
         if (Native != null && Settings != null)
         {
-            Native.ShowPreloaded(Settings.PreloadNativeId, Settings.SuccessScreenStyle, placement);
+            Native.ShowPreloaded(Settings.PreloadNativeId, Settings.SuccessScreenSlot, placement);
         }
     }
 
@@ -275,7 +322,7 @@ public class AdsManager : MonoBehaviour
     // first and lay out only once.
     public int ExpectedLevelEndNativeHeightPx()
     {
-        return Settings != null ? NativeAdUnit.ExpectedHeightPx(Settings.SuccessScreenStyle) : 0;
+        return Settings != null ? NativeAdUnit.ExpectedHeightPx(Settings.SuccessScreenSlot) : 0;
     }
 
     // True only when an ad preloaded at level start is actually in hand. The result cards never load
@@ -305,7 +352,32 @@ public class AdsManager : MonoBehaviour
     }
 
     // Screens subscribe to size their reserved space from the ad's measured height instead of a
-    // hardcoded guess.
+    // hardcoded guess. Deliberately format-agnostic: a screen reserves room for "the ad", and which
+    // format the backend picked is not its business.
+    public void AddAdHeightListener(System.Action<float> listener)
+    {
+        adHeightListeners += listener;
+        listener(AdHeightPixels);
+    }
+
+    public void RemoveAdHeightListener(System.Action<float> listener)
+    {
+        adHeightListeners -= listener;
+    }
+
+    // Only one format is ever on screen at a time, so the larger of the two is the live one.
+    public float AdHeightPixels =>
+        Mathf.Max(Native != null ? Native.HeightPixels : 0f,
+                  Banner != null ? Banner.HeightPixels : 0f);
+
+    System.Action<float> adHeightListeners;
+
+    void OnUnitHeightChanged(float ignored)
+    {
+        adHeightListeners?.Invoke(AdHeightPixels);
+    }
+
+    // Kept for the result cards, which are native-only.
     public void AddNativeHeightListener(System.Action<float> listener)
     {
         if (Native != null)

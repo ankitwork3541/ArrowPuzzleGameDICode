@@ -26,6 +26,6 @@ MonoBehaviour:
   nativeRefreshSeconds: 30
   defaultMainScreenStyle: 2
   defaultPlayScreenStyle: 1
-  defaultSuccessScreenStyle: 2
+  defaultSuccessScreenStyle: 4
   nativeStyles: []
   adMaxAgeMinutes: 30

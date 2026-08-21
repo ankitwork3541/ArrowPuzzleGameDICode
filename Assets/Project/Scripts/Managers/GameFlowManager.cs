@@ -177,7 +177,7 @@ public class GameFlowManager : MonoBehaviour
 
         if (AdsManager.Instance != null)
         {
-            AdsManager.Instance.ShowGameplayNative();
+            AdsManager.Instance.ShowGameplayAd();
             AdsManager.Instance.PreloadLevelEndNative();
         }
     }

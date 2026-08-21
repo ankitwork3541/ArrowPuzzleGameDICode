@@ -38,6 +38,10 @@ public struct NativeAdPlacement
 // Owns the native overlay ad. Android draws it on top of the game, in screen pixels, while the
 // game's own layout lives in panel units — so room has to be opened before the overlay appears and
 // corrected from the template's real height once it exists. Nothing is reserved without an ad.
+//
+// Takes an AdSlotKind, never the backend's raw digit. Digits 1 and 2 ask for banners, which
+// BannerAdUnit owns; passing one here used to be possible and came out as a runtime "unsupported
+// style" log. Now it cannot be expressed.
 public class NativeAdUnit : MonoBehaviour
 {
     const float MeasureTimeoutSeconds = 2f;
@@ -67,7 +71,7 @@ public class NativeAdUnit : MonoBehaviour
 
     bool wantVisible;
     string activeUnitId;
-    int activeStyle;
+    AdSlotKind activeSlot;
     NativeAdPlacement activePlacement;
     bool activeAutoRefresh;
 
@@ -139,21 +143,21 @@ public class NativeAdUnit : MonoBehaviour
     {
         if (wantVisible && !string.IsNullOrEmpty(activeUnitId))
         {
-            Show(activeUnitId, activeStyle, activePlacement, activeAutoRefresh);
+            Show(activeUnitId, activeSlot, activePlacement, activeAutoRefresh);
         }
     }
 
-    public void Show(string adUnitId, int styleNumber, NativeAdPlacement placement, bool autoRefresh = true)
+    public void Show(string adUnitId, AdSlotKind slot, NativeAdPlacement placement, bool autoRefresh = true)
     {
         wantVisible = true;
         activeUnitId = adUnitId;
-        activeStyle = styleNumber;
+        activeSlot = slot;
         activePlacement = placement;
         activeAutoRefresh = autoRefresh;
 
-        if (!IsAllowed(adUnitId, styleNumber))
+        if (!IsAllowed(adUnitId, slot))
         {
-            Debug.Log("[NativeAd] Show refused for style " + styleNumber
+            Debug.Log("[NativeAd] Show refused for " + slot
                       + " — ads disabled, unit ID blank, or style unsupported.");
             Hide();
             return;
@@ -162,7 +166,7 @@ public class NativeAdUnit : MonoBehaviour
         AdsManager manager = AdsManager.Instance;
         if (manager == null || !manager.Ready)
         {
-            Debug.Log("[NativeAd] Show for style " + styleNumber + " parked until the SDK is ready.");
+            Debug.Log("[NativeAd] Show for " + slot + " parked until the SDK is ready.");
             return;
         }
 
@@ -174,10 +178,10 @@ public class NativeAdUnit : MonoBehaviour
 
     // Called when a level starts, so the win or lose card has an ad in hand instead of a wait. This
     // is the only place a result-card ad is ever requested — see ShowPreloaded.
-    public void Preload(string adUnitId, int styleNumber)
+    public void Preload(string adUnitId, AdSlotKind slot)
     {
         AdsManager manager = AdsManager.Instance;
-        if (manager == null || !manager.Ready || !IsAllowed(adUnitId, styleNumber))
+        if (manager == null || !manager.Ready || !IsAllowed(adUnitId, slot))
         {
             return;
         }
@@ -227,16 +231,16 @@ public class NativeAdUnit : MonoBehaviour
     //
     // The next ad is not requested here either. Preloading happens once per level, at StartLevel,
     // so a player who quits from the card never triggers a request that goes to waste.
-    public void ShowPreloaded(string adUnitId, int styleNumber, NativeAdPlacement placement)
+    public void ShowPreloaded(string adUnitId, AdSlotKind slot, NativeAdPlacement placement)
     {
         wantVisible = true;
         activeUnitId = adUnitId;
-        activeStyle = styleNumber;
+        activeSlot = slot;
         activePlacement = placement;
         activeAutoRefresh = false;
         StopLoadLoop();
 
-        if (!IsAllowed(adUnitId, styleNumber))
+        if (!IsAllowed(adUnitId, slot))
         {
             Hide();
             return;
@@ -263,8 +267,8 @@ public class NativeAdUnit : MonoBehaviour
         currentAd = preloadedAd;
         preloadedAd = null;
 
-        Debug.Log("[NativeAd] Using the preloaded ad for style " + styleNumber + ".");
-        StartPresent(currentAd, styleNumber, placement, needsTemplate: true);
+        Debug.Log("[NativeAd] Using the preloaded ad for " + slot + ".");
+        StartPresent(currentAd, slot, placement, needsTemplate: true);
     }
 
     // Full teardown. The ad object goes with it, so the next Show pays for a new request.
@@ -283,7 +287,7 @@ public class NativeAdUnit : MonoBehaviour
         return loadedAt < 0f || Time.realtimeSinceStartup - loadedAt >= AdMaxAgeSeconds;
     }
 
-    void Load(string adUnitId, int styleNumber, NativeAdPlacement placement)
+    void Load(string adUnitId, AdSlotKind slot, NativeAdPlacement placement)
     {
         loadInFlight = true;
         RequestCount++;
@@ -319,7 +323,7 @@ public class NativeAdUnit : MonoBehaviour
                 consecutiveFailures = 0;
 
                 // The player may have left the screen while the request was in flight.
-                if (!wantVisible || !IsAllowed(adUnitId, styleNumber))
+                if (!wantVisible || !IsAllowed(adUnitId, slot))
                 {
                     ad.Destroy();
                     return;
@@ -328,7 +332,7 @@ public class NativeAdUnit : MonoBehaviour
                 DestroyActive();
                 currentAd = ad;
                 WireEvents(ad);
-                StartPresent(ad, styleNumber, placement, needsTemplate: true);
+                StartPresent(ad, slot, placement, needsTemplate: true);
             });
         });
     }
@@ -383,10 +387,10 @@ public class NativeAdUnit : MonoBehaviour
         currentAd.SetTemplatePosition(x, y);
     }
 
-    void StartPresent(NativeOverlayAd ad, int styleNumber, NativeAdPlacement placement, bool needsTemplate)
+    void StartPresent(NativeOverlayAd ad, AdSlotKind slot, NativeAdPlacement placement, bool needsTemplate)
     {
         StopPresent();
-        presentRoutine = StartCoroutine(PresentRoutine(ad, styleNumber, placement, needsTemplate));
+        presentRoutine = StartCoroutine(PresentRoutine(ad, slot, placement, needsTemplate));
     }
 
     void StopPresent()
@@ -406,24 +410,24 @@ public class NativeAdUnit : MonoBehaviour
     //
     // The expected height comes from the template's own layout, so it is known before the ad exists.
     // The measured height afterwards only corrects it.
-    IEnumerator PresentRoutine(NativeOverlayAd ad, int styleNumber, NativeAdPlacement placement, bool needsTemplate)
+    IEnumerator PresentRoutine(NativeOverlayAd ad, AdSlotKind slot, NativeAdPlacement placement, bool needsTemplate)
     {
-        NativeStyleMapping mapping = Settings != null ? Settings.NativeStyle(styleNumber) : null;
+        NativeStyleMapping mapping = Settings != null ? Settings.NativeStyle(slot) : null;
 
         // A fresh config can land between the load and here. Rendering an unmapped style would put
         // an ad on screen at a size the backend just withdrew.
         if (mapping == null)
         {
-            Debug.Log("[NativeAd] Style " + styleNumber + " has no layout — nothing rendered.");
+            Debug.Log("[NativeAd] " + slot + " has no native layout — nothing rendered.");
             presentRoutine = null;
             Hide();
             yield break;
         }
 
-        int expectedHeightPx = ExpectedHeightPx(styleNumber);
+        int expectedHeightPx = ExpectedHeightPx(slot);
         if (expectedHeightPx <= 0)
         {
-            Debug.Log("[NativeAd] No expected height for style " + styleNumber + " — nothing rendered.");
+            Debug.Log("[NativeAd] No expected height for " + slot + " — nothing rendered.");
             presentRoutine = null;
             Hide();
             yield break;
@@ -458,7 +462,7 @@ public class NativeAdUnit : MonoBehaviour
         ad.Show();
         presentRoutine = null;
 
-        Debug.Log("[NativeAd] Showing style " + styleNumber
+        Debug.Log("[NativeAd] Showing " + slot
                   + (placement.anchored
                       ? " anchored " + placement.anchor
                       : " at " + placement.x + "," + placement.y + "dp")
@@ -520,11 +524,11 @@ public class NativeAdUnit : MonoBehaviour
     // How tall the ad will come out for a given width. Public because the UI needs it BEFORE the ad
     // exists: opening the reserved box at its final height means the layout settles once, and the ad
     // can then be requested at a position that is already correct — no repositioning afterwards.
-    // Returns 0 for an unsupported style, which is the caller's signal to reserve nothing at all.
-    public static int ExpectedHeightPx(int styleNumber)
+    // Returns 0 for a non-native slot, which is the caller's signal to reserve nothing at all.
+    public static int ExpectedHeightPx(AdSlotKind slot)
     {
         AdSettings settings = Settings;
-        NativeStyleMapping mapping = settings != null ? settings.NativeStyle(styleNumber) : null;
+        NativeStyleMapping mapping = settings != null ? settings.NativeStyle(slot) : null;
 
         if (mapping == null)
         {
@@ -568,16 +572,16 @@ public class NativeAdUnit : MonoBehaviour
     }
 
     // Three ways a placement can be off, and all three have to leave the screen looking exactly as
-    // it does with ads disabled: the master flag, a blank unit ID, and a style digit the plugin has
-    // no layout for.
-    static bool IsAllowed(string adUnitId, int styleNumber)
+    // it does with ads disabled: the master flag, a blank unit ID, and a slot that is not a native
+    // one (AdSlotKind.None, or a banner slot that reached here by mistake).
+    static bool IsAllowed(string adUnitId, AdSlotKind slot)
     {
         AdSettings settings = Settings;
 
         return settings != null
                && settings.AdsEnabled
                && !string.IsNullOrEmpty(adUnitId)
-               && settings.IsSupportedNativeStyle(styleNumber);
+               && settings.NativeStyle(slot) != null;
     }
 
     void StartMeasure(int fallbackHeightPx)
@@ -672,12 +676,12 @@ public class NativeAdUnit : MonoBehaviour
                 yield return new WaitForSecondsRealtime(delay);
             }
 
-            if (!wantVisible || !IsAllowed(activeUnitId, activeStyle))
+            if (!wantVisible || !IsAllowed(activeUnitId, activeSlot))
             {
                 break;
             }
 
-            Load(activeUnitId, activeStyle, activePlacement);
+            Load(activeUnitId, activeSlot, activePlacement);
 
             // Waiting for the request to settle is what lets the next delay react to a failure.
             float deadline = Time.realtimeSinceStartup + LoadSettleTimeoutSeconds;

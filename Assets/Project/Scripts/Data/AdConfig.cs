@@ -1,9 +1,25 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Which of the plugin's two native templates a backend style digit maps to. The plugin ships only
-// Small and Medium (NativeTemplateId), so digit 1 and 2 are the only ones that can render — every
-// other digit is treated as "no ad on this screen".
+// What the backend's main_screen / play_screen / success_screen digit asks a screen to show.
+// Anything the backend sends that is not on this list means "no ad on that screen".
+public enum AdSlotKind
+{
+    None = 0,
+
+    // Anchored adaptive banners. Both take the device's real width and let Google pick the height;
+    // Large is allowed up to 20% of screen height (50-150dp) where Standard stays around 50-60dp.
+    // Smart banner is deliberately absent — Google deprecated it, and it centres a standard creative
+    // in a screen-wide box, which leaves visible bars down both sides.
+    BannerStandard = 1,
+    BannerLarge = 2,
+
+    NativeSmall = 3,
+    NativeBig = 4
+}
+
+// Which of the plugin's two native templates a native slot renders as. The plugin ships only these
+// two (NativeTemplateId), which is why there are exactly two native digits.
 public enum NativeTemplateSize
 {
     Small,
@@ -14,7 +30,7 @@ public enum NativeTemplateSize
 public class NativeStyleMapping
 {
     [Tooltip("The digit the backend sends in main_screen / play_screen / success_screen.")]
-    public int styleNumber = 1;
+    public int styleNumber = 3;
 
     public NativeTemplateSize template = NativeTemplateSize.Small;
 
@@ -60,18 +76,20 @@ public class AdConfig : ScriptableObject
     public int interstitialCooldownSeconds = 30;
 
     [Tooltip("Native refresh interval used until the backend answers. The backend's "
-             + "refresh_native_sec is taken as-is, unclamped.")]
+             + "refresh_native_sec is taken as-is, unclamped. Banners are NOT refreshed from code — "
+             + "that is left to the ad unit's own auto-refresh in the AdMob dashboard.")]
     public int nativeRefreshSeconds = 30;
 
-    [Header("Native style fallbacks")]
-    [Tooltip("Only used in test mode — outside it, no backend config means no ads at all. Must be "
-             + "1 or 2; any other number renders nothing.")]
+    [Header("Screen slot fallbacks")]
+    [Tooltip("Only used in test mode — outside it, no backend config means no ads at all. "
+             + "0 none, 1 standard adaptive banner, 2 large adaptive banner, 3 small native, "
+             + "4 big native. The success screen never shows a banner, so 1 and 2 mean nothing "
+             + "there.")]
     public int defaultMainScreenStyle = 2;
     public int defaultPlayScreenStyle = 1;
-    public int defaultSuccessScreenStyle = 2;
+    public int defaultSuccessScreenStyle = 4;
 
-    [Tooltip("Leave empty to use the built-in mapping: digit 1 renders Small, digit 2 Medium, and "
-             + "every other digit renders no ad.")]
+    [Tooltip("Leave empty to use the built-in mapping: digit 3 renders Small, digit 4 Medium.")]
     public List<NativeStyleMapping> nativeStyles = new List<NativeStyleMapping>();
 
     [Header("Ad freshness")]

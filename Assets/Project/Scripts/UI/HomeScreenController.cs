@@ -19,8 +19,8 @@ public class HomeScreenController : MonoBehaviour
 
         if (AdsManager.Instance != null)
         {
-            AdsManager.Instance.AddNativeHeightListener(OnNativeHeightChanged);
-            AdsManager.Instance.ShowHomeNative();
+            AdsManager.Instance.AddAdHeightListener(OnAdHeightChanged);
+            AdsManager.Instance.ShowHomeAd();
         }
     }
 
@@ -30,14 +30,15 @@ public class HomeScreenController : MonoBehaviour
 
         if (AdsManager.Instance != null)
         {
-            AdsManager.Instance.RemoveNativeHeightListener(OnNativeHeightChanged);
-            AdsManager.Instance.HideNativeAd();
+            AdsManager.Instance.RemoveAdHeightListener(OnAdHeightChanged);
+            AdsManager.Instance.HideScreenAds();
         }
     }
 
-    // The ad is drawn by Android over the bottom of the screen; this only reserves matching room
-    // above it. A height of zero collapses the box entirely, so no ad means no gap.
-    private void OnNativeHeightChanged(float heightPixels)
+    // The ad — banner or native, whichever the backend asked for — is drawn by Android over the
+    // bottom of the screen; this only reserves matching room above it. A height of zero collapses the
+    // box entirely, so no ad means no gap.
+    private void OnAdHeightChanged(float heightPixels)
     {
         if (root == null) return;
 
@@ -80,6 +81,6 @@ public class HomeScreenController : MonoBehaviour
 
         BottomNavBinder.RefreshMilestones(root);
 
-        OnNativeHeightChanged(AdsManager.Instance != null ? AdsManager.Instance.NativeHeightPixels : 0f);
+        OnAdHeightChanged(AdsManager.Instance != null ? AdsManager.Instance.AdHeightPixels : 0f);
     }
 }
