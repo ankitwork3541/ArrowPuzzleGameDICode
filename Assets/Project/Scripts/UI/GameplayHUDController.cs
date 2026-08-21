@@ -66,6 +66,10 @@ public class GameplayHUDController : MonoBehaviour
         if (AdsManager.Instance != null)
         {
             AdsManager.Instance.RemoveNativeHeightListener(OnNativeHeightChanged);
+
+            // Android draws the overlay above everything, so leaving it up follows the player to
+            // whatever screen comes next. Whoever opens that screen shows its own ad.
+            AdsManager.Instance.HideNativeAd();
         }
     }
 

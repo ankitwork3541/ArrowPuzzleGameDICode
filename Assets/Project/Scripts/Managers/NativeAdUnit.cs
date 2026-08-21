@@ -59,6 +59,11 @@ public class NativeAdUnit : MonoBehaviour
     Coroutine refreshRoutine;
     Coroutine measureRoutine;
 
+    // Lets the result card decide whether to reserve room before it opens anything. Without this it
+    // would open the box, discover on the next frame that no ad was preloaded, and collapse again —
+    // a visible jump in the card's layout.
+    public bool HasPreloadedAd => preloadedAd != null;
+
     // Screen pixels. Zero means nothing is on screen, which is the signal for the UI to collapse
     // its reserved space completely rather than leave a hole.
     public float HeightPixels { get; private set; }
@@ -114,11 +119,10 @@ public class NativeAdUnit : MonoBehaviour
         activePlacement = placement;
         activeAutoRefresh = autoRefresh;
 
-        // Covers both "ads switched off" and "enabled but the unit ID came back blank".
-        if (!IsAllowed(adUnitId))
+        if (!IsAllowed(adUnitId, styleNumber))
         {
             Debug.Log("[NativeAd] Show refused for style " + styleNumber
-                      + " — ads disabled or unit ID blank.");
+                      + " — ads disabled, unit ID blank, or style unsupported.");
             Hide();
             return;
         }
@@ -142,11 +146,12 @@ public class NativeAdUnit : MonoBehaviour
         }
     }
 
-    // Called when a level starts, so the win or lose card has an ad in hand instead of a wait.
-    public void Preload(string adUnitId)
+    // Called when a level starts, so the win or lose card has an ad in hand instead of a wait. This
+    // is the only place a result-card ad is ever requested — see ShowPreloaded.
+    public void Preload(string adUnitId, int styleNumber)
     {
         AdsManager manager = AdsManager.Instance;
-        if (manager == null || !manager.Ready || !IsAllowed(adUnitId))
+        if (manager == null || !manager.Ready || !IsAllowed(adUnitId, styleNumber))
         {
             return;
         }
@@ -178,8 +183,12 @@ public class NativeAdUnit : MonoBehaviour
         });
     }
 
-    // Consumes the preloaded ad and then starts the next one straight away. Without that second
-    // preload only the first level end is instant, and every one after it waits on a live load.
+    // Shows only what is already in hand. A live load here is deliberately not attempted: nobody
+    // waits on a result card, so a request started now would arrive after the player has already
+    // tapped Next or Retry — paid for, never seen. No preloaded ad means no ad and no reserved space.
+    //
+    // The next ad is not requested here either. Preloading happens once per level, at StartLevel,
+    // so a player who quits from the card never triggers a request that goes to waste.
     public void ShowPreloaded(string adUnitId, int styleNumber, NativeAdPlacement placement)
     {
         wantVisible = true;
@@ -189,7 +198,7 @@ public class NativeAdUnit : MonoBehaviour
         activeAutoRefresh = false;
         StopRefresh();
 
-        if (!IsAllowed(adUnitId))
+        if (!IsAllowed(adUnitId, styleNumber))
         {
             Hide();
             return;
@@ -197,8 +206,8 @@ public class NativeAdUnit : MonoBehaviour
 
         if (preloadedAd == null)
         {
-            Debug.Log("[NativeAd] No preloaded ad in hand — loading style " + styleNumber + " live.");
-            Show(adUnitId, styleNumber, placement, autoRefresh: false);
+            Debug.Log("[NativeAd] No preloaded ad in hand — result card shows no ad.");
+            Hide();
             return;
         }
 
@@ -208,7 +217,6 @@ public class NativeAdUnit : MonoBehaviour
 
         Debug.Log("[NativeAd] Using the preloaded ad for style " + styleNumber + ".");
         Render(currentAd, styleNumber, placement);
-        Preload(adUnitId);
     }
 
     public void Hide()
@@ -235,7 +243,7 @@ public class NativeAdUnit : MonoBehaviour
                 }
 
                 // The player may have left the screen while the request was in flight.
-                if (!wantVisible || !IsAllowed(adUnitId))
+                if (!wantVisible || !IsAllowed(adUnitId, styleNumber))
                 {
                     ad.Destroy();
                     SetHeight(0f);
@@ -265,6 +273,17 @@ public class NativeAdUnit : MonoBehaviour
     void Render(NativeOverlayAd ad, int styleNumber, NativeAdPlacement placement)
     {
         NativeStyleMapping mapping = Settings != null ? Settings.NativeStyle(styleNumber) : null;
+
+        // A fresh config can land between the load and this render — refresh_native_sec is 10s, so
+        // that window is hit often enough to matter. Rendering an unmapped style would put an ad on
+        // screen at a size the backend just withdrew.
+        if (mapping == null)
+        {
+            Debug.Log("[NativeAd] Style " + styleNumber + " has no layout — nothing rendered.");
+            Hide();
+            return;
+        }
+
         NativeTemplateStyle style = BuildStyle(mapping);
 
         if (placement.anchored)
@@ -339,12 +358,18 @@ public class NativeAdUnit : MonoBehaviour
     // How tall the ad will come out for a given width. Public because the UI needs it BEFORE the ad
     // exists: opening the reserved box at its final height means the layout settles once, and the ad
     // can then be requested at a position that is already correct — no repositioning afterwards.
+    // Returns 0 for an unsupported style, which is the caller's signal to reserve nothing at all.
     public static int ExpectedHeightPx(int styleNumber)
     {
         AdSettings settings = Settings;
         NativeStyleMapping mapping = settings != null ? settings.NativeStyle(styleNumber) : null;
 
-        if (mapping != null && mapping.heightPx > 0)
+        if (mapping == null)
+        {
+            return 0;
+        }
+
+        if (mapping.heightPx > 0)
         {
             return mapping.heightPx;
         }
@@ -380,10 +405,17 @@ public class NativeAdUnit : MonoBehaviour
         };
     }
 
-    static bool IsAllowed(string adUnitId)
+    // Three ways a placement can be off, and all three have to leave the screen looking exactly as
+    // it does with ads disabled: the master flag, a blank unit ID, and a style digit the plugin has
+    // no layout for.
+    static bool IsAllowed(string adUnitId, int styleNumber)
     {
         AdSettings settings = Settings;
-        return settings != null && settings.AdsEnabled && !string.IsNullOrEmpty(adUnitId);
+
+        return settings != null
+               && settings.AdsEnabled
+               && !string.IsNullOrEmpty(adUnitId)
+               && settings.IsSupportedNativeStyle(styleNumber);
     }
 
     void StartMeasure()
@@ -448,7 +480,8 @@ public class NativeAdUnit : MonoBehaviour
     {
         StopRefresh();
 
-        int seconds = Settings != null ? Settings.NativeRefreshSeconds : AdSettings.MinNativeRefreshSeconds;
+        // Whatever refresh_native_sec asks for, unclamped. Zero or negative means never refresh.
+        int seconds = Settings != null ? Settings.NativeRefreshSeconds : 0;
         if (seconds > 0)
         {
             refreshRoutine = StartCoroutine(RefreshRoutine(seconds));
@@ -471,7 +504,7 @@ public class NativeAdUnit : MonoBehaviour
             // Realtime, so a dialog that froze Time.timeScale does not stall the cycle.
             yield return new WaitForSecondsRealtime(seconds);
 
-            if (!wantVisible || !IsAllowed(activeUnitId))
+            if (!wantVisible || !IsAllowed(activeUnitId, activeStyle))
             {
                 refreshRoutine = null;
                 yield break;

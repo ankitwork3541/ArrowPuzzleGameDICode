@@ -1,5 +1,4 @@
 using System;
-using UnityEngine;
 
 // The single place the rest of the game reads ad settings from. Resolves remote over baked, so no
 // caller ever has to know whether the backend answered.
@@ -27,9 +26,27 @@ public class AdSettings
         return true;
     }
 
-    public bool AdsEnabled => remote != null ? remote.ad_enable == 1 : baked.adsEnabled;
-    public bool RewardedEnabled => remote != null ? remote.rewarded_ad_enable == 1 : baked.rewardedEnabled;
-    public bool BackAdEnabled => remote != null ? remote.back_ad_on == 1 : baked.backAdEnabled;
+    // The backend is the only authority on whether ads run at all. With no payload — not even last
+    // launch's cached one — every format stays off rather than falling back to whatever shipped in
+    // the build. Test mode is the one exception, so the Editor and debug builds still serve.
+    public bool AdsEnabled
+    {
+        get
+        {
+            if (baked.useTestIds)
+            {
+                return true;
+            }
+
+            return remote != null && remote.ad_enable == 1;
+        }
+    }
+
+    public bool RewardedEnabled =>
+        AdsEnabled && (remote != null ? remote.rewarded_ad_enable == 1 : baked.rewardedEnabled);
+
+    public bool BackAdEnabled =>
+        AdsEnabled && (remote != null ? remote.back_ad_on == 1 : baked.backAdEnabled);
 
     public string BannerId => Id(remote?.banner_adunit_id, baked.banner, AdTestIds.Banner);
     public string InterstitialId => Id(remote?.interstitial_adunit_id, baked.interstitial, AdTestIds.Interstitial);
@@ -38,32 +55,26 @@ public class AdSettings
     public string PreloadNativeId => Id(remote?.preload_native_adunit_id, baked.preloadNativeAd, AdTestIds.Native);
 
     // Lets a screen decide whether to open any room at all. Checking AdsEnabled alone would leave a
-    // gap whenever the backend sends an enabled flag but a blank unit ID.
-    public bool CanShowPreloadNative => AdsEnabled && !string.IsNullOrEmpty(PreloadNativeId);
+    // gap whenever the backend sends an enabled flag but a blank unit ID, or a style digit that maps
+    // to no layout.
+    public bool CanShowPreloadNative =>
+        AdsEnabled && !string.IsNullOrEmpty(PreloadNativeId) && IsSupportedNativeStyle(SuccessScreenStyle);
 
     public int LevelsPerInterstitial => Positive(remote?.ad_level_count, baked.levelsPerInterstitial);
     public int InterstitialCooldownSeconds => Positive(remote?.ad_click_time_sec, baked.interstitialCooldownSeconds);
-    public int MinLevelForAds => baked.minLevelForAds;
 
-    // Clamped to the floor AdMob enforces on banner auto-refresh. The backend currently asks for
-    // 10s, which buys many requests and few viewable impressions.
-    public int NativeRefreshSeconds
-    {
-        get
-        {
-            int requested = Positive(remote?.refresh_native_sec, baked.nativeRefreshSeconds);
-            return Mathf.Max(requested, MinNativeRefreshSeconds);
-        }
-    }
-
-    public const int MinNativeRefreshSeconds = 30;
+    public int NativeRefreshSeconds => Positive(remote?.refresh_native_sec, baked.nativeRefreshSeconds);
 
     public int MainScreenStyle => Positive(remote?.main_screen, baked.defaultMainScreenStyle);
     public int PlayScreenStyle => Positive(remote?.play_screen, baked.defaultPlayScreenStyle);
     public int SuccessScreenStyle => Positive(remote?.success_screen, baked.defaultSuccessScreenStyle);
 
-    // The AdConfig table wins so the mapping can be retuned without a code change; the built-in
-    // fallback keeps a freshly created asset working.
+    // Only the two layouts the plugin actually ships are supported: digit 1 is the thin strip,
+    // digit 2 the tall one with a media panel. Any other digit returns null, which every caller
+    // treats as "no ad here" — the backend sending an unmapped number must leave the screen exactly
+    // as it looks with ads off, not fall back to a size nobody asked for.
+    //
+    // The AdConfig table is checked first so the mapping can be retuned without a code change.
     public NativeStyleMapping NativeStyle(int styleNumber)
     {
         if (baked.nativeStyles != null)
@@ -77,11 +88,22 @@ public class AdSettings
             }
         }
 
-        return new NativeStyleMapping
+        if (styleNumber == 1)
         {
-            styleNumber = styleNumber,
-            template = styleNumber >= 3 ? NativeTemplateSize.Medium : NativeTemplateSize.Small
-        };
+            return new NativeStyleMapping { styleNumber = 1, template = NativeTemplateSize.Small };
+        }
+
+        if (styleNumber == 2)
+        {
+            return new NativeStyleMapping { styleNumber = 2, template = NativeTemplateSize.Medium };
+        }
+
+        return null;
+    }
+
+    public bool IsSupportedNativeStyle(int styleNumber)
+    {
+        return NativeStyle(styleNumber) != null;
     }
 
     // Returns null rather than falling back to a test unit: showing test ads to real players earns

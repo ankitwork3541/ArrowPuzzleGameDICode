@@ -170,7 +170,21 @@ public class AdsManager : MonoBehaviour
         Debug.Log("[Ads] SDK ready. remote=" + Settings.HasRemote
                   + " test=" + Settings.UsingTestIds
                   + " interstitial=" + Settings.InterstitialId
-                  + " levelsPerAd=" + Settings.LevelsPerInterstitial);
+                  + " levelsPerAd=" + Settings.LevelsPerInterstitial
+                  + " native=" + Settings.NativeId
+                  + " styles main/play/success=" + Settings.MainScreenStyle
+                  + "/" + Settings.PlayScreenStyle + "/" + Settings.SuccessScreenStyle
+                  + " refresh=" + Settings.NativeRefreshSeconds + "s");
+
+        // LogError, not LogWarning: shipping with this on serves Google's test inventory to real
+        // players and earns nothing, and it also bypasses the "no backend config, no ads" rule.
+        if (Settings.UsingTestIds)
+        {
+            Debug.LogError("[Ads] TEST AD UNITS ARE ON. Turn off AdConfig.useTestIds before release "
+                           + "— the backend's ad unit IDs and its ad_enable flag are both ignored "
+                           + "while this is set.");
+        }
+
         OnReady?.Invoke();
     }
 
@@ -219,7 +233,7 @@ public class AdsManager : MonoBehaviour
     {
         if (Native != null && Settings != null)
         {
-            Native.Preload(Settings.PreloadNativeId);
+            Native.Preload(Settings.PreloadNativeId, Settings.SuccessScreenStyle);
         }
     }
 
@@ -239,6 +253,15 @@ public class AdsManager : MonoBehaviour
     {
         return Settings != null ? NativeAdUnit.ExpectedHeightPx(Settings.SuccessScreenStyle) : 0;
     }
+
+    // True only when an ad preloaded at level start is actually in hand. The result cards never load
+    // one live — nobody waits on a win screen — so this is what decides whether the card reserves
+    // any room at all.
+    public bool LevelEndNativeReady =>
+        Native != null
+        && Settings != null
+        && Settings.CanShowPreloadNative
+        && Native.HasPreloadedAd;
 
     // Called again after the ad's height has grown the card and shifted the reserved box.
     public void MoveNativeAd(int x, int y)

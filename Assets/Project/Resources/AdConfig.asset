@@ -18,10 +18,12 @@ MonoBehaviour:
   rewarded: 
   nativeAd: 
   preloadNativeAd: 
-  adsEnabled: 1
   rewardedEnabled: 1
   backAdEnabled: 0
   levelsPerInterstitial: 2
   interstitialCooldownSeconds: 30
   nativeRefreshSeconds: 10
-  minLevelForAds: 3
+  defaultMainScreenStyle: 2
+  defaultPlayScreenStyle: 1
+  defaultSuccessScreenStyle: 2
+  nativeStyles: []

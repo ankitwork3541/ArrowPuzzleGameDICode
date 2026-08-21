@@ -73,6 +73,13 @@ public class GameFlowManager : MonoBehaviour
     {
         livesManager.ResetLives();
         levelLoader.LoadLevel();
+
+        // A second chance at the result-card ad if the one requested at level start never arrived.
+        // Preload no-ops when an ad is already in hand, so this costs nothing in the normal case.
+        if (AdsManager.Instance != null)
+        {
+            AdsManager.Instance.PreloadLevelEndNative();
+        }
     }
 
     public void OnHintButtonClicked()
@@ -82,12 +89,10 @@ public class GameFlowManager : MonoBehaviour
 
     // Home <-> Settings. The panels themselves are transparent, so what shows through either way
     // is the camera's solid colour with the backdrop arrows drifting behind it.
+    // The home ad is not touched here: HomeScreenController owns it from its own OnEnable/OnDisable,
+    // and showing it here as well requested a second ad every time home opened.
     public void OnSettingsNavClicked()
     {
-        if (AdsManager.Instance != null)
-        {
-            AdsManager.Instance.HideNativeAd();
-        }
         homeRoot.SetActive(false);
         settingsRoot.SetActive(true);
     }
@@ -96,10 +101,6 @@ public class GameFlowManager : MonoBehaviour
     {
         settingsRoot.SetActive(false);
         homeRoot.SetActive(true);
-        if (AdsManager.Instance != null)
-        {
-            AdsManager.Instance.ShowHomeNative();
-        }
     }
 
     // The board is deliberately NOT cleared here, and the camera is deliberately NOT reframed.
@@ -186,11 +187,6 @@ public class GameFlowManager : MonoBehaviour
         levelLoader.ClearLevel();
         CameraController.Instance.FrameMenu();
         homeRoot.SetActive(true);
-
-        if (AdsManager.Instance != null)
-        {
-            AdsManager.Instance.ShowHomeNative();
-        }
     }
 
     // Reads what the generator measured. It used to bucket by arrow count, which said nothing

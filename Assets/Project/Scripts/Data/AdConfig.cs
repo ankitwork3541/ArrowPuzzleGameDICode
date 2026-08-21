@@ -2,7 +2,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // Which of the plugin's two native templates a backend style digit maps to. The plugin ships only
-// Small and Medium (NativeTemplateId), so several digits necessarily share a layout.
+// Small and Medium (NativeTemplateId), so digit 1 and 2 are the only ones that can render — every
+// other digit is treated as "no ad on this screen".
 public enum NativeTemplateSize
 {
     Small,
@@ -41,7 +42,8 @@ public class AdConfig : ScriptableObject
     public string preloadNativeAd;
 
     [Header("Rules")]
-    public bool adsEnabled = true;
+    [Tooltip("Fallbacks for the sub-flags only. There is no baked equivalent of ad_enable: with no "
+             + "backend config, ads stay off entirely.")]
     public bool rewardedEnabled = true;
     public bool backAdEnabled = false;
 
@@ -51,19 +53,18 @@ public class AdConfig : ScriptableObject
     [Tooltip("Minimum gap between two interstitials.")]
     public int interstitialCooldownSeconds = 30;
 
-    [Tooltip("Requested native refresh interval. Clamped up to 30s at runtime.")]
-    public int nativeRefreshSeconds = 30;
+    [Tooltip("Native refresh interval used until the backend answers. The backend's "
+             + "refresh_native_sec is taken as-is, unclamped.")]
+    public int nativeRefreshSeconds = 10;
 
     [Header("Native style fallbacks")]
-    [Tooltip("Used until the backend answers.")]
+    [Tooltip("Only used in test mode — outside it, no backend config means no ads at all. Must be "
+             + "1 or 2; any other number renders nothing.")]
     public int defaultMainScreenStyle = 2;
     public int defaultPlayScreenStyle = 1;
-    public int defaultSuccessScreenStyle = 5;
+    public int defaultSuccessScreenStyle = 2;
 
-    [Tooltip("Leave empty to use the built-in mapping: digits 1-2 render Small, 3 and above Medium.")]
+    [Tooltip("Leave empty to use the built-in mapping: digit 1 renders Small, digit 2 Medium, and "
+             + "every other digit renders no ad.")]
     public List<NativeStyleMapping> nativeStyles = new List<NativeStyleMapping>();
-
-    [Header("Player-friendly floor")]
-    [Tooltip("No ads at all before this level number. 0 disables the grace period.")]
-    public int minLevelForAds = 3;
 }

@@ -89,9 +89,13 @@ public class ResultScreenController : MonoBehaviour
             return;
         }
 
-        if (!AdsManager.Instance.Settings.CanShowPreloadNative)
+        // Checked before anything is opened, not after. An ad that was never preloaded is not loaded
+        // live here — the player taps Next or Retry long before a request would land — so if none is
+        // in hand the card must look exactly as it does with ads off.
+        if (!AdsManager.Instance.LevelEndNativeReady)
         {
-            Debug.Log("[NativeAd] Result card: ads off or no unit ID — leaving no space.");
+            Debug.Log("[NativeAd] Result card: ads off, no unit ID, unsupported style, or nothing "
+                      + "preloaded — leaving no space.");
             NativeAdSpace.Collapse(space);
             return;
         }
@@ -127,6 +131,14 @@ public class ResultScreenController : MonoBehaviour
         // height up front means the group settles into its final centred position once, and the
         // position handed to the plugin is right first time with nothing to correct afterwards.
         int expectedHeightPx = AdsManager.Instance.ExpectedLevelEndNativeHeightPx();
+        if (expectedHeightPx <= 0)
+        {
+            NativeAdSpace.Collapse(space);
+            placeRoutine = null;
+            Debug.Log("[NativeAd] Result card: no height for this style — no ad requested.");
+            yield break;
+        }
+
         NativeAdSpace.Apply(space, expectedHeightPx);
 
         // Two frames: one for the box's own height, one for the re-centred group around it. Then wait
