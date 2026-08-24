@@ -46,6 +46,7 @@ public class InterstitialManager : MonoBehaviour
     private int globalClickCount;
     private float timer;
     private bool showInProgress;
+    private bool adWasSeen;
 
     public int ClickCount => globalClickCount;
     public float TimeElapsed => timer;
@@ -70,10 +71,26 @@ public class InterstitialManager : MonoBehaviour
         InterstitialAdUnit unit = Unit();
         if (unit != null)
         {
-            // Reset on the ad REACHING the screen, not on the decision to show it: an ad that
-            // fails to display was never seen, and wiping the counter for it costs an impression.
-            unit.OnOpened += ResetTracking;
+            unit.OnOpened += OnAdOpened;
+            unit.OnClosed += OnAdClosed;
         }
+    }
+
+    // The cycle restarts when the player gets the game back, not when the ad appears — otherwise
+    // however long they spent watching would come out of the next cooldown.
+    void OnAdOpened()
+    {
+        adWasSeen = true;
+    }
+
+    // Guarded on adWasSeen because OnClosed also fires for an ad that failed to display. Resetting
+    // for one of those would cost an impression the player never got.
+    void OnAdClosed()
+    {
+        if (!adWasSeen) return;
+
+        adWasSeen = false;
+        ResetTracking();
     }
 
     void Update()
@@ -86,7 +103,8 @@ public class InterstitialManager : MonoBehaviour
         InterstitialAdUnit unit = Unit();
         if (unit != null)
         {
-            unit.OnOpened -= ResetTracking;
+            unit.OnOpened -= OnAdOpened;
+            unit.OnClosed -= OnAdClosed;
         }
 
         if (instance == this)
@@ -114,8 +132,18 @@ public class InterstitialManager : MonoBehaviour
         }
 
         AdsManager ads = AdsManager.Instance;
-        if (ads == null || ads.Settings == null
-            || !ads.Settings.InterstitialEnabled || ads.Settings.AdClickCount <= 0)
+        if (ads == null || ads.Settings == null || !ads.Settings.InterstitialEnabled)
+        {
+            onProceed?.Invoke();
+            return;
+        }
+
+        int requiredClicks = ads.Settings.AdClickCount;
+        int requiredTime = ads.Settings.AdClickTimeSec;
+
+        // Both triggers off means there is no click-based interstitial at all — not even a counter
+        // worth keeping.
+        if (requiredClicks <= 0 && requiredTime <= 0)
         {
             onProceed?.Invoke();
             return;
@@ -123,16 +151,21 @@ public class InterstitialManager : MonoBehaviour
 
         globalClickCount++;
 
-        int requiredClicks = ads.Settings.AdClickCount;
-        float requiredTime = ads.Settings.AdClickTimeSec;
+        // EITHER gate is enough. A 0 from the backend switches that one trigger off rather than
+        // satisfying it instantly — otherwise ad_click_time_sec of 0 would put an ad on every
+        // single button in the game.
+        bool timeMet = requiredTime > 0 && timer >= requiredTime;
+        bool countMet = requiredClicks > 0 && globalClickCount >= requiredClicks;
+
         string state = "clicks=" + globalClickCount + "/" + requiredClicks
                        + ", timer=" + timer.ToString("F1") + "s/" + requiredTime + "s";
 
-        // Both gates, every time. Once the click threshold is passed the counter keeps climbing,
-        // so each further click re-checks the clock until one of them finally lands an ad.
-        if (globalClickCount >= requiredClicks && timer >= requiredTime)
+        // Time first, as the spec's flow chart has it: a finished timer shows an ad on its own and
+        // never looks at the counter. The counter is what covers a player who is racing through
+        // faster than the clock.
+        if (timeMet || countMet)
         {
-            Present(ads, onProceed, "Click ad. " + state);
+            Present(ads, onProceed, "Click ad by " + (timeMet ? "TIME" : "COUNT") + ". " + state);
             return;
         }
 

@@ -19,6 +19,10 @@ public class BannerAdUnit : MonoBehaviour
     bool wantVisible;
     bool wantLarge;
 
+    // A failed BannerView is kept rather than nulled, so this is what tells "still loading" apart
+    // from "gave up" when deciding whether an existing banner can be reused.
+    bool loadFailed;
+
     Coroutine presentRoutine;
 
     public bool IsLoaded { get; private set; }
@@ -76,6 +80,15 @@ public class BannerAdUnit : MonoBehaviour
 
     public void Show(bool large)
     {
+        // Already carrying exactly this banner — leave it alone. Create() destroys before it
+        // builds, so falling through would tear down a good ad and pay for a fresh request every
+        // time the player crossed between two screens that both want the same banner. A failed
+        // load is the one case worth rebuilding for, and loadFailed is what lets that through.
+        if (wantVisible && wantLarge == large && banner != null && !loadFailed)
+        {
+            return;
+        }
+
         wantVisible = true;
         wantLarge = large;
 
@@ -107,6 +120,7 @@ public class BannerAdUnit : MonoBehaviour
     void Create(bool large)
     {
         DestroyBanner();
+        loadFailed = false;
 
         AdSize size = large ? LargeAnchoredAdaptiveSize() : AnchoredAdaptiveSize();
         string unitId = AdsManager.Instance.Settings.BannerId;
@@ -149,6 +163,7 @@ public class BannerAdUnit : MonoBehaviour
             }
 
             IsLoaded = false;
+            loadFailed = true;
             SetHeight(0f);
 
             // No retry from here. The ad unit's own auto-refresh owns that; without it enabled in

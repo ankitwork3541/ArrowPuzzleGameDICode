@@ -294,6 +294,10 @@ public class AdsManager : MonoBehaviour
             return;
         }
 
+        // The screen we are replacing may have queued a teardown on its way out. It did not know
+        // this screen wants the same ad; now that we do, call it off.
+        CancelPendingHide();
+
         // Whichever format is not wanted has to be torn down, or the ad from the previous screen
         // keeps drawing over this one — an overlay follows the player until something destroys it.
         if (!AdSettings.IsBanner(slot))
@@ -328,9 +332,46 @@ public class AdsManager : MonoBehaviour
     // Both formats, for a screen on its way out.
     public void HideScreenAds()
     {
+        CancelPendingHide();
         HideBanner();
         HideNativeAd();
     }
+
+    // Screens hand over inside a single frame: the outgoing screen's OnDisable runs before the
+    // incoming screen's OnEnable. Hiding right there tears down a banner the next screen is about
+    // to ask for again — and Banner.Hide() DESTROYS the view, so that costs a whole fresh ad
+    // request and a visible gap. Waiting until the end of the frame lets a Show that arrived in the
+    // meantime cancel the teardown, which is what keeps the ad steady across Home <-> Settings.
+    public void HideScreenAdsDeferred()
+    {
+        if (pendingHide != null)
+        {
+            return;
+        }
+
+        pendingHide = StartCoroutine(HideAtEndOfFrame());
+    }
+
+    System.Collections.IEnumerator HideAtEndOfFrame()
+    {
+        yield return new WaitForEndOfFrame();
+        pendingHide = null;
+        HideBanner();
+        HideNativeAd();
+    }
+
+    void CancelPendingHide()
+    {
+        if (pendingHide == null)
+        {
+            return;
+        }
+
+        StopCoroutine(pendingHide);
+        pendingHide = null;
+    }
+
+    Coroutine pendingHide;
 
     public void PreloadLevelEndNative()
     {

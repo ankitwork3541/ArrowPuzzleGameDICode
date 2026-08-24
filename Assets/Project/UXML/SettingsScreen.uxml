@@ -56,5 +56,9 @@
         </ui:ScrollView>
 
         <ui:Instance template="BottomNav" name="bottom-nav-slot" class="nav-slot" />
+
+        <!-- Below the nav, same as Home: Android draws the ad over the very bottom of the screen,
+             and this only reserves matching room above it. -->
+        <ui:VisualElement name="native-ad-space" class="settings-ad-space" />
     </ui:VisualElement>
 </ui:UXML>

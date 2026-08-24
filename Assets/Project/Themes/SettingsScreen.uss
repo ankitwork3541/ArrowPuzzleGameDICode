@@ -16,6 +16,14 @@
     flex-shrink: 0;
 }
 
+/* Sits under the nav and is grown from the ad's measured height. display:none while there is no
+   ad, so nothing reserves a gap that never gets filled. */
+.settings-ad-space {
+    width: 100%;
+    flex-shrink: 0;
+    display: none;
+}
+
 /* ============ Header ============ */
 .settings-header {
     align-items: center;

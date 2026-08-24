@@ -31,7 +31,11 @@ public class HomeScreenController : MonoBehaviour
         if (AdsManager.Instance != null)
         {
             AdsManager.Instance.RemoveAdHeightListener(OnAdHeightChanged);
-            AdsManager.Instance.HideScreenAds();
+
+            // Deferred: Settings opens later in this same frame and wants the same ad, which
+            // cancels this. Hiding outright would destroy the banner and pay for a fresh request
+            // every time the player touched the nav.
+            AdsManager.Instance.HideScreenAdsDeferred();
         }
     }
 

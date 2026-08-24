@@ -171,6 +171,10 @@ public class GameFlowManager : MonoBehaviour
         LastCompletedLevelNumber = levelLoader.CurrentLevelNumber();
         levelLoader.AdvanceLevel();
 
+        // Background analytics ping. Deliberately not awaited — the win card shows regardless of
+        // whether the network answers, or answers at all.
+        LevelTracker.ReportLevelComplete(LastCompletedLevelNumber);
+
         AudioManager.Instance.PlayLevelComplete();
 
         CameraController.Instance.SuspendInput();

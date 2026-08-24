@@ -33,6 +33,16 @@ public struct NativeAdPlacement
     {
         return new NativeAdPlacement { anchored = false, x = xDp, y = yDp };
     }
+
+    // Compared field by field rather than with Equals(): this is a struct with no override, so the
+    // default comparison boxes and reflects, which is not what a per-screen-change check wants.
+    public static bool Same(NativeAdPlacement a, NativeAdPlacement b)
+    {
+        if (a.anchored != b.anchored) return false;
+        if (a.anchored) return a.anchor == b.anchor;
+
+        return a.x == b.x && a.y == b.y;
+    }
 }
 
 // Owns the native overlay ad. Android draws it on top of the game, in screen pixels, while the
@@ -149,6 +159,16 @@ public class NativeAdUnit : MonoBehaviour
 
     public void Show(string adUnitId, AdSlotKind slot, NativeAdPlacement placement, bool autoRefresh = true)
     {
+        // Nothing has changed and an ad is already on screen — reloading here would throw away a
+        // live impression and start a new request every time the player crossed between two
+        // screens that carry the same slot. Same reasoning as BannerAdUnit.Show().
+        if (wantVisible && currentAd != null
+            && activeUnitId == adUnitId && activeSlot == slot
+            && NativeAdPlacement.Same(activePlacement, placement))
+        {
+            return;
+        }
+
         wantVisible = true;
         activeUnitId = adUnitId;
         activeSlot = slot;

@@ -22,11 +22,37 @@ public class SettingsScreenController : MonoBehaviour
     {
         panelRenderer.RegisterUIReloadCallback(OnUIReload);
         Apply();
+
+        // Settings is reached from Home's own bottom nav and is the same shell, so it carries the
+        // same ad. There is no settings_screen digit from the backend — main_screen governs both.
+        if (AdsManager.Instance != null)
+        {
+            AdsManager.Instance.AddAdHeightListener(OnAdHeightChanged);
+            AdsManager.Instance.ShowHomeAd();
+        }
     }
 
     private void OnDisable()
     {
         panelRenderer.UnregisterUIReloadCallback(OnUIReload);
+
+        if (AdsManager.Instance != null)
+        {
+            AdsManager.Instance.RemoveAdHeightListener(OnAdHeightChanged);
+
+            // Deferred: going back to Home, that screen's OnEnable lands later in this same frame
+            // and asks for the very same ad, which cancels this.
+            AdsManager.Instance.HideScreenAdsDeferred();
+        }
+    }
+
+    // Android draws the ad over the bottom of the screen; this only reserves matching room above
+    // it. A height of zero collapses the box, so no ad means no gap.
+    private void OnAdHeightChanged(float heightPixels)
+    {
+        if (root == null) return;
+
+        NativeAdSpace.Apply(root.Q<VisualElement>("native-ad-space"), heightPixels);
     }
 
     private void OnUIReload(PanelRenderer renderer, VisualElement rootElement)
@@ -49,6 +75,9 @@ public class SettingsScreenController : MonoBehaviour
         BottomNavBinder.Bind(root, "nav-settings", OnHomeNavClicked, null);
 
         Apply();
+
+        // The reload can land after OnEnable, which ran with no root to size the box in.
+        OnAdHeightChanged(AdsManager.Instance != null ? AdsManager.Instance.AdHeightPixels : 0f);
     }
 
     // Same unregister-then-register guard as everywhere else: OnUIReload can fire
