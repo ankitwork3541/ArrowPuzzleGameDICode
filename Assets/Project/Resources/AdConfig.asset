@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 425641415616743619d472ec44376299, type: 3}
   m_Name: AdConfig
   m_EditorClassIdentifier: Assembly-CSharp::AdConfig
-  useTestIds: 1
+  useTestIds: 0
   testDeviceIds: []
   banner: 
   interstitial: 
@@ -21,8 +21,10 @@ MonoBehaviour:
   preloadNativeAd: 
   rewardedEnabled: 1
   backAdEnabled: 0
+  defaultFreeHintCount: 3
   levelsPerInterstitial: 2
   interstitialCooldownSeconds: 30
+  adClickCount: 3
   nativeRefreshSeconds: 30
   defaultMainScreenStyle: 2
   defaultPlayScreenStyle: 1
