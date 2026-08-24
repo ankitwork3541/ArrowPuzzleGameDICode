@@ -1,0 +1,36 @@
+# R8 keep rules for the release build. Unity's own proguard-unity.txt and Android's
+# proguard-android-optimize.txt are still applied — this file only adds what those two miss.
+#
+# Everything here shares one blind spot: the class is never named in code R8 can see. It is looked
+# up by string at runtime, or instantiated by the Android framework from a manifest entry. R8 reads
+# that as "unused", removes or renames it, and the failure only shows up on a release build.
+
+# ---------------------------------------------------------------------------
+# WorkManager + Room
+#
+# androidx.work:work-runtime arrives transitively with the Google Mobile Ads SDK and starts itself
+# at process launch, through androidx.startup's InitializationProvider — before Unity runs a single
+# line, which is why the crash log had no Unity output in it at all.
+#
+# Room resolves its database with Class.forName("<DatabaseClass>_Impl"). Nothing references that
+# generated class directly, so R8 strips it and the process dies with
+# "Failed to create an instance of androidx.work.impl.WorkDatabase".
+# ---------------------------------------------------------------------------
+-keep class androidx.work.impl.WorkDatabase_Impl { *; }
+-keep class * extends androidx.room.RoomDatabase { <init>(); }
+-keep class * extends androidx.work.ListenableWorker { <init>(android.content.Context, androidx.work.WorkerParameters); }
+
+# Declared in WorkManager's manifest and constructed by the framework, never from application code.
+-keep class androidx.work.impl.background.systemalarm.RescheduleReceiver { *; }
+-keep class androidx.work.impl.background.systemjob.SystemJobService { *; }
+-keep class androidx.work.impl.foreground.SystemForegroundService { *; }
+-keep class androidx.work.impl.diagnostics.DiagnosticsReceiver { *; }
+
+# ---------------------------------------------------------------------------
+# androidx.startup
+#
+# Initializers are discovered from <meta-data> entries in the merged manifest, by class name. Same
+# blind spot, and it is the component that was actually mid-crash in the stack trace.
+# ---------------------------------------------------------------------------
+-keep class androidx.startup.InitializationProvider { *; }
+-keep class * implements androidx.startup.Initializer { *; }

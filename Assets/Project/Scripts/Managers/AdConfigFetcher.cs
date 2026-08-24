@@ -30,9 +30,10 @@ public class AdConfigFetcher : MonoBehaviour
 
     public IEnumerator Fetch(Action<AdRemoteConfig> onDone)
     {
+        // ver_name is the whole payload. install_campaign used to go along with it and the backend
+        // no longer takes it.
         WWWForm form = new WWWForm();
         form.AddField("ver_name", Application.version);
-        form.AddField("install_campaign", "organic");
 
         using (UnityWebRequest request = UnityWebRequest.Post(Url, form))
         {
