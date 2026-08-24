@@ -66,54 +66,75 @@
    padding rather than by any drawn boundary. */
 .top-panel {
     background-color: rgb(5, 8, 22);
-    padding-top: 56px;
-    padding-bottom: 34px;
+    padding-top: 48px;
+    padding-bottom: 22px;
 }
 
 .top-row {
     flex-direction: row;
-    justify-content: center;
     align-items: center;
-    height: 170px;
-}
-
-.top-centre {
-    align-items: center;
-}
-
-/* ============ LEVEL badge (top-right) ============ */
-.level-badge {
-    position: absolute;
-    right: 36px;
-    top: 0;
+    justify-content: space-between;
     height: 150px;
-    min-width: 190px;
-    padding-left: 34px;
-    padding-right: 34px;
+    padding-left: 36px;
+    padding-right: 36px;
+}
+
+/* Overlays the whole row so the pill lands on the SCREEN centre. Absolute children are laid out
+   against the parent's padding box, and that box is symmetric, so "centre" here really is centre. */
+.lives-centre {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
     align-items: center;
     justify-content: center;
 }
 
+/* ============ LEVEL badge (top-right) ============
+   Carries the difficulty now, small and in the accent colour, over the level line. min-width is a
+   floor, not a size: five-digit level numbers are coming, and the badge has to grow for them. */
+.level-badge {
+    height: 150px;
+    min-width: 240px;
+    padding-left: 30px;
+    padding-right: 30px;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.level-badge__row {
+    flex-direction: row;
+    align-items: center;
+    margin-top: 4px;
+}
+
+/* Caption and number run at the SAME size so they share a baseline without any nudging — mixing
+   26px and 62px on one row leaves the small word floating against the big one, and USS has no
+   baseline alignment to fix it with. The contrast comes from colour instead. */
 .level-badge__caption {
-    font-size: 26px;
-    letter-spacing: 4px;
-    color: rgba(220, 228, 245, 0.75);
+    font-size: 36px;
+    letter-spacing: 3px;
+    color: rgba(220, 228, 245, 0.55);
     margin: 0;
+    margin-right: 12px;
 }
 
 .level-badge__number {
-    font-size: 62px;
+    font-size: 36px;
     color: rgb(255, 255, 255);
     margin: 0;
-    margin-top: -6px;
 }
 
-/* ============ Difficulty (top centre) ============ */
+/* ============ Difficulty (inside the LEVEL badge) ============
+   Small and sitting over the level line. NIGHTMARE is the longest label it ever carries: at 22px
+   that is about 162px, which is inside the badge's 240px floor once padding is taken off. */
 .hud-difficulty {
-    font-size: 44px;
+    font-size: 22px;
     letter-spacing: 3px;
     color: rgb(0, 218, 243);
-    text-shadow: 0 0 18px rgba(0, 218, 243, 0.6);
+    text-shadow: 0 0 12px rgba(0, 218, 243, 0.6);
     margin: 0;
 }
 
@@ -130,11 +151,9 @@
 /* Back sits in the top row against the 150px badge, so it runs smaller than the
    bottom bar's action buttons. */
 .oct-button--small {
-    position: absolute;
-    left: 36px;
-    top: 15px;
     width: 120px;
     height: 120px;
+    flex-shrink: 0;
 }
 
 .oct-button:active {
@@ -171,14 +190,14 @@
    bottom, so stretching it vertically as well as horizontally stays correct —
    only the two pointed ends must keep their native width. */
 .lives-pill {
-    align-self: center;
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    height: 104px;
-    padding-left: 46px;
-    padding-right: 46px;
-    margin-top: 24px;
+    height: 92px;
+    padding-left: 30px;
+    padding-right: 30px;
+    margin-right: 22px;
+    flex-shrink: 0;
 
     background-image: url("../Sprites/UIHexPillFill.png");
     -unity-background-image-tint-color: rgba(12, 18, 42, 0.88);
@@ -202,13 +221,8 @@
     -unity-slice-bottom: 0;
 }
 
-.lives-pill__caption {
-    font-size: 30px;
-    letter-spacing: 4px;
-    color: rgba(220, 228, 245, 0.8);
-    margin: 0;
-    margin-right: 22px;
-}
+/* The "LIVES" caption is gone: in a single-row header the hearts read on their own, and the word
+   cost more width than it earned. */
 
 .hearts {
     flex-direction: row;
@@ -239,9 +253,10 @@
    at both ends, which is the whole reason the fill is a sprite and not a plain
    background-color — USS has no box-shadow to glow with. */
 .progress-track {
-    width: 400px;
     height: 24px;
-    margin-top: 16px;
+    margin-top: 24px;
+    margin-left: 36px;
+    margin-right: 36px;
     background-image: url("../Sprites/UIBarTrack.png");
     -unity-background-image-tint-color: rgba(255, 255, 255, 0.10);
     -unity-slice-left: 26;

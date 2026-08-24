@@ -10,36 +10,43 @@
 
         <ui:VisualElement name="top-panel" class="top-panel">
 
+            <!-- Back on the left, badge on the right, lives floated over the middle. The pill is
+                 absolutely centred rather than laid out between the two, because back (120) and the
+                 badge (240+) are different widths — in flow it would sit off-centre by half that
+                 difference, and the badge grows again on five-digit level numbers. -->
             <ui:VisualElement name="top-row" class="top-row">
-
-                <ui:VisualElement name="level-badge" class="level-badge oct">
-                    <ui:VisualElement class="oct__frame oct__frame--magenta" picking-mode="Ignore" />
-                    <ui:Label text="LEVEL" class="level-badge__caption" picking-mode="Ignore" />
-                    <ui:Label name="level-number" text="1" class="level-badge__number" picking-mode="Ignore" />
-                </ui:VisualElement>
-
-                <ui:VisualElement name="top-centre" class="top-centre">
-                    <ui:Label name="difficulty-label" text="EASY" class="hud-difficulty" />
-                    <ui:VisualElement name="progress-track" class="progress-track">
-                        <ui:VisualElement name="progress-fill" class="progress-fill" />
-                    </ui:VisualElement>
-                </ui:VisualElement>
 
                 <ui:Button name="back-button" class="oct-button oct-button--small oct">
                     <ui:VisualElement class="oct__frame oct__frame--purple" picking-mode="Ignore" />
                     <ui:VisualElement class="oct-button__icon oct-button__icon--back" picking-mode="Ignore" />
                 </ui:Button>
 
+                <ui:VisualElement name="level-badge" class="level-badge oct" picking-mode="Ignore">
+                    <ui:VisualElement class="oct__frame oct__frame--magenta" picking-mode="Ignore" />
+                    <ui:Label name="difficulty-label" text="EASY" class="hud-difficulty" picking-mode="Ignore" />
+                    <ui:VisualElement class="level-badge__row" picking-mode="Ignore">
+                        <ui:Label text="LEVEL" class="level-badge__caption" picking-mode="Ignore" />
+                        <ui:Label name="level-number" text="1" class="level-badge__number" picking-mode="Ignore" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+                <ui:VisualElement class="lives-centre" picking-mode="Ignore">
+                    <ui:VisualElement name="lives-pill" class="lives-pill" picking-mode="Ignore">
+                        <ui:VisualElement class="lives-pill__frame" picking-mode="Ignore" />
+                        <ui:VisualElement name="hearts" class="hearts" picking-mode="Ignore">
+                            <ui:VisualElement name="heart-0" class="heart" />
+                            <ui:VisualElement name="heart-1" class="heart" />
+                            <ui:VisualElement name="heart-2" class="heart" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
             </ui:VisualElement>
 
-            <ui:VisualElement name="lives-pill" class="lives-pill">
-                <ui:VisualElement class="lives-pill__frame" picking-mode="Ignore" />
-                <ui:Label text="LIVES" class="lives-pill__caption" picking-mode="Ignore" />
-                <ui:VisualElement name="hearts" class="hearts" picking-mode="Ignore">
-                    <ui:VisualElement name="heart-0" class="heart" />
-                    <ui:VisualElement name="heart-1" class="heart" />
-                    <ui:VisualElement name="heart-2" class="heart" />
-                </ui:VisualElement>
+            <!-- Runs the full width under the row, so it doubles as the line that separates the
+                 HUD from the board. -->
+            <ui:VisualElement name="progress-track" class="progress-track" picking-mode="Ignore">
+                <ui:VisualElement name="progress-fill" class="progress-fill" picking-mode="Ignore" />
             </ui:VisualElement>
 
         </ui:VisualElement>
