@@ -39,6 +39,10 @@ public class CameraController : MonoBehaviour
     public float dragThresholdPixels = 12f;
     public float dragThresholdScreenFraction = 0.02f;
 
+    // Longest a finger may stay down and still count as a tap. Generous on purpose — this exists to
+    // reject a resting finger, not to hurry a deliberate one. Raise it if a slow tap ever misses.
+    public float maxTapSeconds = 1f;
+
     public float mouseZoomSpeed = 4f;       // editor ma scroll-wheel thi zoom testing mate
 
     // Flick deceleration, as `v *= exp(-friction * dt)`. Apple's documented UIScrollView rates
@@ -108,6 +112,26 @@ public class CameraController : MonoBehaviour
     private Vector2 tapScreenPos;
     private float pinchPrevDistance;
 
+    // Which contact the pan is following. Tracked by id, not by index: a finger's slot in the
+    // touch list changes as other fingers land and lift, so "the first touch" is a different
+    // finger from one frame to the next.
+    private int pointerFingerId = NoFinger;
+
+    // Set the moment a second finger lands, and cleared ONLY once the screen is completely empty
+    // — Android's ACTION_POINTER_DOWN rule. Clearing it when the count merely drops back to one is
+    // what let every pinch end as a tap: the finger still down would open a fresh gesture the
+    // instant its partner lifted, and that gesture had nothing left to say it came from a pinch.
+    private bool gestureCancelled;
+
+    private float gestureStartTime;
+
+    // The last position the live pointer reported. A lifted finger is gone by the time the release
+    // is handled, so the press-to-release distance has to be measured against this.
+    private Vector2 lastPointerScreenPos;
+
+    private const int NoFinger = -1;
+    private const int MouseFinger = -2;
+
     // The framing the scene was authored with. Menus are drawn over the same world the board
     // lives in, and a level leaves the camera somewhere else entirely, so anything world-space
     // behind them only lines up while the camera sits where it started.
@@ -119,8 +143,18 @@ public class CameraController : MonoBehaviour
         Instance = this;
         cam = GetComponent<Camera>();
 
+        // activeTouches is empty unless this is on. It is the only list that holds real contacts:
+        // Touchscreen.touches is a fixed-size array of slots whose length says nothing about how
+        // many fingers are actually down, and whose indices are recycled between gestures.
+        UnityEngine.InputSystem.EnhancedTouch.EnhancedTouchSupport.Enable();
+
         menuPosition = transform.position;
         menuZoom = cam.orthographicSize;
+    }
+
+    void OnDestroy()
+    {
+        UnityEngine.InputSystem.EnhancedTouch.EnhancedTouchSupport.Disable();
     }
 
     // Put the camera back where the scene started. Called whenever gameplay ends, because
@@ -295,11 +329,39 @@ public class CameraController : MonoBehaviour
         // leaves the board at a framing the level never chose.
         if (introPlaying) return;
 
+        UpdateGestureCancel();     // finger count pehla joi lo — pinch ne tap banta atkave che
         if (HandlePinch()) return; // be aangdi vaparai rahi che — pan/tap skip
         HandleMouseWheelZoom();
         HandleDragAndTap();
         ApplyPanInertia();
         SpringBackToBounds();
+    }
+
+    // A gesture that ever had two fingers in it can never produce a tap, however it ends. The flag
+    // outlives the second finger on purpose — it is only lifted once nothing is touching the glass.
+    void UpdateGestureCancel()
+    {
+        int fingers = LiveTouchCount();
+
+        if (fingers >= 2)
+        {
+            gestureCancelled = true;
+
+            // Drop the single-finger gesture outright rather than letting the release path run:
+            // this is a pinch now, and there is nothing left worth releasing.
+            pointerDown = false;
+            pointerFingerId = NoFinger;
+            return;
+        }
+
+        // !pointerDown matters as much as the empty screen does. This runs BEFORE the release is
+        // handled, so clearing the flag the moment the last finger lifts would hand that very
+        // release a clean slate — and the pinch would end as a tap after all. Waiting for the
+        // release to have been consumed costs one frame and closes the hole.
+        if (fingers == 0 && !MousePressed() && !pointerDown)
+        {
+            gestureCancelled = false;
+        }
     }
 
     // Scaled off the screen rather than a raw pixel count, so the same gesture reads the same on a
@@ -310,30 +372,78 @@ public class CameraController : MonoBehaviour
         return Mathf.Max(dragThresholdPixels, shortSide * dragThresholdScreenFraction);
     }
 
+    // ---------- TOUCH SOURCE ----------
+
+    // activeTouches keeps a contact for the one frame it lifts on, so "still on the glass" has to
+    // be read from the phase — the list's length alone would report a finger that is already gone.
+    static bool IsLive(UnityEngine.InputSystem.EnhancedTouch.Touch touch)
+    {
+        UnityEngine.InputSystem.TouchPhase phase = touch.phase;
+        return phase == UnityEngine.InputSystem.TouchPhase.Began
+            || phase == UnityEngine.InputSystem.TouchPhase.Moved
+            || phase == UnityEngine.InputSystem.TouchPhase.Stationary;
+    }
+
+    static int LiveTouchCount()
+    {
+        var touches = UnityEngine.InputSystem.EnhancedTouch.Touch.activeTouches;
+        int count = 0;
+
+        for (int i = 0; i < touches.Count; i++)
+        {
+            if (IsLive(touches[i])) count++;
+        }
+
+        return count;
+    }
+
+    static bool MousePressed()
+    {
+        Mouse mouse = Mouse.current;
+        return mouse != null && mouse.leftButton.isPressed;
+    }
+
+    // The first two contacts actually on the glass. Deliberately not touches[0] and touches[1] of
+    // Touchscreen: those are slots, and two fingers can easily sit in slots 0 and 2 with slot 1
+    // empty — in which case the old check decided there was no pinch and treated the whole thing
+    // as a one-finger drag.
+    static bool TryGetTwoLiveTouches(out Vector2 a, out Vector2 b)
+    {
+        a = Vector2.zero;
+        b = Vector2.zero;
+
+        var touches = UnityEngine.InputSystem.EnhancedTouch.Touch.activeTouches;
+        int found = 0;
+
+        for (int i = 0; i < touches.Count && found < 2; i++)
+        {
+            if (!IsLive(touches[i])) continue;
+
+            if (found == 0) a = touches[i].screenPosition;
+            else b = touches[i].screenPosition;
+
+            found++;
+        }
+
+        return found == 2;
+    }
+
     // ---------- ZOOM ----------
 
     bool HandlePinch()
     {
-        Touchscreen touch = Touchscreen.current;
-        if (touch == null) return false;
-
-        bool twoDown = touch.touches.Count >= 2
-            && touch.touches[0].press.isPressed
-            && touch.touches[1].press.isPressed;
-
-        if (!twoDown)
+        Vector2 a, b;
+        if (!TryGetTwoLiveTouches(out a, out b))
         {
             pinchPrevDistance = 0f;
             return false;
         }
 
-        // Be aangdi aavi etle chalu drag/tap cancel karo
-        pointerDown = false;
-        gestureWasDrag = true;
+        // The drag/tap cancel itself lives in UpdateGestureCancel(), which runs before this and
+        // keeps holding once a finger lifts. Doing it here only worked for as long as BOTH fingers
+        // stayed down.
         panVelocity = Vector2.zero;
 
-        Vector2 a = touch.touches[0].position.ReadValue();
-        Vector2 b = touch.touches[1].position.ReadValue();
         float distance = Vector2.Distance(a, b);
 
         if (pinchPrevDistance > 0f && distance > 0f)
@@ -377,15 +487,21 @@ public class CameraController : MonoBehaviour
     void HandleDragAndTap()
     {
         Vector2 screenPos;
-        bool pressed = TryGetPointer(out screenPos);
+        int fingerId;
+        bool pressed = TryGetPointer(out screenPos, out fingerId);
+
+        if (pressed) lastPointerScreenPos = screenPos;
 
         if (pressed && !pointerDown)
         {
             pointerDown = true;
+            pointerFingerId = fingerId;
             gestureWasDrag = false;
+            gestureStartTime = Time.unscaledTime;
             gestureStartedOnUI = GameplayHUDController.Instance != null
                 && GameplayHUDController.Instance.IsPointerOverUI(screenPos);
             pointerDownScreenPos = screenPos;
+            lastPointerScreenPos = screenPos;
             dragAnchorWorld = cam.ScreenToWorldPoint(screenPos);
             return;
         }
@@ -422,13 +538,24 @@ public class CameraController : MonoBehaviour
         if (!pressed && pointerDown)
         {
             pointerDown = false;
+            pointerFingerId = NoFinger;
 
             if (gestureStartedOnUI) panVelocity = Vector2.zero;
 
-            if (!gestureWasDrag && !gestureStartedOnUI)
+            // The slop is re-checked against where the finger actually LEFT, not only against the
+            // frames in between. A quick flick can go down and up inside a frame or two and never
+            // produce a mid-gesture sample to measure, which used to make it a tap.
+            if (Vector2.Distance(lastPointerScreenPos, pointerDownScreenPos) > DragThreshold())
+                gestureWasDrag = true;
+
+            // A finger resting in one spot for a second is a hold, not a tap. Without this a slow,
+            // careful nudge of the board that never travels a full slop still fires an arrow.
+            bool withinTapTime = Time.unscaledTime - gestureStartTime <= maxTapSeconds;
+
+            if (!gestureWasDrag && !gestureStartedOnUI && !gestureCancelled && withinTapTime)
             {
                 tapThisFrame = true;
-                tapScreenPos = screenPos;
+                tapScreenPos = lastPointerScreenPos;
                 panVelocity = Vector2.zero;   // a tap is not a flick
             }
         }
@@ -454,26 +581,62 @@ public class CameraController : MonoBehaviour
         if (panVelocity.sqrMagnitude < 0.01f) panVelocity = Vector2.zero;
     }
 
-    bool TryGetPointer(out Vector2 screenPos)
+    // Follows ONE contact for the whole gesture, matched by id. Reading "the first touch" instead
+    // hands the pan to whichever finger currently sits at that index — which changes every time a
+    // finger lands or lifts, and was why a released pinch could report a position belonging to a
+    // completely different part of the screen.
+    bool TryGetPointer(out Vector2 screenPos, out int fingerId)
     {
-        Touchscreen touch = Touchscreen.current;
-        if (touch != null && touch.touches.Count > 0 && touch.touches[0].press.isPressed)
+        var touches = UnityEngine.InputSystem.EnhancedTouch.Touch.activeTouches;
+
+        // Stay with the finger already being followed. The frame it lifts on it is still in the
+        // list, just no longer live — and that entry carries the only record of where the gesture
+        // actually ended, which is what the release needs to tell a flick from a tap.
+        if (pointerFingerId != NoFinger && pointerFingerId != MouseFinger)
         {
-            screenPos = touch.touches[0].position.ReadValue();
-            return true;
+            for (int i = 0; i < touches.Count; i++)
+            {
+                if (touches[i].touchId != pointerFingerId) continue;
+
+                screenPos = touches[i].screenPosition;
+
+                if (IsLive(touches[i]))
+                {
+                    fingerId = touches[i].touchId;
+                    return true;
+                }
+
+                lastPointerScreenPos = screenPos;
+                fingerId = NoFinger;
+                return false;
+            }
+        }
+
+        // Otherwise adopt the first live contact — this is a new gesture.
+        if (pointerFingerId == NoFinger)
+        {
+            for (int i = 0; i < touches.Count; i++)
+            {
+                if (!IsLive(touches[i])) continue;
+
+                screenPos = touches[i].screenPosition;
+                fingerId = touches[i].touchId;
+                return true;
+            }
         }
 
         Mouse mouse = Mouse.current;
         if (mouse != null && mouse.leftButton.isPressed)
         {
             screenPos = mouse.position.ReadValue();
+            fingerId = MouseFinger;
             return true;
         }
 
-        // release thayu tyare pan chhelli position joiye che
-        screenPos = mouse != null ? mouse.position.ReadValue() : Vector2.zero;
-        if (touch != null && touch.touches.Count > 0)
-            screenPos = touch.touches[0].position.ReadValue();
+        // Released. lastPointerScreenPos already holds where the pointer was, so nothing has to be
+        // dug back out of a list the finger has just left.
+        screenPos = lastPointerScreenPos;
+        fingerId = NoFinger;
         return false;
     }
 
