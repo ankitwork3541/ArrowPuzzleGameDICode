@@ -169,7 +169,7 @@ public class GameplayHUDController : MonoBehaviour
             return;
         }
 
-        HintManager hintMgr = HintManager.Instance ?? FindFirstObjectByType<HintManager>();
+        HintManager hintMgr = HintManager.Instance ?? FindAnyObjectByType<HintManager>();
         if (hintMgr == null)
         {
             levelLoader.PlayHint();
@@ -217,7 +217,7 @@ public class GameplayHUDController : MonoBehaviour
     {
         if (hintButton == null) return;
 
-        HintManager hintMgr = HintManager.Instance ?? FindFirstObjectByType<HintManager>();
+        HintManager hintMgr = HintManager.Instance ?? FindAnyObjectByType<HintManager>();
         if (hintMgr == null)
         {
             if (hintBadge != null) hintBadge.style.display = DisplayStyle.None;

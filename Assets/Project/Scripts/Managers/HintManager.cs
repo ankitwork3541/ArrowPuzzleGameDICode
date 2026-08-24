@@ -16,7 +16,7 @@ public class HintManager : MonoBehaviour
         {
             if (instance == null)
             {
-                instance = FindFirstObjectByType<HintManager>();
+                instance = FindAnyObjectByType<HintManager>();
             }
 
             return instance;

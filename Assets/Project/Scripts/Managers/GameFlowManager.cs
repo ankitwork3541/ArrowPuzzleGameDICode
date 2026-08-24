@@ -121,7 +121,7 @@ public class GameFlowManager : MonoBehaviour
         }
         else
         {
-            HintManager hintMgr = HintManager.Instance ?? FindFirstObjectByType<HintManager>();
+            HintManager hintMgr = HintManager.Instance ?? FindAnyObjectByType<HintManager>();
             if (hintMgr != null)
             {
                 hintMgr.RequestHint(

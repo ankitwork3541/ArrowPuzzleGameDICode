@@ -15,7 +15,7 @@ public class InterstitialManager : MonoBehaviour
         {
             if (instance == null)
             {
-                instance = FindFirstObjectByType<InterstitialManager>();
+                instance = FindAnyObjectByType<InterstitialManager>();
             }
 
             return instance;
