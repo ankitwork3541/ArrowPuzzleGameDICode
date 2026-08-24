@@ -36,6 +36,11 @@ public static class NativeAdSpace
         return scale > 0f ? pixels / scale : pixels;
     }
 
+    public static float PanelToPixels(VisualElement element, float panelUnits)
+    {
+        return panelUnits * PanelScale(element);
+    }
+
     // DP is a third coordinate space on top of panel units and screen pixels.
     public static int PanelToDp(VisualElement element, float panelUnits)
     {

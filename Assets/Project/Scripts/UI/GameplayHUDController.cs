@@ -308,6 +308,46 @@ public class GameplayHUDController : MonoBehaviour
         }
     }
 
+    // How much of the camera's view the HUD covers, in SCREEN PIXELS. The board is drawn behind
+    // these bars, so CameraController treats them as content insets — the same idea as
+    // UIScrollView's contentInset. Without it a cell at the very edge of the board can only ever be
+    // panned as far as a spot that is already covered.
+    //
+    // The last good reading is kept because the camera needs these the instant a level loads, and
+    // that is exactly when they are not available: GameFlowManager reactivates this panel and calls
+    // LoadLevel() in the same breath, so PanelRenderer has not re-run its reload callback yet and
+    // the tree is not laid out. The bars are the same size on every level, so last level's numbers
+    // are the right answer. Only the session's very first level has nothing to fall back on.
+    public float TopInsetPixels => Measure(topPanel, true, ref cachedTopInset);
+    public float BottomInsetPixels => Measure(bottomBar, false, ref cachedBottomInset);
+
+    private float cachedTopInset;
+    private float cachedBottomInset;
+
+    private float Measure(VisualElement element, bool fromTop, ref float cache)
+    {
+        float measured = InsetPixels(element, fromTop);
+        if (measured > 0f) cache = measured;
+        return measured > 0f ? measured : cache;
+    }
+
+    // Measured from layout, not from hudVisible: the bars occupy that space whether or not they
+    // have faded in yet, and letting the inset flip to zero mid-entrance would jolt the pan range.
+    private float InsetPixels(VisualElement element, bool fromTop)
+    {
+        if (root == null || root.panel == null || element == null) return 0f;
+
+        Rect bounds = element.worldBound;
+        if (float.IsNaN(bounds.y) || float.IsNaN(bounds.height)) return 0f;
+
+        // UI Toolkit's y grows downward from the top of the panel. bottom-bar is already lifted by
+        // the ad's height, so measuring from its top edge down covers the ad along with it.
+        float panelHeight = root.panel.visualTree.layout.height;
+        float panelUnits = fromTop ? bounds.yMax : panelHeight - bounds.yMin;
+
+        return Mathf.Max(0f, NativeAdSpace.PanelToPixels(root, panelUnits));
+    }
+
     // Did this tap land on the HUD rather than the board? Without this, tapping Hint or the grid
     // toggle ALSO moves whatever arrow happens to sit underneath it.
     public bool IsPointerOverUI(Vector2 screenPos)

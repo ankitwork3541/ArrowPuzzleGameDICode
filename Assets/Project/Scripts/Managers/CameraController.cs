@@ -187,7 +187,7 @@ public class CameraController : MonoBehaviour
         maxZoom = Mathf.Max(restZoom * minZoomOutFactor, Mathf.Min(contentCapY, contentCapX));
 
         cam.orthographicSize = restZoom;
-        panTarget = new Vector2(bounds.center.x, bounds.center.y);
+        panTarget = PanCentre();
         ApplyPan();
     }
 
@@ -201,7 +201,15 @@ public class CameraController : MonoBehaviour
 
         introTween.Stop();
 
-        float fitY = contentBounds.extents.y;
+        // The one look the player gets at the whole board has to fit it into the strip the HUD is
+        // NOT covering — fitting it to the full screen just hides the top and bottom rows behind
+        // the bars, which is the opposite of what this move exists for. Only Y is divided down:
+        // nothing covers the sides.
+        float top, bottom;
+        GetHudInsetFractions(out top, out bottom);
+        float visibleFraction = Mathf.Max(0.2f, 1f - top - bottom);
+
+        float fitY = contentBounds.extents.y / visibleFraction;
         float fitX = contentBounds.extents.x / cam.aspect;
         float from = Mathf.Max(fitY, fitX) * introFitPadding;
 
@@ -212,7 +220,7 @@ public class CameraController : MonoBehaviour
 
         introPlaying = true;
         cam.orthographicSize = from;
-        panTarget = new Vector2(contentBounds.center.x, contentBounds.center.y);
+        panTarget = PanCentre();
         ApplyPan();
 
         // Interpolate 1/size, not size.
@@ -229,12 +237,18 @@ public class CameraController : MonoBehaviour
             onValueChange: (controller, inv) =>
             {
                 controller.cam.orthographicSize = 1f / inv;
+
+                // Re-centred every frame, not once up front: the HUD's inset is a fixed slice of
+                // the SCREEN, so its world size shrinks along with the zoom. Holding one centre
+                // would let the board drift against the bars as the move plays.
+                controller.panTarget = controller.PanCentre();
                 controller.ApplyPan();
             })
             .OnComplete(this, warnIfTargetDestroyed: false, onComplete: controller =>
             {
                 controller.cam.orthographicSize = controller.restZoom;
                 controller.introPlaying = false;
+                controller.panTarget = controller.PanCentre();
                 controller.ApplyPan();
             });
     }
@@ -463,23 +477,62 @@ public class CameraController : MonoBehaviour
         return false;
     }
 
-    // The free pan range, padding included. min > max means the content is narrower than the view
-    // on that axis, so there is nothing to pan and the board simply centres.
-    void GetPanRange(out Vector2 min, out Vector2 max, out Vector2 viewSize)
+    // What fraction of the view's HEIGHT the HUD covers at each end. The board is drawn behind the
+    // top panel and the bottom bar, so those are content insets in exactly the sense UIScrollView
+    // means: the pannable range has to run past the board's edge by however much is covered, or the
+    // edge rows can never be dragged out from under the bars.
+    //
+    // Fractions rather than world units because they are resolution-independent AND zoom-independent
+    // — the bars are a fixed slice of the screen whatever the camera is doing.
+    void GetHudInsetFractions(out float top, out float bottom)
+    {
+        top = 0f;
+        bottom = 0f;
+
+        GameplayHUDController hud = GameplayHUDController.Instance;
+        if (hud == null || Screen.height <= 0) return;
+
+        top = Mathf.Clamp01(hud.TopInsetPixels / Screen.height);
+        bottom = Mathf.Clamp01(hud.BottomInsetPixels / Screen.height);
+    }
+
+    // The board's centre, biased so it lands in the middle of the strip the HUD is NOT covering
+    // rather than the middle of the screen.
+    Vector2 PanCentre()
+    {
+        float top, bottom;
+        GetHudInsetFractions(out top, out bottom);
+
+        return new Vector2(contentBounds.center.x,
+                           contentBounds.center.y + (top - bottom) * cam.orthographicSize);
+    }
+
+    // The free pan range, padding and HUD insets included. min > max means the content is narrower
+    // than the view on that axis, so there is nothing to pan and the board simply centres.
+    void GetPanRange(out Vector2 min, out Vector2 max, out Vector2 viewSize, out Vector2 centre)
     {
         float halfHeight = cam.orthographicSize;
         float halfWidth = halfHeight * cam.aspect;
 
         viewSize = new Vector2(halfWidth * 2f, halfHeight * 2f);
+        centre = PanCentre();
 
         // Kinar thi thodu aagal javani chhut, jethi shape ni farate khali jagya dekhay.
         float marginX = halfWidth * panPadding;
         float marginY = halfHeight * panPadding;
 
+        float topInset, bottomInset;
+        GetHudInsetFractions(out topInset, out bottomInset);
+
+        // Only the Y axis moves: nothing covers the left or right of the view, so widening those
+        // would be slack for its own sake.
+        float insetTopWorld = topInset * viewSize.y;
+        float insetBottomWorld = bottomInset * viewSize.y;
+
         min = new Vector2(contentBounds.min.x + halfWidth - marginX,
-                          contentBounds.min.y + halfHeight - marginY);
+                          contentBounds.min.y + halfHeight - marginY - insetBottomWorld);
         max = new Vector2(contentBounds.max.x - halfWidth + marginX,
-                          contentBounds.max.y - halfHeight + marginY);
+                          contentBounds.max.y - halfHeight + marginY + insetTopWorld);
     }
 
     // Apple's rubber-band curve. Asymptotes towards `dimension`, so however hard the board is
@@ -496,12 +549,12 @@ public class CameraController : MonoBehaviour
     {
         if (!hasContent) return;
 
-        Vector2 min, max, viewSize;
-        GetPanRange(out min, out max, out viewSize);
+        Vector2 min, max, viewSize, centre;
+        GetPanRange(out min, out max, out viewSize, out centre);
 
         Vector3 p = transform.position;
-        p.x = ResistAxis(panTarget.x, min.x, max.x, contentBounds.center.x, viewSize.x);
-        p.y = ResistAxis(panTarget.y, min.y, max.y, contentBounds.center.y, viewSize.y);
+        p.x = ResistAxis(panTarget.x, min.x, max.x, centre.x, viewSize.x);
+        p.y = ResistAxis(panTarget.y, min.y, max.y, centre.y, viewSize.y);
         transform.position = p;
     }
 
@@ -518,12 +571,12 @@ public class CameraController : MonoBehaviour
     {
         if (!hasContent || pointerDown) return;
 
-        Vector2 min, max, viewSize;
-        GetPanRange(out min, out max, out viewSize);
+        Vector2 min, max, viewSize, centre;
+        GetPanRange(out min, out max, out viewSize, out centre);
 
         Vector2 settled = new Vector2(
-            min.x > max.x ? contentBounds.center.x : Mathf.Clamp(panTarget.x, min.x, max.x),
-            min.y > max.y ? contentBounds.center.y : Mathf.Clamp(panTarget.y, min.y, max.y));
+            min.x > max.x ? centre.x : Mathf.Clamp(panTarget.x, min.x, max.x),
+            min.y > max.y ? centre.y : Mathf.Clamp(panTarget.y, min.y, max.y));
 
         if (Mathf.Approximately(settled.x, panTarget.x) && Mathf.Approximately(settled.y, panTarget.y))
             return;
