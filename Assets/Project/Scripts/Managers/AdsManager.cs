@@ -63,6 +63,12 @@ public class AdsManager : MonoBehaviour
             Banner.OnHeightChanged += OnUnitHeightChanged;
         }
 
+        if (Interstitial != null)
+        {
+            Interstitial.OnOpened += PauseAudioForAd;
+            Interstitial.OnClosed += ResumeAudioAfterAd;
+        }
+
         // Last launch's payload, so an offline session still runs on real settings rather than
         // whatever shipped in the build months ago. Applied before HintManager so the first
         // hint sync already sees free_hint_count.
@@ -221,7 +227,10 @@ public class AdsManager : MonoBehaviour
         Debug.Log("[Ads] SDK ready. remote=" + Settings.HasRemote
                   + " test=" + Settings.UsingTestIds
                   + " interstitial=" + Settings.InterstitialId
-                  + " levelsPerAd=" + Settings.LevelsPerInterstitial
+                  + " levelsPerAd=" + Settings.AdLevelCount
+                  + " clickCount=" + Settings.AdClickCount
+                  + " clickTime=" + Settings.AdClickTimeSec + "s"
+                  + " backAd=" + Settings.BackAdEnabled
                   + " native=" + Settings.NativeId
                   + " home=" + Settings.MainScreenStyle + "(" + Settings.MainScreenSlot + ")"
                   + " play=" + Settings.PlayScreenStyle + "(" + Settings.PlayScreenSlot + ")"
@@ -240,11 +249,17 @@ public class AdsManager : MonoBehaviour
         OnReady?.Invoke();
     }
 
-    // Null-safe one-liner for call sites. False means nothing was shown and the caller should
-    // carry on immediately.
-    public bool ShowInterstitial()
+    // A full-screen ad takes over the screen but not Unity's audio, so the win jingle and gameplay
+    // SFX would otherwise keep playing underneath it. Google guarantees one of Closed / Failed for
+    // every presentation, and both land in InterstitialAdUnit.Finish(), so this always pairs up.
+    static void PauseAudioForAd()
     {
-        return Interstitial != null && Interstitial.Show();
+        AudioListener.pause = true;
+    }
+
+    static void ResumeAudioAfterAd()
+    {
+        AudioListener.pause = false;
     }
 
     public void HideBanner()

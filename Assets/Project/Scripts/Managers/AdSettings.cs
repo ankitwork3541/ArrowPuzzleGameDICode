@@ -69,12 +69,8 @@ public class AdSettings
     public int AdLevelCount =>
         remote != null ? Math.Max(0, remote.ad_level_count) : Math.Max(0, baked.levelsPerInterstitial);
 
-    public int LevelsPerInterstitial => AdLevelCount;
-
     public int AdClickTimeSec =>
         remote != null ? Math.Max(0, remote.ad_click_time_sec) : Math.Max(0, baked.interstitialCooldownSeconds);
-
-    public int InterstitialCooldownSeconds => AdClickTimeSec;
 
     public int AdClickCount =>
         remote != null ? Math.Max(0, remote.ad_click_count) : Math.Max(0, baked.adClickCount);

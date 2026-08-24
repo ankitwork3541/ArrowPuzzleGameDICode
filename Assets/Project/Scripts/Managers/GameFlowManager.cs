@@ -47,17 +47,39 @@ public class GameFlowManager : MonoBehaviour
     void HandleBackPressed()
     {
         if (settingsRoot.activeSelf) { OnHomeNavClicked(); return; }
-        if (winRoot.activeSelf) { OnWinHomeClicked(); return; }
-        if (loseRoot.activeSelf) { OnLoseHomeClicked(); return; }
+        if (winRoot.activeSelf) { OnBackFromWin(); return; }
+        if (loseRoot.activeSelf) { OnBackFromLose(); return; }
         if (gameplayRoot.activeSelf) { OnBackToHomeClicked(); return; }
         if (homeRoot.activeSelf) { Application.Quit(); return; }
 
         // Splash is the only screen left, and it has nowhere to go back to — it advances by itself.
     }
 
+    // A hardware back press is a BACK press wherever it lands, so it follows back_ad_on even on the
+    // result cards, whose own Home buttons sit on the click counter instead.
+    void OnBackFromWin()
+    {
+        AudioManager.Instance.StopJingle();
+        InterstitialManager.ShowBackAd(() =>
+        {
+            winRoot.SetActive(false);
+            GoHome();
+        });
+    }
+
+    void OnBackFromLose()
+    {
+        AudioManager.Instance.StopJingle();
+        InterstitialManager.ShowBackAd(() =>
+        {
+            loseRoot.SetActive(false);
+            GoHome();
+        });
+    }
+
     public void OnPlayButtonClicked()
     {
-        InterstitialManager.Instance.TryShowClickAd(() =>
+        InterstitialManager.ShowClickAd(() =>
         {
             homeRoot.SetActive(false);
             StartLevel();
@@ -66,7 +88,7 @@ public class GameFlowManager : MonoBehaviour
 
     public void OnBackToHomeClicked()
     {
-        InterstitialManager.Instance.TryShowBackAd(() =>
+        InterstitialManager.ShowBackAd(() =>
         {
             levelLoader.ClearLevel();   // abandon it, or an in-flight arrow exit still reports a win
             CameraController.Instance.FrameMenu();
@@ -77,7 +99,7 @@ public class GameFlowManager : MonoBehaviour
 
     public void OnRestartLevelClicked()
     {
-        InterstitialManager.Instance.TryShowClickAd(() =>
+        InterstitialManager.ShowClickAd(() =>
         {
             livesManager.ResetLives();
             levelLoader.LoadLevel();
@@ -120,7 +142,7 @@ public class GameFlowManager : MonoBehaviour
     // and showing it here as well requested a second ad every time home opened.
     public void OnSettingsNavClicked()
     {
-        InterstitialManager.Instance.TryShowClickAd(() =>
+        InterstitialManager.ShowClickAd(() =>
         {
             homeRoot.SetActive(false);
             settingsRoot.SetActive(true);
@@ -179,7 +201,7 @@ public class GameFlowManager : MonoBehaviour
     {
         AudioManager.Instance.StopJingle();
         int completedLevel = LastCompletedLevelNumber;
-        InterstitialManager.Instance.TryShowLevelAd(completedLevel, () =>
+        InterstitialManager.ShowLevelAd(completedLevel, () =>
         {
             winRoot.SetActive(false);
             levelLoader.ClearLevel();
@@ -190,7 +212,7 @@ public class GameFlowManager : MonoBehaviour
     public void OnWinHomeClicked()
     {
         AudioManager.Instance.StopJingle();
-        InterstitialManager.Instance.TryShowClickAd(() =>
+        InterstitialManager.ShowClickAd(() =>
         {
             winRoot.SetActive(false);
             GoHome();
@@ -200,7 +222,7 @@ public class GameFlowManager : MonoBehaviour
     public void OnRetryLevelClicked()
     {
         AudioManager.Instance.StopJingle();
-        InterstitialManager.Instance.TryShowClickAd(() =>
+        InterstitialManager.ShowClickAd(() =>
         {
             loseRoot.SetActive(false);
             levelLoader.ClearLevel();
@@ -211,7 +233,7 @@ public class GameFlowManager : MonoBehaviour
     public void OnLoseHomeClicked()
     {
         AudioManager.Instance.StopJingle();
-        InterstitialManager.Instance.TryShowClickAd(() =>
+        InterstitialManager.ShowClickAd(() =>
         {
             loseRoot.SetActive(false);
             GoHome();

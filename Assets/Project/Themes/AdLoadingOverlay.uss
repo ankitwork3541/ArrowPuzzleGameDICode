@@ -1,0 +1,92 @@
+/* Styles for the shared ad-loading modal. Self-contained on purpose: this overlay renders on its
+   own panel, so it cannot borrow the octagon rules from any single screen's stylesheet. */
+
+.oct {
+    background-image: url("../Sprites/UIOctagonFill.png");
+    -unity-background-image-tint-color: rgba(12, 18, 42, 0.88);
+    -unity-slice-left: 44;
+    -unity-slice-top: 44;
+    -unity-slice-right: 44;
+    -unity-slice-bottom: 44;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+}
+
+.oct__frame {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("../Sprites/UIOctagonFrame.png");
+    -unity-slice-left: 44;
+    -unity-slice-top: 44;
+    -unity-slice-right: 44;
+    -unity-slice-bottom: 44;
+}
+
+.oct__frame--cyan {
+    -unity-background-image-tint-color: rgb(0, 229, 255);
+}
+
+/* The font is set here rather than inherited: this overlay is its own panel, so it no longer sits
+   under .gameplay-root, which is where the modal used to pick Oxanium up. */
+.ad-loading-modal {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    justify-content: center;
+    align-items: center;
+    -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-Bold%20SDF.asset?fileID=11400000&guid=2d8208c2123c041daaecd4a4cf0d1ae2&type=2#Oxanium-Bold SDF");
+}
+
+.ad-loading-modal--hidden {
+    display: none;
+}
+
+.ad-loading-modal__backdrop {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(5, 8, 22, 0.88);
+}
+
+.ad-loading-modal__card {
+    width: 600px;
+    padding: 60px 40px;
+    align-items: center;
+    justify-content: center;
+    background-image: url("../Sprites/UIOctagonFill.png");
+    -unity-background-image-tint-color: rgba(12, 18, 42, 0.98);
+}
+
+.ad-loading-spinner {
+    width: 90px;
+    height: 90px;
+    background-image: url("../Sprites/Circle01.png");
+    -unity-background-image-tint-color: rgb(0, 229, 255);
+    margin-bottom: 28px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+}
+
+.ad-loading-modal__title {
+    font-size: 38px;
+    letter-spacing: 4px;
+    color: rgb(0, 218, 243);
+    text-shadow: 0 0 16px rgba(0, 218, 243, 0.6);
+    margin: 0;
+    margin-bottom: 12px;
+}
+
+.ad-loading-modal__subtitle {
+    font-size: 24px;
+    letter-spacing: 2px;
+    color: rgba(220, 228, 245, 0.7);
+    margin: 0;
+}

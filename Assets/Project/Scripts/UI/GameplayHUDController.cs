@@ -28,16 +28,12 @@ public class GameplayHUDController : MonoBehaviour
     private Button hintButton;
     private VisualElement hintBadge;
     private Label hintBadgeLabel;
-    private VisualElement adLoadingModal;
-    private VisualElement adLoadingSpinner;
 
     // Cached state: the managers can fire their events before the UI has finished
     // loading, so we remember the latest values and (re)apply them once root exists.
     private int lives, maxLives;
     private int remainingArrows, totalArrows;
     private bool hudVisible;
-    private bool isLoadingAd;
-    private float spinnerAngle;
 
     private void OnEnable()
     {
@@ -92,15 +88,6 @@ public class GameplayHUDController : MonoBehaviour
         }
     }
 
-    private void Update()
-    {
-        if (isLoadingAd && adLoadingSpinner != null)
-        {
-            spinnerAngle = (spinnerAngle + Time.unscaledDeltaTime * 360f) % 360f;
-            adLoadingSpinner.style.rotate = new Rotate(Angle.Degrees(spinnerAngle));
-        }
-    }
-
     private void OnEntranceStart()
     {
         hudVisible = false;
@@ -128,8 +115,6 @@ public class GameplayHUDController : MonoBehaviour
         hintButton = root.Q<Button>("hint-button");
         hintBadge = root.Q<VisualElement>("hint-badge");
         hintBadgeLabel = root.Q<Label>("hint-badge-label");
-        adLoadingModal = root.Q<VisualElement>("ad-loading-modal");
-        adLoadingSpinner = root.Q<VisualElement>("ad-loading-spinner");
 
         Bind(root.Q<Button>("back-button"), gameFlowManager.OnBackToHomeClicked);
         Bind(root.Q<Button>("restart-button"), gameFlowManager.OnRestartLevelClicked);
@@ -151,7 +136,7 @@ public class GameplayHUDController : MonoBehaviour
 
     private void ToggleGuideLines()
     {
-        InterstitialManager.Instance.TryShowClickAd(() =>
+        InterstitialManager.ShowClickAd(() =>
         {
             guideLines.Toggle();
             gridButton.EnableInClassList("grid-button--on", guideLines.IsVisible);
@@ -179,7 +164,7 @@ public class GameplayHUDController : MonoBehaviour
 
     public void HandleHintRequested()
     {
-        if (isLoadingAd)
+        if (AdLoadingOverlay.Showing)
         {
             return;
         }
@@ -217,23 +202,15 @@ public class GameplayHUDController : MonoBehaviour
         );
     }
 
+    // Kept as the hint flow's entry points; the modal itself is now the game-wide overlay.
     public void ShowAdLoadingModal()
     {
-        isLoadingAd = true;
-        spinnerAngle = 0f;
-        if (adLoadingModal != null)
-        {
-            adLoadingModal.EnableInClassList("ad-loading-modal--hidden", false);
-        }
+        AdLoadingOverlay.Show();
     }
 
     public void HideAdLoadingModal()
     {
-        isLoadingAd = false;
-        if (adLoadingModal != null)
-        {
-            adLoadingModal.EnableInClassList("ad-loading-modal--hidden", true);
-        }
+        AdLoadingOverlay.Hide();
     }
 
     private void ApplyHintState()
@@ -340,7 +317,7 @@ public class GameplayHUDController : MonoBehaviour
         if (root == null || root.panel == null || !hudVisible) return false;
 
         // If loading modal is on screen, block all board interaction
-        if (isLoadingAd) return true;
+        if (AdLoadingOverlay.Showing) return true;
 
         // UI Toolkit uses a top-left origin, screen coordinates are bottom-left, and
         // ScreenToPanel does NOT flip for you — Unity's own example inverts y first.
