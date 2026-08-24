@@ -132,4 +132,11 @@ Keep this updated as work progresses — add an entry after each meaningful step
   leftovers. Hint tap loads a rewarded ad on demand (Unity `RewardedAd.Load`, not preload), shows
   the themed loading modal, and unlocks the hint only after the ad closes with Google's reward
   callback. Skip / no-fill / load fail does not unlock. After free hints, if rewarded is off the
-  hint button disables. Banner / interstitial / native units were not changed.
+  hint button disables. Banner / native units were not changed.
+- **2026-08-24** — Interstitial policy matches the API rules. Click-based ads use one global
+  counter plus `ad_click_time_sec`; both must pass, then a *preloaded* interstitial is shown
+  (official load-ahead, never load-on-tap). Skip keeps the counter so the next eligible click
+  retries. `ad_level_count` is a separate Next-button path with no click/time gate. `back_ad_on`
+  folds the HUD back button into the same click counter. Tracking resets on process start (app
+  kill) and on a successful show — not on in-game Restart. `ad_click_count` / `ad_level_count` of
+  0 turn that trigger off.

@@ -78,6 +78,9 @@ public class AdConfig : ScriptableObject
     [Tooltip("Minimum gap between two interstitials.")]
     public int interstitialCooldownSeconds = 30;
 
+    [Tooltip("Global button click threshold before eligible for click-based interstitial.")]
+    public int adClickCount = 3;
+
     [Tooltip("Native refresh interval used until the backend answers. The backend's "
              + "refresh_native_sec is taken as-is, unclamped. Banners are NOT refreshed from code — "
              + "that is left to the ad unit's own auto-refresh in the AdMob dashboard.")]

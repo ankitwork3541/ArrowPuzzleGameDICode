@@ -57,14 +57,27 @@ public class AdSettings
     public string NativeId => Id(remote?.native_adunit_id, baked.nativeAd, AdTestIds.Native);
     public string PreloadNativeId => Id(remote?.preload_native_adunit_id, baked.preloadNativeAd, AdTestIds.Native);
 
+    public bool InterstitialEnabled => AdsEnabled && !string.IsNullOrEmpty(InterstitialId);
+
     // Lets a screen decide whether to open any room at all. Checking AdsEnabled alone would leave a
     // gap whenever the backend sends an enabled flag but a blank unit ID, or a digit that maps to
     // nothing this screen can show.
     public bool CanShowPreloadNative =>
         AdsEnabled && !string.IsNullOrEmpty(PreloadNativeId) && IsNative(SuccessScreenSlot);
 
-    public int LevelsPerInterstitial => Positive(remote?.ad_level_count, baked.levelsPerInterstitial);
-    public int InterstitialCooldownSeconds => Positive(remote?.ad_click_time_sec, baked.interstitialCooldownSeconds);
+    // 0 is a real answer (that trigger is off). Positive() would treat it as missing.
+    public int AdLevelCount =>
+        remote != null ? Math.Max(0, remote.ad_level_count) : Math.Max(0, baked.levelsPerInterstitial);
+
+    public int LevelsPerInterstitial => AdLevelCount;
+
+    public int AdClickTimeSec =>
+        remote != null ? Math.Max(0, remote.ad_click_time_sec) : Math.Max(0, baked.interstitialCooldownSeconds);
+
+    public int InterstitialCooldownSeconds => AdClickTimeSec;
+
+    public int AdClickCount =>
+        remote != null ? Math.Max(0, remote.ad_click_count) : Math.Max(0, baked.adClickCount);
 
     // 0 is a real answer ("no free hints"). Positive() would treat it as missing and fall back.
     public int FreeHintCount =>

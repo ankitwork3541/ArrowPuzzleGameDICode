@@ -151,8 +151,11 @@ public class GameplayHUDController : MonoBehaviour
 
     private void ToggleGuideLines()
     {
-        guideLines.Toggle();
-        gridButton.EnableInClassList("grid-button--on", guideLines.IsVisible);
+        InterstitialManager.Instance.TryShowClickAd(() =>
+        {
+            guideLines.Toggle();
+            gridButton.EnableInClassList("grid-button--on", guideLines.IsVisible);
+        });
     }
 
     private void OnLivesChanged(int newLives, int newMax)

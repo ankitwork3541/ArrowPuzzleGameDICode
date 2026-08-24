@@ -75,6 +75,11 @@ public class AdsManager : MonoBehaviour
         {
             gameObject.AddComponent<HintManager>();
         }
+
+        if (GetComponent<InterstitialManager>() == null)
+        {
+            gameObject.AddComponent<InterstitialManager>();
+        }
     }
 
     void Start()

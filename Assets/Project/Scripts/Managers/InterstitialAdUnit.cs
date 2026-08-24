@@ -91,16 +91,20 @@ public class InterstitialAdUnit : MonoBehaviour
         });
     }
 
-    // False means nothing was shown, so the caller can carry straight on rather than wait for an
-    // OnClosed that will never arrive.
-    public bool Show()
+    private System.Action pendingClosedCallback;
+
+    // Shows the loaded interstitial. onClosed is called once the ad dismisses, fails to show,
+    // or immediately if no ad was ready.
+    public bool Show(System.Action onClosed = null)
     {
         if (!IsReady)
         {
             Load();
+            onClosed?.Invoke();
             return false;
         }
 
+        pendingClosedCallback = onClosed;
         ad.Show();
         return true;
     }
@@ -123,7 +127,11 @@ public class InterstitialAdUnit : MonoBehaviour
             // An interstitial is a single-use object: once shown it can never be shown again, so
             // the replacement has to be fetched now rather than at the next show site.
             DestroyAd();
+            System.Action callback = pendingClosedCallback;
+            pendingClosedCallback = null;
+
             OnClosed?.Invoke();
+            callback?.Invoke();
             Load();
         });
     }

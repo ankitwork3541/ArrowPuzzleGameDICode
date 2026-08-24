@@ -57,29 +57,38 @@ public class GameFlowManager : MonoBehaviour
 
     public void OnPlayButtonClicked()
     {
-        homeRoot.SetActive(false);
-        StartLevel();
+        InterstitialManager.Instance.TryShowClickAd(() =>
+        {
+            homeRoot.SetActive(false);
+            StartLevel();
+        });
     }
 
     public void OnBackToHomeClicked()
     {
-        levelLoader.ClearLevel();   // abandon it, or an in-flight arrow exit still reports a win
-        CameraController.Instance.FrameMenu();
-        gameplayRoot.SetActive(false);
-        homeRoot.SetActive(true);
+        InterstitialManager.Instance.TryShowBackAd(() =>
+        {
+            levelLoader.ClearLevel();   // abandon it, or an in-flight arrow exit still reports a win
+            CameraController.Instance.FrameMenu();
+            gameplayRoot.SetActive(false);
+            homeRoot.SetActive(true);
+        });
     }
 
     public void OnRestartLevelClicked()
     {
-        livesManager.ResetLives();
-        levelLoader.LoadLevel();
-
-        // A second chance at the result-card ad if the one requested at level start never arrived.
-        // Preload no-ops when an ad is already in hand, so this costs nothing in the normal case.
-        if (AdsManager.Instance != null)
+        InterstitialManager.Instance.TryShowClickAd(() =>
         {
-            AdsManager.Instance.PreloadLevelEndNative();
-        }
+            livesManager.ResetLives();
+            levelLoader.LoadLevel();
+
+            // A second chance at the result-card ad if the one requested at level start never arrived.
+            // Preload no-ops when an ad is already in hand, so this costs nothing in the normal case.
+            if (AdsManager.Instance != null)
+            {
+                AdsManager.Instance.PreloadLevelEndNative();
+            }
+        });
     }
 
     public void OnHintButtonClicked()
@@ -111,8 +120,11 @@ public class GameFlowManager : MonoBehaviour
     // and showing it here as well requested a second ad every time home opened.
     public void OnSettingsNavClicked()
     {
-        homeRoot.SetActive(false);
-        settingsRoot.SetActive(true);
+        InterstitialManager.Instance.TryShowClickAd(() =>
+        {
+            homeRoot.SetActive(false);
+            settingsRoot.SetActive(true);
+        });
     }
 
     public void OnHomeNavClicked()
@@ -143,6 +155,12 @@ public class GameFlowManager : MonoBehaviour
         gameplayRoot.SetActive(false);
         winRoot.SetActive(true);
 
+        // Keep a preloaded interstitial warm while the player reads the card, so NEXT can
+        // show immediately. Does nothing if one is already in hand.
+        if (AdsManager.Instance != null && AdsManager.Instance.Interstitial != null)
+        {
+            AdsManager.Instance.Interstitial.Load();
+        }
     }
 
     public void ShowLose()
@@ -160,31 +178,44 @@ public class GameFlowManager : MonoBehaviour
     public void OnNextLevelClicked()
     {
         AudioManager.Instance.StopJingle();
-        winRoot.SetActive(false);
-        levelLoader.ClearLevel();
-        StartLevel();
+        int completedLevel = LastCompletedLevelNumber;
+        InterstitialManager.Instance.TryShowLevelAd(completedLevel, () =>
+        {
+            winRoot.SetActive(false);
+            levelLoader.ClearLevel();
+            StartLevel();
+        });
     }
 
     public void OnWinHomeClicked()
     {
         AudioManager.Instance.StopJingle();
-        winRoot.SetActive(false);
-        GoHome();
+        InterstitialManager.Instance.TryShowClickAd(() =>
+        {
+            winRoot.SetActive(false);
+            GoHome();
+        });
     }
 
     public void OnRetryLevelClicked()
     {
         AudioManager.Instance.StopJingle();
-        loseRoot.SetActive(false);
-        levelLoader.ClearLevel();
-        StartLevel();
+        InterstitialManager.Instance.TryShowClickAd(() =>
+        {
+            loseRoot.SetActive(false);
+            levelLoader.ClearLevel();
+            StartLevel();
+        });
     }
 
     public void OnLoseHomeClicked()
     {
         AudioManager.Instance.StopJingle();
-        loseRoot.SetActive(false);
-        GoHome();
+        InterstitialManager.Instance.TryShowClickAd(() =>
+        {
+            loseRoot.SetActive(false);
+            GoHome();
+        });
     }
 
     private void StartLevel()
