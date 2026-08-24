@@ -49,7 +49,10 @@
             <ui:VisualElement class="action">
                 <ui:Button name="hint-button" class="oct-button oct">
                     <ui:VisualElement class="oct__frame oct__frame--cyan" picking-mode="Ignore" />
-                    <ui:VisualElement class="oct-button__icon oct-button__icon--hint oct-button__icon--cyan" picking-mode="Ignore" />
+                    <ui:VisualElement name="hint-icon" class="oct-button__icon oct-button__icon--hint oct-button__icon--cyan" picking-mode="Ignore" />
+                    <ui:VisualElement name="hint-badge" class="hint-badge" picking-mode="Ignore">
+                        <ui:Label name="hint-badge-label" text="3" class="hint-badge__label" picking-mode="Ignore" />
+                    </ui:VisualElement>
                 </ui:Button>
                 <ui:Label text="HINT" class="action__label" picking-mode="Ignore" />
             </ui:VisualElement>
@@ -70,6 +73,17 @@
                 <ui:Label text="RESTART" class="action__label" picking-mode="Ignore" />
             </ui:VisualElement>
 
+        </ui:VisualElement>
+
+        <!-- Loading Ad Modal Overlay -->
+        <ui:VisualElement name="ad-loading-modal" class="ad-loading-modal ad-loading-modal--hidden">
+            <ui:VisualElement class="ad-loading-modal__backdrop" picking-mode="Position" />
+            <ui:VisualElement class="ad-loading-modal__card oct">
+                <ui:VisualElement class="oct__frame oct__frame--cyan" picking-mode="Ignore" />
+                <ui:VisualElement name="ad-loading-spinner" class="ad-loading-spinner" picking-mode="Ignore" />
+                <ui:Label text="LOADING AD..." class="ad-loading-modal__title" picking-mode="Ignore" />
+                <ui:Label text="Please wait a moment" class="ad-loading-modal__subtitle" picking-mode="Ignore" />
+            </ui:VisualElement>
         </ui:VisualElement>
 
         <ui:VisualElement name="native-ad-space" class="gameplay-ad-space" />

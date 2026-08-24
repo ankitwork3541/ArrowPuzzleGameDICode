@@ -20,9 +20,13 @@ public class AdsManager : MonoBehaviour
     public InterstitialAdUnit Interstitial { get; private set; }
     public BannerAdUnit Banner { get; private set; }
     public NativeAdUnit Native { get; private set; }
+    public RewardedAdUnit Rewarded { get; private set; }
 
     // Ad formats wait on this instead of polling Ready.
     public event System.Action OnReady;
+
+    // Fired after a cached or fresh backend payload is applied. Hint count follows this.
+    public event System.Action OnSettingsChanged;
 
     AdConfigFetcher fetcher;
 
@@ -47,6 +51,7 @@ public class AdsManager : MonoBehaviour
         Interstitial = GetComponent<InterstitialAdUnit>();
         Banner = GetComponent<BannerAdUnit>();
         Native = GetComponent<NativeAdUnit>();
+        Rewarded = GetComponent<RewardedAdUnit>() ?? gameObject.AddComponent<RewardedAdUnit>();
 
         if (Native != null)
         {
@@ -59,10 +64,16 @@ public class AdsManager : MonoBehaviour
         }
 
         // Last launch's payload, so an offline session still runs on real settings rather than
-        // whatever shipped in the build months ago.
+        // whatever shipped in the build months ago. Applied before HintManager so the first
+        // hint sync already sees free_hint_count.
         if (Settings.ApplyRemote(fetcher.LoadCached()))
         {
             Debug.Log("[Ads] Cached config applied.");
+        }
+
+        if (GetComponent<HintManager>() == null)
+        {
+            gameObject.AddComponent<HintManager>();
         }
     }
 
@@ -73,6 +84,7 @@ public class AdsManager : MonoBehaviour
             if (Settings.ApplyRemote(config))
             {
                 Debug.Log("[Ads] Fresh config applied.");
+                OnSettingsChanged?.Invoke();
             }
         }));
 

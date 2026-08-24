@@ -25,12 +25,19 @@ public class GameplayHUDController : MonoBehaviour
     private VisualElement progressFill;
     private List<VisualElement> hearts;
     private Button gridButton;
+    private Button hintButton;
+    private VisualElement hintBadge;
+    private Label hintBadgeLabel;
+    private VisualElement adLoadingModal;
+    private VisualElement adLoadingSpinner;
 
     // Cached state: the managers can fire their events before the UI has finished
     // loading, so we remember the latest values and (re)apply them once root exists.
     private int lives, maxLives;
     private int remainingArrows, totalArrows;
     private bool hudVisible;
+    private bool isLoadingAd;
+    private float spinnerAngle;
 
     private void OnEnable()
     {
@@ -40,6 +47,11 @@ public class GameplayHUDController : MonoBehaviour
         levelManager.OnArrowCountChanged += OnArrowCountChanged;
         levelLoader.OnEntranceStart += OnEntranceStart;
         levelLoader.OnEntranceComplete += OnEntranceComplete;
+
+        if (HintManager.Instance != null)
+        {
+            HintManager.Instance.OnHintStateChanged += OnHintStateChanged;
+        }
 
         // GameFlowManager activates this panel just before LoadLevel(), so start hidden
         // rather than flashing the controls for the frames before the entrance begins.
@@ -63,6 +75,13 @@ public class GameplayHUDController : MonoBehaviour
         levelLoader.OnEntranceStart -= OnEntranceStart;
         levelLoader.OnEntranceComplete -= OnEntranceComplete;
 
+        if (HintManager.Instance != null)
+        {
+            HintManager.Instance.OnHintStateChanged -= OnHintStateChanged;
+        }
+
+        HideAdLoadingModal();
+
         if (AdsManager.Instance != null)
         {
             AdsManager.Instance.RemoveAdHeightListener(OnAdHeightChanged);
@@ -70,6 +89,15 @@ public class GameplayHUDController : MonoBehaviour
             // Android draws the overlay above everything, so leaving it up follows the player to
             // whatever screen comes next. Whoever opens that screen shows its own ad.
             AdsManager.Instance.HideScreenAds();
+        }
+    }
+
+    private void Update()
+    {
+        if (isLoadingAd && adLoadingSpinner != null)
+        {
+            spinnerAngle = (spinnerAngle + Time.unscaledDeltaTime * 360f) % 360f;
+            adLoadingSpinner.style.rotate = new Rotate(Angle.Degrees(spinnerAngle));
         }
     }
 
@@ -97,10 +125,15 @@ public class GameplayHUDController : MonoBehaviour
         progressFill = root.Q<VisualElement>("progress-fill");
         hearts = root.Query<VisualElement>(className: "heart").ToList();
         gridButton = root.Q<Button>("grid-button");
+        hintButton = root.Q<Button>("hint-button");
+        hintBadge = root.Q<VisualElement>("hint-badge");
+        hintBadgeLabel = root.Q<Label>("hint-badge-label");
+        adLoadingModal = root.Q<VisualElement>("ad-loading-modal");
+        adLoadingSpinner = root.Q<VisualElement>("ad-loading-spinner");
 
         Bind(root.Q<Button>("back-button"), gameFlowManager.OnBackToHomeClicked);
         Bind(root.Q<Button>("restart-button"), gameFlowManager.OnRestartLevelClicked);
-        Bind(root.Q<Button>("hint-button"), gameFlowManager.OnHintButtonClicked);
+        Bind(hintButton, gameFlowManager.OnHintButtonClicked);
         Bind(gridButton, ToggleGuideLines);
 
         Apply();
@@ -109,6 +142,7 @@ public class GameplayHUDController : MonoBehaviour
     // Unregister before registering so a second UI reload can't stack duplicates.
     private static void Bind(Button button, System.Action handler)
     {
+        if (button == null) return;
         UIClickSound.Attach(button);
 
         button.clicked -= handler;
@@ -135,6 +169,122 @@ public class GameplayHUDController : MonoBehaviour
         Apply();
     }
 
+    private void OnHintStateChanged(int remaining, bool isAdRequired)
+    {
+        ApplyHintState();
+    }
+
+    public void HandleHintRequested()
+    {
+        if (isLoadingAd)
+        {
+            return;
+        }
+
+        HintManager hintMgr = HintManager.Instance ?? FindFirstObjectByType<HintManager>();
+        if (hintMgr == null)
+        {
+            levelLoader.PlayHint();
+            return;
+        }
+
+        if (!hintMgr.CanUseHint)
+        {
+            return;
+        }
+
+        hintMgr.RequestHint(
+            onHintUnlocked: () =>
+            {
+                HideAdLoadingModal();
+                levelLoader.PlayHint();
+            },
+            onFailed: () =>
+            {
+                HideAdLoadingModal();
+            },
+            onAdLoadingStart: () =>
+            {
+                ShowAdLoadingModal();
+            },
+            onAdOpening: () =>
+            {
+                HideAdLoadingModal();
+            }
+        );
+    }
+
+    public void ShowAdLoadingModal()
+    {
+        isLoadingAd = true;
+        spinnerAngle = 0f;
+        if (adLoadingModal != null)
+        {
+            adLoadingModal.EnableInClassList("ad-loading-modal--hidden", false);
+        }
+    }
+
+    public void HideAdLoadingModal()
+    {
+        isLoadingAd = false;
+        if (adLoadingModal != null)
+        {
+            adLoadingModal.EnableInClassList("ad-loading-modal--hidden", true);
+        }
+    }
+
+    private void ApplyHintState()
+    {
+        if (hintButton == null) return;
+
+        HintManager hintMgr = HintManager.Instance ?? FindFirstObjectByType<HintManager>();
+        if (hintMgr == null)
+        {
+            if (hintBadge != null) hintBadge.style.display = DisplayStyle.None;
+            hintButton.SetEnabled(true);
+            hintButton.EnableInClassList("oct-button--disabled", false);
+            return;
+        }
+
+        if (hintMgr.HasFreeHints)
+        {
+            if (hintBadge != null)
+            {
+                hintBadge.style.display = DisplayStyle.Flex;
+                hintBadge.EnableInClassList("hint-badge--ad", false);
+            }
+            if (hintBadgeLabel != null)
+            {
+                hintBadgeLabel.text = hintMgr.RemainingHints.ToString();
+            }
+            hintButton.SetEnabled(true);
+            hintButton.EnableInClassList("oct-button--disabled", false);
+        }
+        else if (hintMgr.IsRewardedAvailable)
+        {
+            if (hintBadge != null)
+            {
+                hintBadge.style.display = DisplayStyle.Flex;
+                hintBadge.EnableInClassList("hint-badge--ad", true);
+            }
+            if (hintBadgeLabel != null)
+            {
+                hintBadgeLabel.text = "AD";
+            }
+            hintButton.SetEnabled(true);
+            hintButton.EnableInClassList("oct-button--disabled", false);
+        }
+        else
+        {
+            if (hintBadge != null)
+            {
+                hintBadge.style.display = DisplayStyle.None;
+            }
+            hintButton.SetEnabled(false);
+            hintButton.EnableInClassList("oct-button--disabled", true);
+        }
+    }
+
     private void Apply()
     {
         if (root == null) return;
@@ -151,6 +301,8 @@ public class GameplayHUDController : MonoBehaviour
         progressFill.style.width = new Length(solved * 100f, LengthUnit.Percent);
 
         gridButton.EnableInClassList("grid-button--on", guideLines.IsVisible);
+
+        ApplyHintState();
 
         OnAdHeightChanged(AdsManager.Instance != null ? AdsManager.Instance.AdHeightPixels : 0f);
     }
@@ -178,25 +330,14 @@ public class GameplayHUDController : MonoBehaviour
 
     // Did this tap land on the HUD rather than the board? Without this, tapping Hint or the grid
     // toggle ALSO moves whatever arrow happens to sit underneath it.
-    //
-    // Deliberately tested against the known blockers' worldBound instead of IPanel.Pick(): Pick
-    // depends on the picking-mode of every ancestor being right, including the panel wrapper this
-    // controller does not own, and one wrong ancestor silently blocks the entire board instead of
-    // failing loudly. The blockers are few and explicit here — extend this when the HUD gains new
-    // controls.
-    //
-    // `.top-panel` is checked as a whole, not just its buttons, because it is deliberately opaque
-    // (it hides arrows panned up behind the progress line), so there is no board to tap up there.
-    //
-    // `.bottom-bar` is NOT opaque, so its worldBound is wider than what the player can actually
-    // see — it spans the full screen width to keep its three buttons centred. Blocking that whole
-    // strip is still the right call: it is only ~250px tall at the bottom of the screen, and the
-    // alternative is that a tap next to Hint slides whichever arrow happens to sit behind it.
     public bool IsPointerOverUI(Vector2 screenPos)
     {
         // A hidden HUD must not eat board taps — during the entrance the whole root is
         // `visibility: hidden`, so the board really is visible under the top bar.
         if (root == null || root.panel == null || !hudVisible) return false;
+
+        // If loading modal is on screen, block all board interaction
+        if (isLoadingAd) return true;
 
         // UI Toolkit uses a top-left origin, screen coordinates are bottom-left, and
         // ScreenToPanel does NOT flip for you — Unity's own example inverts y first.

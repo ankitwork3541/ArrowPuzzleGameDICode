@@ -291,6 +291,98 @@
     -unity-background-image-tint-color: rgb(255, 255, 255);
 }
 
+/* ============ Hint button badge & states ============ */
+.hint-badge {
+    position: absolute;
+    right: 8px;
+    top: 8px;
+    min-width: 44px;
+    height: 44px;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-radius: 22px;
+    background-color: rgb(0, 229, 255);
+    align-items: center;
+    justify-content: center;
+}
+
+.hint-badge--ad {
+    background-color: rgb(255, 43, 214);
+    min-width: 52px;
+}
+
+.hint-badge__label {
+    font-size: 24px;
+    color: rgb(5, 8, 22);
+    margin: 0;
+    -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-ExtraBold%20SDF.asset?fileID=11400000&guid=a1b658a48c21246d783d8c4f4c297d45&type=2#Oxanium-ExtraBold SDF");
+}
+
+.oct-button--disabled {
+    opacity: 0.35;
+}
+
+/* ============ Ad Loading Modal Overlay ============ */
+.ad-loading-modal {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.ad-loading-modal--hidden {
+    display: none;
+}
+
+.ad-loading-modal__backdrop {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(5, 8, 22, 0.88);
+}
+
+.ad-loading-modal__card {
+    width: 600px;
+    padding: 60px 40px;
+    align-items: center;
+    justify-content: center;
+    background-image: url("../Sprites/UIOctagonFill.png");
+    -unity-background-image-tint-color: rgba(12, 18, 42, 0.98);
+}
+
+.ad-loading-spinner {
+    width: 90px;
+    height: 90px;
+    background-image: url("../Sprites/Circle01.png");
+    -unity-background-image-tint-color: rgb(0, 229, 255);
+    margin-bottom: 28px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+}
+
+.ad-loading-modal__title {
+    font-size: 38px;
+    letter-spacing: 4px;
+    color: rgb(0, 218, 243);
+    text-shadow: 0 0 16px rgba(0, 218, 243, 0.6);
+    margin: 0;
+    margin-bottom: 12px;
+}
+
+.ad-loading-modal__subtitle {
+    font-size: 24px;
+    letter-spacing: 2px;
+    color: rgba(220, 228, 245, 0.7);
+    margin: 0;
+}
+
 /* Last child of gameplay-root, so a measured height pushes the flow up. bottom-bar is absolutely
    positioned and is lifted separately in GameplayHUDController. */
 .gameplay-ad-space {

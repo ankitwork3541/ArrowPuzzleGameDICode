@@ -122,7 +122,14 @@ Keep this updated as work progresses — add an entry after each meaningful step
     the backdrop together (both are comparable cost and both are decoration, not gameplay);
     blocked-bounce red is still pure `Color.red`, which is dull against neon and barely blooms —
     something like `#FF1744` would sit in the palette better.
-  - Open perf question, not yet measured: `LineRenderer` is not SRP-Batcher compatible (Unity
+    - Open perf question, not yet measured: `LineRenderer` is not SRP-Batcher compatible (Unity
     supports meshes only, "not lines and trails"), so each arrow is its own draw call. Measure
     batches on the biggest level before considering the real fix — one procedural mesh for all
     arrow bodies. Input no longer depends on `EdgeCollider2D`, which makes that refactor viable.
+- **2026-08-24** — Hint rewarded ads match the product rules. `ad_enable` is the master switch;
+  `rewarded_ad_enable` only toggles rewarded while other formats can stay on. `free_hint_count`
+  from the API is the free pool; a changed value resets remaining hints, an unchanged value keeps
+  leftovers. Hint tap loads a rewarded ad on demand (Unity `RewardedAd.Load`, not preload), shows
+  the themed loading modal, and unlocks the hint only after the ad closes with Google's reward
+  callback. Skip / no-fill / load fail does not unlock. After free hints, if rewarded is off the
+  hint button disables. Banner / interstitial / native units were not changed.

@@ -69,6 +69,9 @@ public class AdConfig : ScriptableObject
     public bool rewardedEnabled = true;
     public bool backAdEnabled = false;
 
+    [Tooltip("Number of free hints provided before requiring rewarded ads.")]
+    public int defaultFreeHintCount = 3;
+
     [Tooltip("Show an interstitial after this many completed levels.")]
     public int levelsPerInterstitial = 2;
 

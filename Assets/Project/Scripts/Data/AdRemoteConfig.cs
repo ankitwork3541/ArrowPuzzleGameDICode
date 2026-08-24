@@ -20,6 +20,7 @@ public class AdRemoteConfig
     public int refresh_native_sec;
     public int ad_click_count;
     public int ad_level_count;
+    public int free_hint_count;
 
     // Meaning not confirmed with the backend owner yet — parsed and stored, deliberately unused.
     public int main_screen;

@@ -43,6 +43,8 @@ public class AdSettings
         }
     }
 
+    // Master switch is ad_enable (AdsEnabled). rewarded_ad_enable only turns THIS format off
+    // while banners / interstitial / native can stay on. Any digit other than 1 is off.
     public bool RewardedEnabled =>
         AdsEnabled && (remote != null ? remote.rewarded_ad_enable == 1 : baked.rewardedEnabled);
 
@@ -63,6 +65,10 @@ public class AdSettings
 
     public int LevelsPerInterstitial => Positive(remote?.ad_level_count, baked.levelsPerInterstitial);
     public int InterstitialCooldownSeconds => Positive(remote?.ad_click_time_sec, baked.interstitialCooldownSeconds);
+
+    // 0 is a real answer ("no free hints"). Positive() would treat it as missing and fall back.
+    public int FreeHintCount =>
+        remote != null ? Math.Max(0, remote.free_hint_count) : Math.Max(0, baked.defaultFreeHintCount);
 
     public int NativeRefreshSeconds => Positive(remote?.refresh_native_sec, baked.nativeRefreshSeconds);
 

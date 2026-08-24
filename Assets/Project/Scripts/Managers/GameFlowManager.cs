@@ -84,7 +84,25 @@ public class GameFlowManager : MonoBehaviour
 
     public void OnHintButtonClicked()
     {
-        levelLoader.PlayHint();
+        if (GameplayHUDController.Instance != null)
+        {
+            GameplayHUDController.Instance.HandleHintRequested();
+        }
+        else
+        {
+            HintManager hintMgr = HintManager.Instance ?? FindFirstObjectByType<HintManager>();
+            if (hintMgr != null)
+            {
+                hintMgr.RequestHint(
+                    onHintUnlocked: () => levelLoader.PlayHint(),
+                    onFailed: () => {}
+                );
+            }
+            else
+            {
+                levelLoader.PlayHint();
+            }
+        }
     }
 
     // Home <-> Settings. The panels themselves are transparent, so what shows through either way
