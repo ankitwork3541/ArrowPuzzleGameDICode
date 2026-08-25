@@ -86,10 +86,10 @@ public static class LevelCampaignGenerator
 
     static string[] shapeFiles = new string[0];
 
-    [MenuItem("ArrowPuzzle/Campaign/Bake 15 Levels (test)")]
+    [MenuItem("ArrowPuzzle/Campaign/Bake 15 Levels")]
     static void Bake15() { Bake(15); }
 
-    [MenuItem("ArrowPuzzle/Campaign/Bake 50 Levels (test)")]
+    [MenuItem("ArrowPuzzle/Campaign/Bake 50 Levels")]
     static void Bake50() { Bake(50); }
 
     [MenuItem("ArrowPuzzle/Campaign/Bake 1000 Levels")]
