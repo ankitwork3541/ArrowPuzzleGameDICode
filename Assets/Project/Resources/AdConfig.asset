@@ -30,7 +30,4 @@ MonoBehaviour:
   defaultPlayScreenStyle: 1
   defaultSuccessScreenStyle: 4
   nativeStyles: []
-  forceMainScreenStyle: 1
-  forcePlayScreenStyle: 2
-  forceSuccessScreenStyle: 3
   adMaxAgeMinutes: 30

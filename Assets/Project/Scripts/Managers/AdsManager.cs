@@ -244,16 +244,6 @@ public class AdsManager : MonoBehaviour
                   + " result=" + Settings.SuccessScreenStyle + "(" + Settings.SuccessScreenSlot + ")"
                   + " refresh=" + Settings.NativeRefreshSeconds + "s");
 
-        // Same reasoning as the test-ID error below: a build that ships with a forced digit serves
-        // whatever the last local test asked for and silently ignores the backend, and there is no
-        // way to tell from the outside.
-        if (Settings.HasStyleOverride)
-        {
-            Debug.LogError("[Ads] LOCAL SCREEN STYLE OVERRIDE IS ON — " + Settings.StyleOverrideSummary
-                           + ". The backend's main_screen / play_screen / success_screen are being "
-                           + "ignored. Set every force* field in AdConfig back to -1 before release.");
-        }
-
         // LogError, not LogWarning: shipping with this on serves Google's test inventory to real
         // players and earns nothing, and it also bypasses the "no backend config, no ads" rule.
         if (Settings.UsingTestIds)
