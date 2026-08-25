@@ -59,6 +59,8 @@ public class ResultScreenController : MonoBehaviour
             settleRoutine = null;
         }
 
+        UnhookScroll();
+
         VisualElement space = AdSpace;
         if (space != null)
         {
@@ -72,6 +74,12 @@ public class ResultScreenController : MonoBehaviour
     // Reserves the box and fills it with the loading skeleton until the overlay paints. Room here is
     // only ever opened for an ad already in hand, so this is a short bridge — a couple of frames plus
     // however long RenderTemplate takes — not an open-ended wait like the bottom slots have.
+    //
+    // The skeleton needs a box tall enough to read as one. While the ad's real height is still being
+    // measured the box is only a sliver, and a skeleton drawn into that comes out as a squashed strip
+    // rather than a placeholder.
+    private const float MinPlaceholderPixels = 80f;
+
     private void ApplyAdSpace(VisualElement space, float heightPixels)
     {
         NativeAdSpace.Apply(space, heightPixels);
@@ -80,7 +88,7 @@ public class ResultScreenController : MonoBehaviour
                        && AdsManager.Instance.Native != null
                        && !AdsManager.Instance.Native.ShowingAd;
 
-        AdPlaceholder.SetVisible(space, heightPixels > 0f && pending,
+        AdPlaceholder.SetVisible(space, heightPixels >= MinPlaceholderPixels && pending,
                                  NativeAdSpace.PixelsToPanel(space, heightPixels));
     }
 
@@ -118,6 +126,8 @@ public class ResultScreenController : MonoBehaviour
         space.UnregisterCallback<GeometryChangedEvent>(OnAdSpaceGeometryChanged);
         space.RegisterCallback<GeometryChangedEvent>(OnAdSpaceGeometryChanged);
 
+        HookScroll();
+
         // Opened to a sliver so the box gets a width. Its real height arrives from the measurement.
         space.style.display = DisplayStyle.Flex;
         space.style.height = 1f;
@@ -141,23 +151,18 @@ public class ResultScreenController : MonoBehaviour
             yield break;
         }
 
-        // The ad renders at its own natural size — full screen width — so only its height has to be
-        // reserved, and that is known from the template before the ad exists. Opening the box at that
-        // height up front means the group settles into its final centred position once, and the
-        // position handed to the plugin is right first time with nothing to correct afterwards.
-        int expectedHeightPx = AdsManager.Instance.ExpectedLevelEndNativeHeightPx();
-        if (expectedHeightPx <= 0)
-        {
-            NativeAdSpace.Collapse(space);
-            placeRoutine = null;
-            Debug.Log("[NativeAd] Result card: no height for this style — no ad requested.");
-            yield break;
-        }
+        // No height is predicted here any more. The box only needs a resolved RECT so the overlay can
+        // be placed at its top-left; the height arrives later, measured off the rendered template,
+        // and grows the box then. That works because the scroll content is top-aligned: growing the
+        // last element does not move its own top edge, so the position handed to the plugin stays
+        // correct with nothing to correct afterwards.
+        //
+        // The sliver is what gives the box a laid-out rect to read. Zero height would still resolve,
+        // but a 1px box is also what the skeleton needs to be measurable.
+        ApplyAdSpace(space, 1f);
 
-        ApplyAdSpace(space, expectedHeightPx);
-
-        // Two frames: one for the box's own height, one for the re-centred group around it. Then wait
-        // for a resolved rect, because worldBound reads NaN until UI Toolkit has laid the panel out.
+        // Two frames: one for the box's own height, one for the layout around it. Then wait for a
+        // resolved rect, because worldBound reads NaN until UI Toolkit has laid the panel out.
         float deadline = Time.realtimeSinceStartup + 2f;
         Vector2Int topLeftDp;
 
@@ -182,10 +187,10 @@ public class ResultScreenController : MonoBehaviour
         }
 
         adRequested = true;
-        Debug.Log("[NativeAd] Ad box reserved " + expectedHeightPx + "px tall, ad at "
+        Debug.Log("[NativeAd] Result card ad box laid out, ad at "
                   + topLeftDp.x + "," + topLeftDp.y + "dp"
                   + " (screen " + Screen.width + "x" + Screen.height
-                  + ", density " + NativeAdSpace.DisplayDensity + ").");
+                  + ", density " + NativeAdSpace.DisplayDensity + "). Height follows the measurement.");
 
         // Consumes the ad preloaded when the level started, so the card does not wait on a network
         // round trip.
@@ -194,9 +199,49 @@ public class ResultScreenController : MonoBehaviour
         placeRoutine = null;
     }
 
+    // The overlay is an Android view at a fixed screen position, so scrolling the card moves the box
+    // out from under it unless the ad is moved too. Scrolling is a TRANSFORM on the content
+    // container, not a layout change, so GeometryChangedEvent never fires for it — the scroller's own
+    // value is the only signal.
+    private void HookScroll()
+    {
+        ScrollView scroll = root != null ? root.Q<ScrollView>("result-scroll") : null;
+        if (scroll == null)
+        {
+            return;
+        }
+
+        scroll.verticalScroller.valueChanged -= OnScrolled;
+        scroll.verticalScroller.valueChanged += OnScrolled;
+    }
+
+    private void UnhookScroll()
+    {
+        ScrollView scroll = root != null ? root.Q<ScrollView>("result-scroll") : null;
+        if (scroll != null)
+        {
+            scroll.verticalScroller.valueChanged -= OnScrolled;
+        }
+    }
+
+    private void OnScrolled(float value)
+    {
+        NudgeAdToBox();
+    }
+
     // Every later layout pass — including the one caused by the ad's measured height — nudges the
     // ad to the box's new position.
     private void OnAdSpaceGeometryChanged(GeometryChangedEvent evt)
+    {
+        if (!adRequested || AdsManager.Instance == null)
+        {
+            return;
+        }
+
+        NudgeAdToBox();
+    }
+
+    private void NudgeAdToBox()
     {
         if (!adRequested || AdsManager.Instance == null)
         {

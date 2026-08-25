@@ -10,25 +10,27 @@
     <ui:VisualElement name="screen-root" class="result-root">
         <ui:VisualElement class="result-scrim" picking-mode="Ignore" />
 
-        <ui:VisualElement name="result-card" class="result-card">
-            <ui:VisualElement class="result-card__frame result-card__frame--lose" picking-mode="Ignore" />
+        <ui:ScrollView mode="Vertical" name="result-scroll" class="result-scroll">
 
-            <ui:Label name="level-label" text="LEVEL 01" class="result-card__level result-card__level--lose" picking-mode="Ignore" />
-            <ui:Label text="OUT OF LIVES" class="result-card__title" picking-mode="Ignore" />
+            <ui:VisualElement name="result-card" class="result-card">
+                <ui:VisualElement class="result-card__frame result-card__frame--lose" picking-mode="Ignore" />
 
-            <ui:Button name="primary-button" class="result-primary">
-                <ui:VisualElement picking-mode="Ignore" class="result-primary__inner">
-                    <ui:Label text="RETRY" picking-mode="Ignore" class="result-primary__label" />
-                </ui:VisualElement>
-            </ui:Button>
+                <ui:Label name="level-label" text="LEVEL 01" class="result-card__level result-card__level--lose" picking-mode="Ignore" />
+                <ui:Label text="OUT OF LIVES" class="result-card__title" picking-mode="Ignore" />
 
-            <ui:Button name="home-button" text="HOME" class="result-home" />
+                <ui:Button name="primary-button" class="result-primary">
+                    <ui:VisualElement picking-mode="Ignore" class="result-primary__inner">
+                        <ui:Label text="RETRY" picking-mode="Ignore" class="result-primary__label" />
+                    </ui:VisualElement>
+                </ui:Button>
 
+                <ui:Button name="home-button" text="HOME" class="result-home" />
+            </ui:VisualElement>
 
-        </ui:VisualElement>
+            <ui:VisualElement name="dialog-ad-space" class="dialog-ad-space">
+                <ui:Instance template="AdPlaceholder" name="ad-placeholder-slot" class="ad-placeholder-slot" />
+            </ui:VisualElement>
 
-        <ui:VisualElement name="dialog-ad-space" class="dialog-ad-space">
-            <ui:Instance template="AdPlaceholder" name="ad-placeholder-slot" class="ad-placeholder-slot" />
-        </ui:VisualElement>
+        </ui:ScrollView>
     </ui:VisualElement>
 </ui:UXML>

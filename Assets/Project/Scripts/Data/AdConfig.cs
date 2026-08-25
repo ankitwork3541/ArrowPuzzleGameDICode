@@ -30,11 +30,6 @@ public class NativeStyleMapping
     public int styleNumber = 3;
 
     public NativeTemplateSize template = NativeTemplateSize.Small;
-
-    [Tooltip("Overrides how much room the UI reserves for this style, in PIXELS. 0 uses the "
-             + "template's own height, which is almost always right. The ad itself always renders "
-             + "at its natural size — asking the SDK for a custom size is a known-broken path.")]
-    public int heightPx;
 }
 
 // Baked fallback ad settings, shipped inside the build. The backend config overrides these at

@@ -352,13 +352,13 @@ public class AdsManager : MonoBehaviour
 
         if (AdSettings.IsBanner(slot) && Banner != null)
         {
-            Banner.Show(slot == AdSlotKind.BannerLarge);
+            Banner.Show(slot == AdSlotKind.BannerLarge, screen);
             return;
         }
 
         if (AdSettings.IsNative(slot) && Native != null)
         {
-            Native.Show(Settings.NativeId, slot, NativeAdPlacement.Bottom());
+            Native.Show(Settings.NativeId, slot, NativeAdPlacement.Bottom(), screen);
         }
     }
 
@@ -427,13 +427,6 @@ public class AdsManager : MonoBehaviour
         {
             Native.ShowPreloaded(Settings.PreloadNativeId, Settings.SuccessScreenSlot, placement);
         }
-    }
-
-    // What the level-end ad will measure, so a screen can open its reserved box at the right height
-    // first and lay out only once.
-    public int ExpectedLevelEndNativeHeightPx()
-    {
-        return Settings != null ? NativeAdUnit.ExpectedHeightPx(Settings.SuccessScreenSlot) : 0;
     }
 
     // True only when an ad preloaded at level start is actually in hand. The result cards never load

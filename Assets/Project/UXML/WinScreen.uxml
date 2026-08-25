@@ -4,31 +4,37 @@
 
     <!-- The board behind this panel is world-space and stays on screen; the scrim dims it rather
          than hiding it, so the player still sees the level they just cleared. The confetti is not
-         here — ResultScreenController adds it in code, on top of everything. -->
+         here — ResultScreenController adds it in code, on top of everything.
+
+         The card and the ad box are direct children of the ScrollView: its own content container is
+         the element that centres them (see .unity-scroll-view__content-container in ResultScreen.uss),
+         so no wrapper of ours sits in between to get its width wrong. -->
 
     <ui:VisualElement name="screen-root" class="result-root">
         <ui:VisualElement class="result-scrim" picking-mode="Ignore" />
 
-        <ui:VisualElement name="result-card" class="result-card">
-            <ui:VisualElement class="result-card__frame result-card__frame--win" picking-mode="Ignore" />
+        <ui:ScrollView mode="Vertical" name="result-scroll" class="result-scroll">
 
-            <ui:Label name="level-label" text="LEVEL 01" class="result-card__level" picking-mode="Ignore" />
-            <ui:Label text="LEVEL COMPLETE" class="result-card__title" picking-mode="Ignore" />
+            <ui:VisualElement name="result-card" class="result-card">
+                <ui:VisualElement class="result-card__frame result-card__frame--win" picking-mode="Ignore" />
 
-            <ui:Button name="primary-button" class="result-primary">
-                <ui:VisualElement picking-mode="Ignore" class="result-primary__inner">
-                    <ui:Label text="NEXT" picking-mode="Ignore" class="result-primary__label" />
-                    <ui:Label text="&gt;" picking-mode="Ignore" class="result-primary__chevron" />
-                </ui:VisualElement>
-            </ui:Button>
+                <ui:Label name="level-label" text="LEVEL 01" class="result-card__level" picking-mode="Ignore" />
+                <ui:Label text="LEVEL COMPLETE" class="result-card__title" picking-mode="Ignore" />
 
-            <ui:Button name="home-button" text="HOME" class="result-home" />
+                <ui:Button name="primary-button" class="result-primary">
+                    <ui:VisualElement picking-mode="Ignore" class="result-primary__inner">
+                        <ui:Label text="NEXT" picking-mode="Ignore" class="result-primary__label" />
+                        <ui:Label text="&gt;" picking-mode="Ignore" class="result-primary__chevron" />
+                    </ui:VisualElement>
+                </ui:Button>
 
+                <ui:Button name="home-button" text="HOME" class="result-home" />
+            </ui:VisualElement>
 
-        </ui:VisualElement>
+            <ui:VisualElement name="dialog-ad-space" class="dialog-ad-space">
+                <ui:Instance template="AdPlaceholder" name="ad-placeholder-slot" class="ad-placeholder-slot" />
+            </ui:VisualElement>
 
-        <ui:VisualElement name="dialog-ad-space" class="dialog-ad-space">
-            <ui:Instance template="AdPlaceholder" name="ad-placeholder-slot" class="ad-placeholder-slot" />
-        </ui:VisualElement>
+        </ui:ScrollView>
     </ui:VisualElement>
 </ui:UXML>

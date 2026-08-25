@@ -60,10 +60,6 @@ public class NativeAdUnit : MonoBehaviour
     // retry loop; the load callback itself is not on a timer.
     const float LoadSettleTimeoutSeconds = 30f;
 
-    // Read off the template layouts in googlemobileads-unity.aar, not chosen.
-    const int MediumTemplateHeightDp = 350;
-    const int SmallTemplateMarginDp = 10;
-
     // Retry floor and ceiling. The floor is deliberately independent of refresh_native_sec: a
     // backend asking for a 10s refresh must not turn a no-fill region into 360 failed requests an
     // hour, which is exactly the request-to-impression ratio that earns an ad serving limit.
@@ -85,11 +81,22 @@ public class NativeAdUnit : MonoBehaviour
     NativeAdPlacement activePlacement;
     bool activeAutoRefresh;
 
+    // Which screen the ad on screen belongs to. Part of the reuse test for the same reason the
+    // banner has one — see the note on BannerAdUnit.wantOwner.
+    string activeOwner;
+
     int consecutiveFailures;
     bool loadInFlight;
 
+    // What each template last measured on THIS device, so the next request for the same slot can
+    // open its box straight away and carry the loading skeleton. Deliberately learned rather than
+    // hardcoded: the template's real height depends on the device's font scale, its dp width and the
+    // creative's own text, so no constant can be right everywhere. Empty on the session's first
+    // request for a slot, which simply means no skeleton that once.
+    readonly System.Collections.Generic.Dictionary<AdSlotKind, int> measuredHeights =
+        new System.Collections.Generic.Dictionary<AdSlotKind, int>();
+
     Coroutine loadRoutine;
-    Coroutine measureRoutine;
     Coroutine presentRoutine;
 
     // Session counters. Requests versus impressions is the ratio that predicts a serving limit, and
@@ -146,7 +153,6 @@ public class NativeAdUnit : MonoBehaviour
         }
 
         StopLoadLoop();
-        StopMeasure();
         StopPresent();
         DestroyActive();
         DestroyPreloaded();
@@ -157,19 +163,22 @@ public class NativeAdUnit : MonoBehaviour
     {
         if (wantVisible && !string.IsNullOrEmpty(activeUnitId))
         {
-            Show(activeUnitId, activeSlot, activePlacement, activeAutoRefresh);
+            Show(activeUnitId, activeSlot, activePlacement, activeOwner, activeAutoRefresh);
         }
     }
 
-    public void Show(string adUnitId, AdSlotKind slot, NativeAdPlacement placement, bool autoRefresh = true)
+    public void Show(string adUnitId, AdSlotKind slot, NativeAdPlacement placement, string owner,
+                     bool autoRefresh = true)
     {
-        // Nothing has changed and an ad is already on screen — reloading here would throw away a
-        // live impression and start a new request every time the player crossed between two
-        // screens that carry the same slot. Same reasoning as BannerAdUnit.Show().
+        // Nothing has changed and this screen's ad is already up — reloading here would throw away a
+        // live impression and start a new request every time the player crossed between two screens
+        // sharing one digit. Same reasoning as BannerAdUnit.Show().
         if (wantVisible && currentAd != null
-            && activeUnitId == adUnitId && activeSlot == slot
+            && activeUnitId == adUnitId && activeSlot == slot && activeOwner == owner
             && NativeAdPlacement.Same(activePlacement, placement))
         {
+            Debug.Log("[NativeAd] Reusing the " + owner + " " + slot
+                      + " already on screen — no new request.");
             return;
         }
 
@@ -177,6 +186,7 @@ public class NativeAdUnit : MonoBehaviour
         activeUnitId = adUnitId;
         activeSlot = slot;
         activePlacement = placement;
+        activeOwner = owner;
         activeAutoRefresh = autoRefresh;
 
         if (!IsAllowed(adUnitId, slot))
@@ -201,7 +211,7 @@ public class NativeAdUnit : MonoBehaviour
         if (currentAd == null)
         {
             SetShowingAd(false);
-            SetHeight(ExpectedHeightPx(slot));
+            SetHeight(LastMeasuredHeightPx(slot));
         }
 
         // A fresh, player-driven show starts the backoff ladder over. Only a failing retry loop is
@@ -272,6 +282,7 @@ public class NativeAdUnit : MonoBehaviour
         activeUnitId = adUnitId;
         activeSlot = slot;
         activePlacement = placement;
+        activeOwner = "result";
         activeAutoRefresh = false;
         StopLoadLoop();
 
@@ -315,8 +326,8 @@ public class NativeAdUnit : MonoBehaviour
         }
 
         wantVisible = false;
+        activeOwner = null;
         StopLoadLoop();
-        StopMeasure();
         StopPresent();
         DestroyActive();
         SetShowingAd(false);
@@ -333,8 +344,11 @@ public class NativeAdUnit : MonoBehaviour
         loadInFlight = true;
         RequestCount++;
 
-        Debug.Log("[NativeAd] Requesting " + slot + " — unit " + adUnitId + ", "
-                  + ExpectedHeightPx(slot) + "px reserved.");
+        int reserved = LastMeasuredHeightPx(slot);
+        Debug.Log("[NativeAd] Requesting " + slot + " for " + activeOwner + " — unit " + adUnitId
+                  + (reserved > 0
+                      ? ", " + reserved + "px reserved from the last measurement."
+                      : ", nothing reserved yet — first " + slot + " of this session."));
 
         NativeOverlayAd.Load(adUnitId, new AdRequest(), BuildOptions(), (ad, error) =>
         {
@@ -449,14 +463,21 @@ public class NativeAdUnit : MonoBehaviour
         }
     }
 
-    // Room is opened BEFORE the overlay appears, not after it has been measured. The overlay is an
-    // Android view drawn above Unity: showing it while the game's own layout still ends at the
-    // bottom of the screen puts it straight over whatever is there — on the gameplay screen, the
-    // Hint and Restart buttons. A tap meant for a button then lands on the ad, and an accidental
-    // click is invalid traffic, which is the fastest route to an ad serving limit.
+    // Renders the template, opens whatever room this slot is known to need, shows the ad, and then
+    // corrects the room from the height Android actually reports.
     //
-    // The expected height comes from the template's own layout, so it is known before the ad exists.
-    // The measured height afterwards only corrects it.
+    // The measurement has to happen AFTER Show(), not before. The plugin's hide() sets the template
+    // view to View.GONE (bipush 8 in UnityNativeTemplateAd$10), and Android never measures or lays
+    // out a GONE view — so getHeight(), which is all getTemplateHeightInPixels() returns, reads 0 for
+    // as long as the ad is hidden. There is no way to measure a native overlay off screen. That is
+    // the one place it differs from BannerAdUnit, which can measure before showing.
+    //
+    // The height is still never PREDICTED. It used to be computed from the template's layout (350dp
+    // for medium), but that is only the NativeAdView's own bound — the rendered height moves with the
+    // device's font scale, its dp width and the creative's text length, so a constant was wrong on
+    // exactly the devices where it mattered. What is reserved up front is the last figure this slot
+    // actually measured on THIS device; the session's first render of a slot has none, and takes a
+    // couple of frames with the ad on screen before its room opens.
     IEnumerator PresentRoutine(NativeOverlayAd ad, AdSlotKind slot, NativeAdPlacement placement, bool needsTemplate)
     {
         NativeStyleMapping mapping = Settings != null ? Settings.NativeStyle(slot) : null;
@@ -468,27 +489,6 @@ public class NativeAdUnit : MonoBehaviour
             Debug.Log("[NativeAd] " + slot + " has no native layout — nothing rendered.");
             presentRoutine = null;
             Hide();
-            yield break;
-        }
-
-        int expectedHeightPx = ExpectedHeightPx(slot);
-        if (expectedHeightPx <= 0)
-        {
-            Debug.Log("[NativeAd] No expected height for " + slot + " — nothing rendered.");
-            presentRoutine = null;
-            Hide();
-            yield break;
-        }
-
-        SetHeight(expectedHeightPx);
-
-        // Two frames: one for the reserved box's own height, one for the layout that follows it.
-        yield return null;
-        yield return null;
-
-        if (ad == null || currentAd != ad || !wantVisible)
-        {
-            presentRoutine = null;
             yield break;
         }
 
@@ -506,28 +506,90 @@ public class NativeAdUnit : MonoBehaviour
             }
         }
 
+        int known = LastMeasuredHeightPx(slot);
+        if (known > 0)
+        {
+            SetHeight(known);
+
+            // Two frames: one for the reserved box's own height, one for the layout that follows it.
+            yield return null;
+            yield return null;
+        }
+
+        if (ad == null || currentAd != ad || !wantVisible)
+        {
+            presentRoutine = null;
+            yield break;
+        }
+
         ad.Show();
-        presentRoutine = null;
         SetShowingAd(true);
 
         Debug.Log("[NativeAd] Showing " + slot
                   + (placement.anchored
                       ? " anchored " + placement.anchor
                       : " at " + placement.x + "," + placement.y + "dp")
-                  + ", " + expectedHeightPx + "px reserved first.");
+                  + (known > 0
+                      ? ", " + known + "px reserved first from the last measurement."
+                      : ", nothing reserved yet — measuring now."));
 
-        StartMeasure(expectedHeightPx);
+        // Polling is the only signal available: the template reports a height once Android has laid
+        // it out, which is not the frame Show() returned on.
+        float measured = 0f;
+        float deadline = Time.realtimeSinceStartup + MeasureTimeoutSeconds;
+
+        while (Time.realtimeSinceStartup < deadline)
+        {
+            if (ad == null || currentAd != ad || !wantVisible)
+            {
+                presentRoutine = null;
+                yield break;
+            }
+
+            measured = ad.GetTemplateHeightInPixels();
+            if (measured > 0f)
+            {
+                break;
+            }
+
+            yield return null;
+        }
+
+        presentRoutine = null;
+
+        if (measured <= 0f)
+        {
+            // Nothing to reserve and an overlay already on screen — which is the accidental-click
+            // case the reserve-first order exists to prevent. One filled ad is worth less than
+            // invalid traffic on the account, so it comes down.
+            Debug.LogWarning("[NativeAd] " + slot + " never reported a height even after Show(); "
+                             + "taking it down rather than leaving it over the UI.");
+            Hide();
+            yield break;
+        }
+
+        measuredHeights[slot] = Mathf.CeilToInt(measured);
+        SetHeight(measured);
+
+        Debug.Log("[NativeAd] Measured " + ad.GetTemplateWidthInPixels() + " x " + measured
+                  + " px (screen " + Screen.width + " x " + Screen.height + ").");
     }
 
-    // Colours come from the game's own palette so the ad reads as part of the screen rather than a
-    // white slab dropped onto it. The arrangement is fixed by the template and cannot be changed.
-    // The card tint from ResultScreen.uss, so an ad beside the result card reads as the same
-    // material rather than a lighter or darker slab.
-    static readonly Color Panel = new Color(0.047f, 0.071f, 0.165f);
-    static readonly Color Ink = new Color(0.02f, 0.03f, 0.086f);
-    static readonly Color Muted = new Color(0.65f, 0.70f, 0.80f);
-    static readonly Color Accent = new Color(0f, 0.898f, 1f);
-
+    // Only the template id. Every other field is deliberately left unset so the ad renders exactly
+    // as Google ships it — its own font sizes, colours, image handling and spacing.
+    //
+    // This is not laziness, it is what keeps the medium template inside its own bounds. Its
+    // NativeAdView is a hard-coded 350dp tall (gnt_medium_template_view.xml) with a wrap_content
+    // body inside it and no maxLines, and its text sizes are `sp`, so they grow with the device's
+    // font-scale setting. Pushing our own larger sizes in through setTextSize() spent budget the
+    // template does not have, and the call-to-action button was squeezed out past the bottom edge —
+    // which is what AdMob's native validator reports as "Advertiser assets outside native ad view".
+    //
+    // Safe to leave blank: the plugin guards every field. applyStyles() wraps each setTextSize() in
+    // `if (size > 0)` and null-checks every colour. MainBackgroundColor is a non-nullable Color so it
+    // does go through as transparent, but it lands on the inner ad_background layout, not on the
+    // NativeAdView — whose own white gnt_outline_shape background stays put. Either way the card
+    // renders as Google's stock template.
     static NativeTemplateStyle BuildStyle(NativeStyleMapping mapping)
     {
         NativeTemplateSize template = mapping != null ? mapping.template : NativeTemplateSize.Small;
@@ -536,77 +598,16 @@ public class NativeAdUnit : MonoBehaviour
         {
             TemplateId = template == NativeTemplateSize.Medium
                 ? NativeTemplateId.Medium
-                : NativeTemplateId.Small,
-
-            MainBackgroundColor = Panel,
-
-            PrimaryText = TextStyle(Color.white, 15, NativeTemplateFontStyle.Bold),
-            SecondaryText = TextStyle(Muted, 12, NativeTemplateFontStyle.Normal),
-            TertiaryText = TextStyle(Muted, 12, NativeTemplateFontStyle.Normal),
-
-            CallToActionText = new NativeTemplateTextStyle
-            {
-                BackgroundColor = Accent,
-                TextColor = Ink,
-                FontSize = 14,
-                Style = NativeTemplateFontStyle.Bold
-            }
+                : NativeTemplateId.Small
         };
     }
 
-    // BackgroundColor has to be set on every text row, not left at the struct default. The plugin's
-    // applyStyles() pushes each row's background onto its TextView unconditionally, so an unset
-    // value paints a box in whatever colour the default happens to be — which is what made the
-    // headline, the rating row and the body each sit on a different shade.
-    static NativeTemplateTextStyle TextStyle(Color color, int size, NativeTemplateFontStyle style)
+    // What this slot measured last time on this device, or 0 if it has not rendered yet. Public
+    // because the UI reserves room from it before the ad exists.
+    public int LastMeasuredHeightPx(AdSlotKind slot)
     {
-        return new NativeTemplateTextStyle
-        {
-            BackgroundColor = Panel,
-            TextColor = color,
-            FontSize = size,
-            Style = style
-        };
+        return measuredHeights.TryGetValue(slot, out int height) ? height : 0;
     }
-
-    // How tall the ad will come out for a given width. Public because the UI needs it BEFORE the ad
-    // exists: opening the reserved box at its final height means the layout settles once, and the ad
-    // can then be requested at a position that is already correct — no repositioning afterwards.
-    // Returns 0 for a non-native slot, which is the caller's signal to reserve nothing at all.
-    public static int ExpectedHeightPx(AdSlotKind slot)
-    {
-        AdSettings settings = Settings;
-        NativeStyleMapping mapping = settings != null ? settings.NativeStyle(slot) : null;
-
-        if (mapping == null)
-        {
-            return 0;
-        }
-
-        if (mapping.heightPx > 0)
-        {
-            return mapping.heightPx;
-        }
-
-        return NaturalHeightPx(mapping, Screen.width);
-    }
-
-    // A container shorter than the template's own height does not scale the ad down — it clips and
-    // overlaps it. Both figures are read off the template layouts inside googlemobileads-unity.aar:
-    //
-    //   medium  the root NativeAdView is a fixed 350dp tall
-    //   small   the inner box is constrained to a 4:1 ratio, inside 10dp of margin each side
-    static int NaturalHeightPx(NativeStyleMapping mapping, int widthPx)
-    {
-        bool medium = mapping != null && mapping.template == NativeTemplateSize.Medium;
-
-        return medium
-            ? Mathf.RoundToInt(MediumTemplateHeightDp * Density)
-            : Mathf.RoundToInt(widthPx / 4f + SmallTemplateMarginDp * 2f * Density);
-    }
-
-    // Same source the placement maths uses, so a dp figure means the same thing on both sides.
-    static float Density => NativeAdSpace.DisplayDensity;
 
     static NativeAdOptions BuildOptions()
     {
@@ -630,57 +631,6 @@ public class NativeAdUnit : MonoBehaviour
                && settings.AdsEnabled
                && !string.IsNullOrEmpty(adUnitId)
                && settings.NativeStyle(slot) != null;
-    }
-
-    void StartMeasure(int fallbackHeightPx)
-    {
-        StopMeasure();
-        measureRoutine = StartCoroutine(MeasureRoutine(fallbackHeightPx));
-    }
-
-    void StopMeasure()
-    {
-        if (measureRoutine != null)
-        {
-            StopCoroutine(measureRoutine);
-            measureRoutine = null;
-        }
-    }
-
-    // The template reports a height only once Android has laid it out, which is not the frame the
-    // render call returned on. Polling is the only signal available.
-    IEnumerator MeasureRoutine(int fallbackHeightPx)
-    {
-        float deadline = Time.realtimeSinceStartup + MeasureTimeoutSeconds;
-
-        while (Time.realtimeSinceStartup < deadline)
-        {
-            if (currentAd == null)
-            {
-                measureRoutine = null;
-                yield break;
-            }
-
-            float height = currentAd.GetTemplateHeightInPixels();
-            if (height > 0f)
-            {
-                Debug.Log("[NativeAd] Measured " + currentAd.GetTemplateWidthInPixels()
-                          + " x " + height + " px (reserved " + fallbackHeightPx + "px, screen is "
-                          + Screen.width + " x " + Screen.height + ").");
-                SetHeight(height);
-                measureRoutine = null;
-                yield break;
-            }
-
-            yield return null;
-        }
-
-        // The reserved height stays. The ad is on screen whether or not it ever reported a size, so
-        // collapsing here would leave it sitting over the UI underneath — the accidental-click case
-        // the reserve-first order exists to prevent.
-        Debug.LogWarning("[NativeAd] Template never reported a height; keeping the "
-                         + fallbackHeightPx + "px reserved for it.");
-        measureRoutine = null;
     }
 
     void SetHeight(float pixels)

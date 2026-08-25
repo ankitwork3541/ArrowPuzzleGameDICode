@@ -251,6 +251,85 @@ public static class LevelCarver
         return mask;
     }
 
+    // A full rectangle with random bites taken out of it — 1-4 corners nibbled in a staircase, and
+    // half the time a hole cut from the middle that never touches an edge. Costs no artwork —
+    // unlike a silhouette from LevelShapeMask — so every level that wants "not a plain rectangle"
+    // gets its own combination instead of cycling through the same handful of images.
+    const float NotchMinDepthFraction = 0.15f;
+    const float NotchMaxDepthFraction = 0.35f;
+    const float HoleMinSizeFraction = 0.10f;
+    const float HoleMaxSizeFraction = 0.22f;
+    const int HoleMarginCells = 2;
+
+    public static HashSet<Vector2Int> NotchedRectangle(int width, int height)
+    {
+        HashSet<Vector2Int> mask = Rectangle(width, height);
+
+        int cornerCount = Random.Range(1, 5);   // 1-4 corners, each corner used at most once
+        List<Vector2Int> usedCorners = new List<Vector2Int>();
+
+        for (int i = 0; i < cornerCount; i++)
+        {
+            Vector2Int corner;
+            do
+            {
+                corner = new Vector2Int(Random.value < 0.5f ? 0 : 1, Random.value < 0.5f ? 0 : 1);
+            } while (usedCorners.Contains(corner));
+            usedCorners.Add(corner);
+
+            CarveCorner(mask, width, height, corner);
+        }
+
+        // Optional, and only attempted on a board with room for a real margin around it, so a
+        // small board never turns into a paper-thin ring.
+        if (Random.value < 0.5f)
+            CarveCenterHole(mask, width, height);
+
+        return mask;
+    }
+
+    static void CarveCorner(HashSet<Vector2Int> mask, int width, int height, Vector2Int corner)
+    {
+        int notchW = Mathf.Clamp(Mathf.RoundToInt(width * Random.Range(NotchMinDepthFraction, NotchMaxDepthFraction)), 1, width - 2);
+        int notchH = Mathf.Clamp(Mathf.RoundToInt(height * Random.Range(NotchMinDepthFraction, NotchMaxDepthFraction)), 1, height - 2);
+        int steps = Random.Range(1, 4);   // 1 = plain rectangular bite, 2-3 = staircase
+
+        for (int s = 0; s < steps; s++)
+        {
+            int stepW = Mathf.Max(1, notchW - Mathf.RoundToInt(notchW * s / (float)steps));
+            int stepH = Mathf.Max(1, Mathf.RoundToInt(notchH * (s + 1) / (float)steps));
+
+            for (int y = 0; y < stepH; y++)
+            {
+                for (int x = 0; x < stepW; x++)
+                {
+                    int gx = corner.x == 0 ? x : width - 1 - x;
+                    int gy = corner.y == 0 ? y : height - 1 - y;
+                    mask.Remove(new Vector2Int(gx, gy));
+                }
+            }
+        }
+    }
+
+    // A rectangular gap inside the board that never touches the outer edge, so it reads as a hole
+    // rather than another corner bite — HoleMarginCells keeps a solid frame around it.
+    static void CarveCenterHole(HashSet<Vector2Int> mask, int width, int height)
+    {
+        int maxHoleW = width - HoleMarginCells * 2 - 1;
+        int maxHoleH = height - HoleMarginCells * 2 - 1;
+        if (maxHoleW < 2 || maxHoleH < 2) return;   // too small for a hole with a real margin
+
+        int holeW = Mathf.Clamp(Mathf.RoundToInt(width * Random.Range(HoleMinSizeFraction, HoleMaxSizeFraction)), 2, maxHoleW);
+        int holeH = Mathf.Clamp(Mathf.RoundToInt(height * Random.Range(HoleMinSizeFraction, HoleMaxSizeFraction)), 2, maxHoleH);
+
+        int originX = Random.Range(HoleMarginCells, width - HoleMarginCells - holeW + 1);
+        int originY = Random.Range(HoleMarginCells, height - HoleMarginCells - holeH + 1);
+
+        for (int y = 0; y < holeH; y++)
+            for (int x = 0; x < holeW; x++)
+                mask.Remove(new Vector2Int(originX + x, originY + y));
+    }
+
     // ASCII art, TOP row first so the literal in code reads the way the shape looks on screen.
     // '.' and space are empty; every other character is a filled cell.
     public static HashSet<Vector2Int> FromAscii(string[] rows)

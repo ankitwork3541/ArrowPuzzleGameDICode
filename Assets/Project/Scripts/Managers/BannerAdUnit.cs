@@ -27,6 +27,12 @@ public class BannerAdUnit : MonoBehaviour
     bool wantVisible;
     bool wantLarge;
 
+    // Which screen the ad on screen belongs to. Part of the reuse test, not just the size: the
+    // backend gives main_screen and play_screen their own digits, so they are separate placements
+    // even when both digits happen to name the same size. Home and Settings share one owner because
+    // they share one digit.
+    string wantOwner;
+
     // A failed BannerView is kept rather than nulled, so this is what tells "still loading" apart
     // from "gave up" when deciding whether an existing banner can be reused.
     bool loadFailed;
@@ -88,23 +94,28 @@ public class BannerAdUnit : MonoBehaviour
     {
         if (wantVisible)
         {
-            Show(wantLarge);
+            Show(wantLarge, wantOwner);
         }
     }
 
-    public void Show(bool large)
+    public void Show(bool large, string owner)
     {
-        // Already carrying exactly this banner — leave it alone. Create() destroys before it
-        // builds, so falling through would tear down a good ad and pay for a fresh request every
-        // time the player crossed between two screens that both want the same banner. A failed
-        // load is the one case worth rebuilding for, and loadFailed is what lets that through.
-        if (wantVisible && wantLarge == large && banner != null && !loadFailed)
+        // Already carrying exactly this screen's banner — leave it alone. Create() destroys before
+        // it builds, so falling through would tear down a good ad and pay for a fresh request every
+        // time the player crossed between two screens sharing one digit, which is Home and Settings.
+        // A failed load is the one case worth rebuilding for, and loadFailed is what lets that
+        // through.
+        if (wantVisible && wantLarge == large && wantOwner == owner
+            && banner != null && !loadFailed)
         {
+            Debug.Log("[Banner] Reusing the " + owner + " banner already on screen ("
+                      + (large ? "LARGE_BANNER 320x100" : "BANNER 320x50") + ") — no new request.");
             return;
         }
 
         wantVisible = true;
         wantLarge = large;
+        wantOwner = owner;
 
         if (!IsAllowed())
         {
@@ -131,6 +142,7 @@ public class BannerAdUnit : MonoBehaviour
         }
 
         wantVisible = false;
+        wantOwner = null;
         StopPresent();
         StopReserveTimeout();
         DestroyBanner();
@@ -159,7 +171,8 @@ public class BannerAdUnit : MonoBehaviour
         RequestCount++;
 
         Debug.Log("[Banner] Requesting " + (large ? "LARGE_BANNER 320x100" : "BANNER 320x50")
-                  + " — unit " + unitId + ", " + ExpectedHeightPx(large) + "px reserved.");
+                  + " for " + wantOwner + " — unit " + unitId + ", "
+                  + ExpectedHeightPx(large) + "px reserved.");
 
         // Hidden from the moment it exists. A BannerView puts itself on screen as soon as it loads,
         // and a banner that appears before the game's layout has opened room for it lands on top of

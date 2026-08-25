@@ -66,11 +66,9 @@ public static class LevelCampaignGenerator
 
     // ---------- shaped levels ----------
 
-    // Every Nth level is shaped, counting from level 1 — so the first one lands inside onboarding,
-    // which is where the reference puts its first shaped board too (around its sixth level). It
-    // cycles through whatever silhouettes are in LevelShapeSources/. 0 disables shapes; so does an
-    // empty source folder, so the bake still works before any art exists.
-    const int ShapeEveryNLevels = 7;
+    // Cycles through whatever silhouettes are in LevelShapeSources/ — see the board-type bag
+    // further down for how often a shaped level actually comes up. An empty source folder just
+    // means the bag never draws one, so the bake still works before any art exists.
 
     // Shapes cover only part of their bounding box, so the box has to be bigger than a rectangle
     // holding the same arrows. The first build measures the real coverage and the second corrects
@@ -107,12 +105,14 @@ public static class LevelCampaignGenerator
 
         int arrowMisses = 0;
         int shapedLevels = 0;
+        int notchedLevels = 0;
         bool cancelled = false;
 
         shapeFiles = LevelShapeMask.ListShapes();
         Debug.Log(shapeFiles.Length > 0
-            ? $"[Campaign] {shapeFiles.Length} silhouette(s) found — a shaped board every {ShapeEveryNLevels} levels."
-            : $"[Campaign] no silhouettes in {LevelShapeMask.FolderPath} — every level will be a rectangle.");
+            ? $"[Campaign] {shapeFiles.Length} silhouette(s) found — roughly 1 shaped and 2 notched board(s) "
+              + $"in every {BagSize} levels, order shuffled so it can't be predicted."
+            : $"[Campaign] no silhouettes in {LevelShapeMask.FolderPath} — boards will be rectangle or notched only.");
 
         try
         {
@@ -134,8 +134,11 @@ public static class LevelCampaignGenerator
                 int width = 0, height = 0;
                 HashSet<Vector2Int> mask = null;
                 string shapeName = null;
+                bool notched = false;
 
-                if (WantsShape(i))
+                BoardType boardType = BoardTypeFor(i);
+
+                if (boardType == BoardType.Shaped)
                 {
                     mask = BuildShapeMask(shapedLevels, wantArrows, out width, out height, out shapeName);
                     if (mask != null) shapedLevels++;
@@ -144,7 +147,10 @@ public static class LevelCampaignGenerator
                 if (mask == null)
                 {
                     BoardFor(wantArrows, out width, out height);
-                    mask = LevelCarver.Rectangle(width, height);
+                    notched = boardType == BoardType.Notched
+                              && width >= NotchMinBoardSize && height >= NotchMinBoardSize;
+                    mask = notched ? LevelCarver.NotchedRectangle(width, height) : LevelCarver.Rectangle(width, height);
+                    if (notched) notchedLevels++;
                 }
 
                 LevelCarver.Params prm = ParamsFor(i, wantArrows);
@@ -171,9 +177,11 @@ public static class LevelCampaignGenerator
                 if (Mathf.Abs(arrows.Count - wantArrows) > Mathf.Max(1, wantArrows * ArrowTolerance))
                     arrowMisses++;
 
+                string boardNote = shapeName ?? (notched ? "notched" : null);
+
                 // Only the head is logged — Unity truncates a thousand rows anyway.
-                if (i < 20 || (i + 1) % 100 == 0 || shapeName != null)
-                    ramp.AppendLine(RampRow(i, width, height, wantArrows, arrows, result, shapeName));
+                if (i < 20 || (i + 1) % 100 == 0 || boardNote != null)
+                    ramp.AppendLine(RampRow(i, width, height, wantArrows, arrows, result, boardNote));
             }
         }
         finally
@@ -211,6 +219,8 @@ public static class LevelCampaignGenerator
         summary.AppendLine($"round-trip verified cell-for-cell   |   baked in {clock.Elapsed.TotalSeconds:F1}s");
         if (shapedLevels > 0)
             summary.AppendLine($"{shapedLevels} shaped level(s) from {shapeFiles.Length} silhouette(s)");
+        if (notchedLevels > 0)
+            summary.AppendLine($"{notchedLevels} notched-rectangle level(s)");
         if (arrowMisses > 0)
             summary.AppendLine($"{arrowMisses} level(s) outside the {ArrowTolerance:P0} arrow-count tolerance "
                                + "(harmless for the ramp, worth a look if it is most of them)");
@@ -310,14 +320,61 @@ public static class LevelCampaignGenerator
         return FitCellsPerArrow[FitCellsPerArrow.Length - 1];
     }
 
-    // Levels 7, 14, 21, ... — the very first level stays a plain 4x4, since level 1 has three
-    // arrows and a silhouette at that size is unreadable anyway.
-    static bool WantsShape(int levelIndex)
-    {
-        if (ShapeEveryNLevels <= 0 || shapeFiles.Length == 0) return false;
+    // ---------- board-type bag ----------
 
-        int levelNumber = levelIndex + 1;
-        return levelNumber >= ShapeEveryNLevels && levelNumber % ShapeEveryNLevels == 0;
+    // Which "kind" of board a level gets: a plain rectangle, one with corners nibbled off and
+    // maybe a center hole (see LevelCarver.NotchedRectangle), or a silhouette from
+    // LevelShapeSources/.
+    enum BoardType { Rectangle, Notched, Shaped }
+
+    // A shuffled BAG, not a fixed "every Nth level" — a player who has reached level 30 can read a
+    // clockwork `% 7 == 0` pattern within a few levels, and predictability kills the exact surprise
+    // mixing board types was meant to add. A bag keeps the same overall ratio (1 shaped + 2 notched
+    // in every 10) while making the ORDER inside each bag unpredictable — the trick Tetris uses
+    // (7-bag) so a piece never vanishes for 20 draws or repeats 5 times running under pure chance.
+    const int BagSize = 10;
+    static readonly BoardType[] BagTemplate =
+    {
+        BoardType.Shaped,
+        BoardType.Notched, BoardType.Notched,
+        BoardType.Rectangle, BoardType.Rectangle, BoardType.Rectangle,
+        BoardType.Rectangle, BoardType.Rectangle, BoardType.Rectangle, BoardType.Rectangle
+    };
+
+    // Used when no silhouette art exists at all, so the bag never wastes a draw on a Shaped slot
+    // that would only fall back to a rectangle anyway — the notch:rectangle ratio still holds.
+    static readonly BoardType[] BagTemplateNoShapes =
+    {
+        BoardType.Notched, BoardType.Notched,
+        BoardType.Rectangle, BoardType.Rectangle, BoardType.Rectangle,
+        BoardType.Rectangle, BoardType.Rectangle, BoardType.Rectangle, BoardType.Rectangle
+    };
+
+    // A tiny onboarding board has no room to lose a corner and still teach the mechanic clearly —
+    // see the call site, which falls back to a plain rectangle below this size. A shaped level
+    // guards itself the same way, via BuildShapeMask's own size-driven failure path.
+    const int NotchMinBoardSize = 6;
+
+    static BoardType BoardTypeFor(int levelIndex)
+    {
+        BoardType[] template = shapeFiles.Length > 0 ? BagTemplate : BagTemplateNoShapes;
+
+        int bagIndex = levelIndex / template.Length;
+        int slot = levelIndex % template.Length;
+
+        BoardType[] bag = (BoardType[])template.Clone();
+
+        // Deterministic Fisher-Yates, seeded by which bag this is — re-baking reproduces the same
+        // campaign byte for byte, same as everywhere else in this file.
+        for (int i = bag.Length - 1; i > 0; i--)
+        {
+            int j = Mathf.FloorToInt(Hash01(bagIndex * 7919 + i) * (i + 1));
+            BoardType temp = bag[i];
+            bag[i] = bag[j];
+            bag[j] = temp;
+        }
+
+        return bag[slot];
     }
 
     // Which silhouette the nth shaped level gets.
@@ -403,7 +460,7 @@ public static class LevelCampaignGenerator
         {
             lengthDecay = decay,
             turnChance = 0.33f,
-            attempts = (!WantsShape(levelIndex) && levelIndex < OnboardingArrows.Length) ? 12 : CarveAttemptsBulk
+            attempts = (BoardTypeFor(levelIndex) != BoardType.Shaped && levelIndex < OnboardingArrows.Length) ? 12 : CarveAttemptsBulk
         };
     }
 
@@ -418,7 +475,7 @@ public static class LevelCampaignGenerator
         // A shaped level's arrow count follows its silhouette, so searching seeds for the ramp's
         // count is chasing a number it can never reach — and on a big mask that search costs
         // minutes. Shapes always use the cheap budget, wherever they land in the campaign.
-        bool shaped = WantsShape(levelIndex);
+        bool shaped = BoardTypeFor(levelIndex) == BoardType.Shaped;
         int attempts = (!shaped && levelIndex < OnboardingArrows.Length)
             ? SeedAttemptsOnboarding : SeedAttemptsBulk;
         int tolerance = Mathf.Max(1, Mathf.RoundToInt(wantArrows * ArrowTolerance));
