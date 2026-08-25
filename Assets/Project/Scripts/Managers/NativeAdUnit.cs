@@ -85,6 +85,17 @@ public class NativeAdUnit : MonoBehaviour
     // banner has one — see the note on BannerAdUnit.wantOwner.
     string activeOwner;
 
+    // Bumped by Show(), ShowPreloaded() and Hide() — anything that changes which screen owns the
+    // slot. Load()'s callback captures this at request time and only acts if it is still current.
+    // wantVisible alone is not enough: a fast level (won in a couple of seconds, well within the
+    // gameplay screen's still-in-flight ad request) hands the slot to the result screen's
+    // ShowPreloaded() while that request is outstanding, which sets wantVisible = true again for
+    // the RESULT ad. The stale gameplay-ad callback would then read wantVisible as true, pass
+    // IsAllowed() (still generically true), and overwrite the result ad with itself at the
+    // gameplay screen's placement — a genuine "wrong ad, wrong position" glitch that AdMob's
+    // validator can catch as an out-of-bounds render on that one occasion.
+    int requestToken;
+
     int consecutiveFailures;
     bool loadInFlight;
 
@@ -188,6 +199,7 @@ public class NativeAdUnit : MonoBehaviour
         activePlacement = placement;
         activeOwner = owner;
         activeAutoRefresh = autoRefresh;
+        requestToken++;
 
         if (!IsAllowed(adUnitId, slot))
         {
@@ -284,6 +296,7 @@ public class NativeAdUnit : MonoBehaviour
         activePlacement = placement;
         activeOwner = "result";
         activeAutoRefresh = false;
+        requestToken++;
         StopLoadLoop();
 
         if (!IsAllowed(adUnitId, slot))
@@ -327,6 +340,7 @@ public class NativeAdUnit : MonoBehaviour
 
         wantVisible = false;
         activeOwner = null;
+        requestToken++;
         StopLoadLoop();
         StopPresent();
         DestroyActive();
@@ -343,6 +357,11 @@ public class NativeAdUnit : MonoBehaviour
     {
         loadInFlight = true;
         RequestCount++;
+
+        // Captured now, checked in the callback: if Show()/ShowPreloaded()/Hide() moved the slot
+        // on to a different owner in the meantime, wantVisible alone would read true again and let
+        // this stale result through — see the comment on requestToken's declaration.
+        int token = requestToken;
 
         int reserved = LastMeasuredHeightPx(slot);
         Debug.Log("[NativeAd] Requesting " + slot + " for " + activeOwner + " — unit " + adUnitId
@@ -382,10 +401,13 @@ public class NativeAdUnit : MonoBehaviour
                 consecutiveFailures = 0;
                 Debug.Log("[NativeAd] Loaded " + slot + ".");
 
-                // The player may have left the screen while the request was in flight.
-                if (!wantVisible || !IsAllowed(adUnitId, slot))
+                // The player may have left the screen while the request was in flight, or handed
+                // the slot to a different owner (e.g. the result screen's ShowPreloaded()) that
+                // also wants an ad — token catches that second case, which wantVisible alone cannot
+                // since ShowPreloaded() sets it straight back to true for itself.
+                if (!wantVisible || token != requestToken || !IsAllowed(adUnitId, slot))
                 {
-                    Debug.Log("[NativeAd] Loaded after the screen was left — discarded, not shown.");
+                    Debug.Log("[NativeAd] Loaded after the slot moved on — discarded, not shown.");
                     ad.Destroy();
                     return;
                 }
@@ -445,6 +467,12 @@ public class NativeAdUnit : MonoBehaviour
             return;
         }
 
+        // Diagnostic for the "Level 1 only" validator glitch on the scrolling result card: logs
+        // every reposition so a repro's logcat shows whether SetTemplatePosition is being called
+        // faster than Android can settle the previous one's layout pass. Remove once that is
+        // confirmed or ruled out.
+        Debug.Log("[NativeAd][diag] MoveTo(" + x + "," + y + ") at t=" + Time.realtimeSinceStartup);
+
         currentAd.SetTemplatePosition(x, y);
     }
 
@@ -495,6 +523,13 @@ public class NativeAdUnit : MonoBehaviour
         if (needsTemplate)
         {
             NativeTemplateStyle style = BuildStyle(mapping);
+
+            // Diagnostic for the "Level 1 only" validator glitch — see the note on MoveTo(). Marks
+            // the moment Android is first asked to inflate this template, so a repro's logcat can
+            // show how long that took relative to the MoveTo() calls that follow it.
+            Debug.Log("[NativeAd][diag] RenderTemplate at t=" + Time.realtimeSinceStartup
+                      + (placement.anchored ? ", anchored " + placement.anchor
+                                             : ", " + placement.x + "," + placement.y + "dp"));
 
             if (placement.anchored)
             {
@@ -547,6 +582,7 @@ public class NativeAdUnit : MonoBehaviour
             }
 
             measured = ad.GetTemplateHeightInPixels();
+            Debug.Log("[NativeAd][diag] poll t=" + Time.realtimeSinceStartup + " height=" + measured);
             if (measured > 0f)
             {
                 break;

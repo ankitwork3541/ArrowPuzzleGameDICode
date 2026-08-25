@@ -226,6 +226,10 @@ public class ResultScreenController : MonoBehaviour
 
     private void OnScrolled(float value)
     {
+        // Diagnostic for the "Level 1 only" validator glitch — see the note on
+        // NativeAdUnit.MoveTo(). Distinguishes a scroll-range change with no user input (content
+        // growing as the ad's height arrives) from an actual scroll gesture.
+        Debug.Log("[NativeAd][diag] OnScrolled(" + value + ") at t=" + Time.realtimeSinceStartup);
         NudgeAdToBox();
     }
 
@@ -238,6 +242,8 @@ public class ResultScreenController : MonoBehaviour
             return;
         }
 
+        Debug.Log("[NativeAd][diag] OnAdSpaceGeometryChanged at t=" + Time.realtimeSinceStartup
+                  + " newRect=" + evt.newRect);
         NudgeAdToBox();
     }
 
@@ -250,6 +256,8 @@ public class ResultScreenController : MonoBehaviour
 
         if (NativeAdSpace.TryTopLeftDp(AdSpace, out Vector2Int topLeftDp))
         {
+            Debug.Log("[NativeAd][diag] NudgeAdToBox -> MoveTo(" + topLeftDp.x + "," + topLeftDp.y
+                      + ") at t=" + Time.realtimeSinceStartup);
             AdsManager.Instance.MoveNativeAd(topLeftDp.x, topLeftDp.y);
         }
     }
