@@ -6,14 +6,16 @@
     width: 100%;
     height: 100%;
     -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-Bold%20SDF.asset?fileID=11400000&guid=2d8208c2123c041daaecd4a4cf0d1ae2&type=2#Oxanium-Bold SDF");
-    transition-property: opacity;
-    transition-duration: 0.35s;
-    transition-timing-function: ease-out;
 }
 
-/* Held back while the arrows draw themselves in, then faded up. `visibility` is
-   what actually blocks clicks — opacity 0 alone still picks up pointer events. */
-.gameplay-root--hidden {
+/* Held back while the arrows draw themselves in, then faded up. `visibility` is what actually blocks
+   clicks — opacity 0 alone still picks up pointer events.
+   Applied to the two BARS, not to `.gameplay-root`: the ad box is a child of the root and must not
+   fade with them. Its loading skeleton has to be on screen from the moment the ad is requested,
+   which is level start — before the arrows have finished drawing in. A child cannot undo its
+   parent's opacity (opacity composites the whole subtree), so the only way to exempt the box is to
+   stop fading its parent. The bars carry their own transition, in the two rules below. */
+.hud-hidden {
     opacity: 0;
     visibility: hidden;
 }
@@ -64,10 +66,16 @@
    panned up — no camera clipping or masking needed. Because the two colours are
    identical the panel has no visible edge of its own, so its height is set by
    padding rather than by any drawn boundary. */
+/* The fade transition lives on each bar rather than on the shared .hud-hidden class, because
+   transition-property is not additive across rules — a class setting `opacity` would REPLACE
+   .bottom-bar's own `bottom` transition instead of adding to it. */
 .top-panel {
     background-color: rgb(5, 8, 22);
     padding-top: 48px;
     padding-bottom: 22px;
+    transition-property: opacity;
+    transition-duration: 0.35s;
+    transition-timing-function: ease-out;
 }
 
 .top-row {
@@ -290,9 +298,9 @@
     flex-direction: row;
     justify-content: center;
     align-items: flex-start;
-    transition-property: bottom;
-    transition-duration: 0.22s;
-    transition-timing-function: ease-out;
+    transition-property: bottom, opacity;
+    transition-duration: 0.22s, 0.35s;
+    transition-timing-function: ease-out, ease-out;
 }
 
 .action {
@@ -349,9 +357,19 @@
 
 /* Last child of gameplay-root, so a measured height pushes the flow up. bottom-bar is absolutely
    positioned and is lifted separately in GameplayHUDController. */
+/* Pinned to the bottom, not laid out in flow like Home's and Settings' boxes are.
+   `.gameplay-root` is a column with exactly one other IN-FLOW child, `.top-panel` — `.bottom-bar` is
+   absolute, and an absolute element is invisible to the layout engine, so it neither takes space nor
+   shifts its siblings. That left this box as the second in-flow child, sitting directly under the
+   header, which is where the loading skeleton was appearing.
+   Nothing needs pushing down here either: the board is drawn by the camera, and the bar's lift is
+   applied straight to its own `bottom` from the measured ad height. So the only job left is to cover
+   the strip Android draws the anchored ad over, and absolute at bottom 0 is exactly that strip. */
 .gameplay-ad-space {
-    width: 100%;
-    flex-shrink: 0;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
     overflow: hidden;
     transition-property: height;
     transition-duration: 0.22s;

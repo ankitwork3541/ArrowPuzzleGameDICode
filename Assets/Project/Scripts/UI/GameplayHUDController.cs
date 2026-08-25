@@ -17,7 +17,6 @@ public class GameplayHUDController : MonoBehaviour
     public static GameplayHUDController Instance;
 
     private VisualElement root;
-    private VisualElement hudRoot;   // the .gameplay-root element itself, not the panel wrapper
     private VisualElement topPanel;
     private VisualElement bottomBar;
     private Label difficultyLabel;
@@ -105,7 +104,6 @@ public class GameplayHUDController : MonoBehaviour
     {
         root = rootElement;
 
-        hudRoot = root.Q<VisualElement>("gameplay-root") ?? root;
         topPanel = root.Q<VisualElement>("top-panel");
         bottomBar = root.Q<VisualElement>("bottom-bar");
         difficultyLabel = root.Q<Label>("difficulty-label");
@@ -269,7 +267,9 @@ public class GameplayHUDController : MonoBehaviour
     {
         if (root == null) return;
 
-        hudRoot.EnableInClassList("gameplay-root--hidden", !hudVisible);
+        // The two bars fade, the ad box does not — see the .hud-hidden note in GameplayScreen.uss.
+        if (topPanel != null) topPanel.EnableInClassList("hud-hidden", !hudVisible);
+        if (bottomBar != null) bottomBar.EnableInClassList("hud-hidden", !hudVisible);
 
         difficultyLabel.text = GameFlowManager.GetDifficultyLabel(levelLoader.CurrentLevel());
         levelNumberLabel.text = levelLoader.CurrentLevelNumber().ToString();
