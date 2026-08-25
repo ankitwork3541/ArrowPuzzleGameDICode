@@ -681,11 +681,24 @@ public class NativeAdUnit : MonoBehaviour
         return style;
     }
 
-    // What this slot measured last time on this device, or 0 if it has not rendered yet. Public
-    // because the UI reserves room from it before the ad exists.
+    // What this slot measured last time on this device, or an initial estimate if it has not rendered
+    // yet. Public because the UI reserves room from it before the ad exists.
     public int LastMeasuredHeightPx(AdSlotKind slot)
     {
-        return measuredHeights.TryGetValue(slot, out int height) ? height : 0;
+        if (measuredHeights.TryGetValue(slot, out int height) && height > 0)
+        {
+            return height;
+        }
+
+        NativeStyleMapping mapping = Settings != null ? Settings.NativeStyle(slot) : null;
+        if (mapping != null)
+        {
+            float density = NativeAdSpace.DisplayDensity;
+            int defaultDp = mapping.template == NativeTemplateSize.Medium ? 300 : 90;
+            return Mathf.RoundToInt(defaultDp * density);
+        }
+
+        return 0;
     }
 
     static NativeAdOptions BuildOptions()

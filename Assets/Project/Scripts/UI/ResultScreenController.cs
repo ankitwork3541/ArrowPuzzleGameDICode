@@ -151,11 +151,14 @@ public class ResultScreenController : MonoBehaviour
             yield break;
         }
 
-        // No height is predicted here any more. The box only needs a resolved RECT so the overlay can
-        // be placed at its top-left; the height arrives later, measured off the rendered template,
-        // and grows the box then. That works because the scroll content is top-aligned: growing the
-        // last element does not move its own top edge, so the position handed to the plugin stays
-        // correct with nothing to correct afterwards.
+        // No height is predicted here. The box only needs a resolved RECT so the overlay can be
+        // placed at its top-left; the height arrives later, measured off the rendered template, and
+        // grows the box then. That works because the scroll content is top-aligned: growing the last
+        // element does not move its own top edge, so the position handed to the plugin stays correct
+        // with nothing to correct afterwards. Guessing a height here instead (which a since-reverted
+        // change tried) re-centres the whole card+ad group once the guess is corrected — shifting the
+        // CARD, not just the ad box — which is what let the ad's top edge end up underneath the
+        // card's bottom border on the session's first render.
         //
         // The sliver is what gives the box a laid-out rect to read. Zero height would still resolve,
         // but a 1px box is also what the skeleton needs to be measurable.
