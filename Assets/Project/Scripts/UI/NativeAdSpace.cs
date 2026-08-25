@@ -206,6 +206,16 @@ public static class NativeAdSpace
     //
     // Returns false while UI Toolkit has yet to lay the element out, rather than a zero that would
     // silently fling the ad into the corner.
+    //
+    // Confirmed on device (logcat): the session's first-ever result card gets a GeometryChangedEvent
+    // whose rect is genuinely (0,0,0,0) — not NaN — for one frame, before the ScrollView's content
+    // container has resolved a real width. Every later card already has a cached height reservation
+    // from a previous level, so its box is never actually zero-sized and this frame never happens
+    // again. Without this check, that first zero-sized frame passed as "resolved" and drove
+    // RenderTemplate/SetTemplatePosition against a degenerate box. Worth keeping on its own merits —
+    // it stops a nonsensical position ever being sent — but it is not what causes AdMob's validator
+    // to flag the session's first native ad: that still happens with this fix in place, from a
+    // cause not yet identified.
     public static bool TryTopLeftDp(VisualElement element, out Vector2Int topLeftDp)
     {
         topLeftDp = Vector2Int.zero;
@@ -216,7 +226,7 @@ public static class NativeAdSpace
         }
 
         Rect bounds = element.worldBound;
-        if (float.IsNaN(bounds.x) || float.IsNaN(bounds.y))
+        if (float.IsNaN(bounds.x) || float.IsNaN(bounds.y) || bounds.width <= 0f || bounds.height <= 0f)
         {
             return false;
         }

@@ -460,6 +460,17 @@ public class NativeAdUnit : MonoBehaviour
     // Repositions a template that is already on screen. This is what makes an in-card ad possible:
     // the card cannot know where to put the ad until the ad's height has grown the card, and the
     // card's rect is only final after that layout pass.
+    //
+    // Confirmed on device (logcat): ResultScreenController's settle-and-nudge callbacks call this
+    // with the SAME x,y up to a dozen times in one ~250ms window while the card's layout is
+    // settling — none of them are wrong, they just keep re-confirming a position that already
+    // landed. SetTemplatePosition re-triggers Android's own layout pass on the template each time,
+    // so this was a dozen redundant relayouts for nothing. Worth keeping on its own merits, but
+    // confirmed (also via logcat) NOT to be what makes AdMob's validator flag the session's first
+    // native ad — that still happens with this dedup in place, from a cause not yet identified.
+    int? lastMoveX;
+    int? lastMoveY;
+
     public void MoveTo(int x, int y)
     {
         if (currentAd == null)
@@ -467,12 +478,13 @@ public class NativeAdUnit : MonoBehaviour
             return;
         }
 
-        // Diagnostic for the "Level 1 only" validator glitch on the scrolling result card: logs
-        // every reposition so a repro's logcat shows whether SetTemplatePosition is being called
-        // faster than Android can settle the previous one's layout pass. Remove once that is
-        // confirmed or ruled out.
-        Debug.Log("[NativeAd][diag] MoveTo(" + x + "," + y + ") at t=" + Time.realtimeSinceStartup);
+        if (lastMoveX == x && lastMoveY == y)
+        {
+            return;
+        }
 
+        lastMoveX = x;
+        lastMoveY = y;
         currentAd.SetTemplatePosition(x, y);
     }
 
@@ -523,13 +535,6 @@ public class NativeAdUnit : MonoBehaviour
         if (needsTemplate)
         {
             NativeTemplateStyle style = BuildStyle(mapping);
-
-            // Diagnostic for the "Level 1 only" validator glitch — see the note on MoveTo(). Marks
-            // the moment Android is first asked to inflate this template, so a repro's logcat can
-            // show how long that took relative to the MoveTo() calls that follow it.
-            Debug.Log("[NativeAd][diag] RenderTemplate at t=" + Time.realtimeSinceStartup
-                      + (placement.anchored ? ", anchored " + placement.anchor
-                                             : ", " + placement.x + "," + placement.y + "dp"));
 
             if (placement.anchored)
             {
@@ -582,7 +587,6 @@ public class NativeAdUnit : MonoBehaviour
             }
 
             measured = ad.GetTemplateHeightInPixels();
-            Debug.Log("[NativeAd][diag] poll t=" + Time.realtimeSinceStartup + " height=" + measured);
             if (measured > 0f)
             {
                 break;
@@ -827,6 +831,8 @@ public class NativeAdUnit : MonoBehaviour
         currentAd.Hide();
         currentAd.Destroy();
         currentAd = null;
+        lastMoveX = null;
+        lastMoveY = null;
     }
 
     void DestroyPreloaded()
