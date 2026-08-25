@@ -1,10 +1,9 @@
 using System.Collections.Generic;
 using GoogleMobileAds.Api;
-using GoogleMobileAds.Ump.Api;
 using UnityEngine;
 
-// Owns the ad stack: gathers consent, initialises the SDK, and keeps AdSettings fed from the
-// backend. Nothing else in the game touches the Google Mobile Ads API directly.
+// Owns the ad stack: initialises the SDK and keeps AdSettings fed from the backend. Nothing
+// else in the game touches the Google Mobile Ads API directly.
 [RequireComponent(typeof(AdConfigFetcher))]
 public class AdsManager : MonoBehaviour
 {
@@ -106,7 +105,7 @@ public class AdsManager : MonoBehaviour
             }
         }));
 
-        RequestConsent();
+        Initialize();
     }
 
     // Resources.Load needs the exact file name, and Unity names a new asset after the menu entry
@@ -129,49 +128,13 @@ public class AdsManager : MonoBehaviour
         return found.Length > 0 ? found[0] : null;
     }
 
-    // UMP raises its callbacks on a background JNI thread, and MobileAds.Initialize creates Unity
-    // objects, which only the main thread may do. Calling it straight from a consent callback dies
-    // inside the plugin's static setup as a TypeInitializationException — with no usable stack,
-    // because the failure is in a static constructor. So callbacks only raise a flag; Update acts
-    // on it. MobileAdsEventExecutor cannot do this job here: it is itself part of the SDK that has
-    // not been initialised yet.
-    volatile bool consentResolved;
+    // MobileAds.Initialize creates Unity objects, so its callback (which fires on a background
+    // JNI thread) can only raise a flag here; Update acts on it on the main thread.
     volatile bool initializationReported;
     volatile bool initializationSucceeded;
-    bool initializeRequested;
-
-    void RequestConsent()
-    {
-        ConsentInformation.Update(new ConsentRequestParameters(), consentError =>
-        {
-            if (consentError != null)
-            {
-                Debug.LogWarning("[Ads] Consent update failed: " + consentError.Message);
-                consentResolved = true;
-                return;
-            }
-
-            ConsentForm.LoadAndShowConsentFormIfRequired(formError =>
-            {
-                if (formError != null)
-                {
-                    Debug.LogWarning("[Ads] Consent form failed: " + formError.Message);
-                }
-
-                consentResolved = true;
-            });
-        });
-    }
 
     void Update()
     {
-        if (consentResolved && !initializeRequested)
-        {
-            consentResolved = false;
-            initializeRequested = true;
-            InitializeIfAllowed();
-        }
-
         if (initializationReported)
         {
             initializationReported = false;
@@ -179,18 +142,8 @@ public class AdsManager : MonoBehaviour
         }
     }
 
-    // Reached even when consent errored: a player outside the EEA needs no form, and a returning
-    // player already has a stored answer, so CanRequestAds can still be true.
-    void InitializeIfAllowed()
+    void Initialize()
     {
-        if (!ConsentInformation.CanRequestAds())
-        {
-            Debug.Log("[Ads] Consent withheld — ads stay off this session.");
-            return;
-        }
-
-        Debug.Log("[Ads] Consent resolved. Initialising SDK on the main thread.");
-
         RegisterTestDevices();
 
         MobileAds.Initialize(status =>
@@ -508,19 +461,4 @@ public class AdsManager : MonoBehaviour
     }
 
     public float NativeHeightPixels => Native != null ? Native.HeightPixels : 0f;
-
-    // Wire to a Settings-screen button. Only meaningful where a privacy entry point is required.
-    public void ShowPrivacyOptions()
-    {
-        ConsentForm.ShowPrivacyOptionsForm(showError =>
-        {
-            if (showError != null)
-            {
-                Debug.LogWarning("[Ads] Privacy form failed: " + showError.Message);
-            }
-        });
-    }
-
-    public bool PrivacyOptionsRequired =>
-        ConsentInformation.PrivacyOptionsRequirementStatus == PrivacyOptionsRequirementStatus.Required;
 }
