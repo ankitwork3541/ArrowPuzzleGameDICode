@@ -285,6 +285,9 @@
     flex-direction: row;
     justify-content: center;
     align-items: flex-start;
+    transition-property: bottom;
+    transition-duration: 0.22s;
+    transition-timing-function: ease-out;
 }
 
 .action {
@@ -344,5 +347,18 @@
 .gameplay-ad-space {
     width: 100%;
     flex-shrink: 0;
-    display: none;
+    overflow: hidden;
+    transition-property: height;
+    transition-duration: 0.22s;
+    transition-timing-function: ease-out;
+}
+
+/* The <ui:Instance> wrapper around the ad-loading skeleton, styled here the same way `.nav-slot` is.
+   Absolute so the skeleton fills whatever height the box was opened to without ever driving it. */
+.ad-placeholder-slot {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
 }

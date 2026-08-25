@@ -25,6 +25,28 @@ public static class NativeAdSpace
         space.style.height = PixelsToPanel(space, adHeightPixels);
     }
 
+    // The variant the anchored bottom slots use: room is opened the moment the ad is requested and
+    // filled with a skeleton, so the layout settles once instead of jumping when the ad paints.
+    //
+    // Unlike Apply(space, height) this never touches `display`. The height is animated by USS, and
+    // flipping display to None cancels a transition mid-flight — which is the jolt this exists to
+    // remove. A zero-height box with `flex-shrink: 0` and `overflow: hidden` takes up nothing, so
+    // leaving it laid out costs the screen nothing.
+    public static void Apply(VisualElement space, float adHeightPixels, bool showPlaceholder)
+    {
+        if (space == null)
+        {
+            return;
+        }
+
+        float panelHeight = adHeightPixels > 0f ? PixelsToPanel(space, adHeightPixels) : 0f;
+
+        space.style.display = DisplayStyle.Flex;
+        space.style.height = panelHeight;
+
+        AdPlaceholder.SetVisible(space, showPlaceholder && panelHeight > 0f, panelHeight);
+    }
+
     public static void Collapse(VisualElement space)
     {
         Apply(space, 0f);

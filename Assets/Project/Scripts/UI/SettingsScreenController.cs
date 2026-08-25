@@ -52,7 +52,8 @@ public class SettingsScreenController : MonoBehaviour
     {
         if (root == null) return;
 
-        NativeAdSpace.Apply(root.Q<VisualElement>("native-ad-space"), heightPixels);
+        NativeAdSpace.Apply(root.Q<VisualElement>("native-ad-space"), heightPixels,
+                            AdsManager.Instance != null && AdsManager.Instance.AdPlaceholderVisible);
     }
 
     private void OnUIReload(PanelRenderer renderer, VisualElement rootElement)

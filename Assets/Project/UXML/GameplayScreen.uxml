@@ -1,5 +1,6 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/Project/Themes/GameplayScreen.uss?fileID=7433441132597879392&amp;guid=b4369a12a23684b82832b80a76b589b0&amp;type=3#GameplayScreen" />
+    <ui:Template name="AdPlaceholder" src="project://database/Assets/Project/UXML/AdPlaceholder.uxml" />
 
     <!-- Every octagonal container is TWO layers: the element itself carries the dark fill sprite,
          and a `__frame` child laid over it carries the neon edge. They are separate because they
@@ -85,7 +86,9 @@
         <!-- The ad-loading modal used to live here. It is now a global overlay on its own panel
              (AdLoadingOverlay), because interstitials also fire from home and the result cards. -->
 
-        <ui:VisualElement name="native-ad-space" class="gameplay-ad-space" />
+        <ui:VisualElement name="native-ad-space" class="gameplay-ad-space">
+            <ui:Instance template="AdPlaceholder" name="ad-placeholder-slot" class="ad-placeholder-slot" />
+        </ui:VisualElement>
 
     </ui:VisualElement>
 </ui:UXML>

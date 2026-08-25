@@ -110,6 +110,10 @@ public class NativeAdUnit : MonoBehaviour
     public float HeightPixels { get; private set; }
     public event Action<float> OnHeightChanged;
 
+    // True only once the overlay is actually painted. Until then any reserved room is holding a
+    // skeleton, which is what the UI needs to know to show one.
+    public bool ShowingAd { get; private set; }
+
     static AdSettings Settings => AdsManager.Instance != null ? AdsManager.Instance.Settings : null;
 
     static float AdMaxAgeSeconds => Settings != null ? Settings.AdMaxAgeSeconds : 1800f;
@@ -188,6 +192,16 @@ public class NativeAdUnit : MonoBehaviour
         {
             Debug.Log("[NativeAd] Show for " + slot + " parked until the SDK is ready.");
             return;
+        }
+
+        // Room first, request second. The template's height is known from its own layout before any
+        // ad exists, so the screen can open the box to that and fill it with a skeleton — and
+        // nothing has to move again when the overlay paints. Opening it only in PresentRoutine is
+        // what shoved the bottom nav upwards in one frame.
+        if (currentAd == null)
+        {
+            SetShowingAd(false);
+            SetHeight(ExpectedHeightPx(slot));
         }
 
         // A fresh, player-driven show starts the backoff ladder over. Only a failing retry loop is
@@ -299,6 +313,7 @@ public class NativeAdUnit : MonoBehaviour
         StopMeasure();
         StopPresent();
         DestroyActive();
+        SetShowingAd(false);
         SetHeight(0f);
     }
 
@@ -333,6 +348,7 @@ public class NativeAdUnit : MonoBehaviour
                     // refresh must not pull the floor out from under an ad that is still showing.
                     if (currentAd == null)
                     {
+                        SetShowingAd(false);
                         SetHeight(0f);
                     }
 
@@ -481,6 +497,7 @@ public class NativeAdUnit : MonoBehaviour
 
         ad.Show();
         presentRoutine = null;
+        SetShowingAd(true);
 
         Debug.Log("[NativeAd] Showing " + slot
                   + (placement.anchored
@@ -666,6 +683,21 @@ public class NativeAdUnit : MonoBehaviour
         OnHeightChanged?.Invoke(pixels);
     }
 
+    // Raises OnHeightChanged too, even though no height moved. The reserved room is opened at the
+    // template's own expected height, so the measured height that follows is usually identical —
+    // without this the one event that matters, "the skeleton can come down now", would never reach
+    // the UI.
+    void SetShowingAd(bool value)
+    {
+        if (ShowingAd == value)
+        {
+            return;
+        }
+
+        ShowingAd = value;
+        OnHeightChanged?.Invoke(HeightPixels);
+    }
+
     void StartLoadLoop(float firstDelaySeconds)
     {
         StopLoadLoop();
@@ -708,6 +740,16 @@ public class NativeAdUnit : MonoBehaviour
             while (loadInFlight && Time.realtimeSinceStartup < deadline)
             {
                 yield return null;
+            }
+
+            // The load callback never came back. Google's callbacks always fire, but a skeleton left
+            // up forever because one of them did not is a visible bug, not a missing ad.
+            if (loadInFlight && currentAd == null)
+            {
+                Debug.LogWarning("[NativeAd] No answer in " + LoadSettleTimeoutSeconds
+                                 + "s — giving the reserved room back.");
+                SetShowingAd(false);
+                SetHeight(0f);
             }
 
             delay = NextDelaySeconds();

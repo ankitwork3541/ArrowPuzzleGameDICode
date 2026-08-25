@@ -7,10 +7,7 @@ public enum AdSlotKind
 {
     None = 0,
 
-    // Anchored adaptive banners. Both take the device's real width and let Google pick the height;
-    // Large is allowed up to 20% of screen height (50-150dp) where Standard stays around 50-60dp.
-    // Smart banner is deliberately absent — Google deprecated it, and it centres a standard creative
-    // in a screen-wide box, which leaves visible bars down both sides.
+    // Google's two fixed banner sizes: BANNER (320x50 dp) and LARGE_BANNER (320x100 dp).
     BannerStandard = 1,
     BannerLarge = 2,
 
@@ -88,7 +85,7 @@ public class AdConfig : ScriptableObject
 
     [Header("Screen slot fallbacks")]
     [Tooltip("Only used in test mode — outside it, no backend config means no ads at all. "
-             + "0 none, 1 standard adaptive banner, 2 large adaptive banner, 3 small native, "
+             + "0 none, 1 banner 320x50, 2 large banner 320x100, 3 small native, "
              + "4 big native. The success screen never shows a banner, so 1 and 2 mean nothing "
              + "there.")]
     public int defaultMainScreenStyle = 2;

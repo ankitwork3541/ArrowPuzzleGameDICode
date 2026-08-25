@@ -15,6 +15,14 @@ public class BannerAdUnit : MonoBehaviour
 {
     const float MeasureTimeoutSeconds = 2f;
 
+    // Backstop for the reserved room. Google's load callbacks always fire, but a skeleton left up
+    // forever because one of them did not is a visible bug, not a missing ad.
+    const float ReserveTimeoutSeconds = 12f;
+
+    // The two fixed sizes, in dp, so the room can be opened before any ad exists.
+    const int StandardHeightDp = 50;
+    const int LargeHeightDp = 100;
+
     BannerView banner;
     bool wantVisible;
     bool wantLarge;
@@ -24,8 +32,13 @@ public class BannerAdUnit : MonoBehaviour
     bool loadFailed;
 
     Coroutine presentRoutine;
+    Coroutine reserveRoutine;
 
     public bool IsLoaded { get; private set; }
+
+    // True only once the ad is actually painted. Until then the reserved room is holding a skeleton,
+    // which is what the UI needs to know to show one.
+    public bool ShowingAd { get; private set; }
 
     // Screen pixels, published for the UI to reserve matching room. Zero means nothing is on screen,
     // which is the signal to collapse that room completely rather than leave a hole.
@@ -65,6 +78,7 @@ public class BannerAdUnit : MonoBehaviour
         }
 
         StopPresent();
+        StopReserveTimeout();
         DestroyBanner();
     }
 
@@ -113,7 +127,9 @@ public class BannerAdUnit : MonoBehaviour
     {
         wantVisible = false;
         StopPresent();
+        StopReserveTimeout();
         DestroyBanner();
+        SetShowingAd(false);
         SetHeight(0f);
     }
 
@@ -122,8 +138,16 @@ public class BannerAdUnit : MonoBehaviour
         DestroyBanner();
         loadFailed = false;
 
-        AdSize size = large ? LargeAnchoredAdaptiveSize() : AnchoredAdaptiveSize();
+        AdSize size = large ? LargeSize() : StandardSize();
         string unitId = AdsManager.Instance.Settings.BannerId;
+
+        // Room first, ad second. The size is fixed, so the final height is known before the request
+        // is even sent — the UI can open the box to exactly that and fill it with a skeleton, and
+        // nothing has to move again when the ad paints. Opening it afterwards is what shoved the
+        // bottom nav upwards in one frame.
+        SetShowingAd(false);
+        SetHeight(ExpectedHeightPx(large));
+        StartReserveTimeout();
 
         banner = new BannerView(unitId, size, AdPosition.Bottom);
         BannerView created = banner;
@@ -164,6 +188,8 @@ public class BannerAdUnit : MonoBehaviour
 
             IsLoaded = false;
             loadFailed = true;
+            StopReserveTimeout();
+            SetShowingAd(false);
             SetHeight(0f);
 
             // No retry from here. The ad unit's own auto-refresh owns that; without it enabled in
@@ -213,8 +239,8 @@ public class BannerAdUnit : MonoBehaviour
     }
 
     // Publishes the banner's real height, waits for the UI to open that much room, and only then puts
-    // the banner on screen. The height is read from the loaded banner rather than guessed: an
-    // adaptive banner's height is chosen by Google per device, so there is no formula to predict it.
+    // the banner on screen. The height is read from the loaded banner rather than converted from dp
+    // here, so the reserved room always matches what the SDK actually placed.
     IEnumerator PresentRoutine(BannerView target)
     {
         float heightPx = 0f;
@@ -243,6 +269,8 @@ public class BannerAdUnit : MonoBehaviour
             // how much room to open, and an unplaced banner is exactly the accidental-click case.
             Debug.LogWarning("[Banner] Never reported a height; not shown.");
             presentRoutine = null;
+            StopReserveTimeout();
+            SetShowingAd(false);
             SetHeight(0f);
             yield break;
         }
@@ -261,8 +289,10 @@ public class BannerAdUnit : MonoBehaviour
 
         target.Show();
         presentRoutine = null;
+        StopReserveTimeout();
+        SetShowingAd(true);
 
-        Debug.Log("[Banner] Showing " + (wantLarge ? "large" : "standard") + " adaptive, "
+        Debug.Log("[Banner] Showing " + (wantLarge ? "LARGE_BANNER 320x100" : "BANNER 320x50") + ", "
                   + target.GetWidthInPixels() + " x " + heightPx + " px, room reserved first.");
         LogCounters("shown");
     }
@@ -276,6 +306,58 @@ public class BannerAdUnit : MonoBehaviour
 
         HeightPixels = pixels;
         OnHeightChanged?.Invoke(pixels);
+    }
+
+    // Raises OnHeightChanged too, even though no height moved. A fixed-size banner loads at exactly
+    // the height that was reserved for it, so without this the one event that matters — "the
+    // skeleton can come down now" — would never reach the UI.
+    void SetShowingAd(bool value)
+    {
+        if (ShowingAd == value)
+        {
+            return;
+        }
+
+        ShowingAd = value;
+        OnHeightChanged?.Invoke(HeightPixels);
+    }
+
+    void StartReserveTimeout()
+    {
+        StopReserveTimeout();
+        reserveRoutine = StartCoroutine(ReserveTimeout());
+    }
+
+    void StopReserveTimeout()
+    {
+        if (reserveRoutine != null)
+        {
+            StopCoroutine(reserveRoutine);
+            reserveRoutine = null;
+        }
+    }
+
+    IEnumerator ReserveTimeout()
+    {
+        yield return new WaitForSecondsRealtime(ReserveTimeoutSeconds);
+        reserveRoutine = null;
+
+        if (ShowingAd)
+        {
+            yield break;
+        }
+
+        Debug.LogWarning("[Banner] No answer in " + ReserveTimeoutSeconds
+                         + "s — giving the reserved room back.");
+        SetHeight(0f);
+    }
+
+    // What the banner will measure, in screen pixels, before one exists. Both sizes are fixed, so
+    // this is exact rather than an estimate.
+    public static int ExpectedHeightPx(bool large)
+    {
+        int dp = large ? LargeHeightDp : StandardHeightDp;
+        return Mathf.RoundToInt(dp * NativeAdSpace.DisplayDensity);
     }
 
     void LogCounters(string what)
@@ -299,23 +381,17 @@ public class BannerAdUnit : MonoBehaviour
                && !string.IsNullOrEmpty(manager.Settings.BannerId);
     }
 
-    // Anchored adaptive rather than the fixed 320x50: it takes the device's real width, so wide
-    // phones do not get a small banner floating in a bar of background.
-    //
-    // The width is the screen's real dp width, NOT AdSize.FullWidth. FullWidth is -1, and the
-    // next-generation Ads SDK this plugin now depends on (ads-mobile-sdk) rejects it outright —
-    // "java.lang.IllegalArgumentException: Invalid width for AdSize -1" the moment the BannerView is
-    // constructed. Google's own Unity sample still shows FullWidth; it no longer works here.
-    public static AdSize AnchoredAdaptiveSize()
+    // The two fixed IAB sizes from Google's standard banner table: BANNER (320x50 dp) for style 1
+    // and LARGE_BANNER (320x100 dp) for style 2. Fixed, not adaptive — the creative is always
+    // exactly this size on every device, so the two styles stay visually distinct.
+    public static AdSize StandardSize()
     {
-        return AdSize.GetCurrentOrientationAnchoredAdaptiveBannerAdSizeWithWidth(ScreenWidthDp);
+        return AdSize.Banner;
     }
 
-    // The taller variant: up to 20% of screen height, between 50 and 150dp. Google intends it for
-    // non-scrolling layouts, which is what every screen in this game is.
-    public static AdSize LargeAnchoredAdaptiveSize()
+    public static AdSize LargeSize()
     {
-        return AdSize.GetCurrentOrientationLargeAnchoredAdaptiveBannerAdSizeWithWidth(ScreenWidthDp);
+        return AdSize.LargeBanner;
     }
 
     // Same density source the native ad's placement maths uses, so dp means the same thing on both

@@ -443,6 +443,14 @@ public class AdsManager : MonoBehaviour
         Mathf.Max(Native != null ? Native.HeightPixels : 0f,
                   Banner != null ? Banner.HeightPixels : 0f);
 
+    // Room is reserved but no ad has painted into it yet, so the screen should fill it with a
+    // skeleton. Both units reserve their box the moment the request goes out and only flip ShowingAd
+    // once the ad is on screen, which is what makes this a single answer for either format.
+    public bool AdPlaceholderVisible =>
+        AdHeightPixels > 0f
+        && !(Banner != null && Banner.ShowingAd)
+        && !(Native != null && Native.ShowingAd);
+
     System.Action<float> adHeightListeners;
 
     void OnUnitHeightChanged(float ignored)

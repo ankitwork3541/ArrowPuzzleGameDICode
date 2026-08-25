@@ -1,6 +1,7 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/Project/Themes/SettingsScreen.uss?fileID=7433441132597879392&amp;guid=61f7f2a6d75040d49a64611f413ba112&amp;type=3#SettingsScreen" />
     <ui:Template name="BottomNav" src="project://database/Assets/Project/UXML/BottomNav.uxml" />
+    <ui:Template name="AdPlaceholder" src="project://database/Assets/Project/UXML/AdPlaceholder.uxml" />
     <ui:VisualElement name="screen-root" class="screen-root">
 
         <ui:VisualElement name="settings-header" class="settings-header">
@@ -59,6 +60,8 @@
 
         <!-- Below the nav, same as Home: Android draws the ad over the very bottom of the screen,
              and this only reserves matching room above it. -->
-        <ui:VisualElement name="native-ad-space" class="settings-ad-space" />
+        <ui:VisualElement name="native-ad-space" class="settings-ad-space">
+            <ui:Instance template="AdPlaceholder" name="ad-placeholder-slot" class="ad-placeholder-slot" />
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

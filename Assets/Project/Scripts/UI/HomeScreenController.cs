@@ -42,11 +42,15 @@ public class HomeScreenController : MonoBehaviour
     // The ad — banner or native, whichever the backend asked for — is drawn by Android over the
     // bottom of the screen; this only reserves matching room above it. A height of zero collapses the
     // box entirely, so no ad means no gap.
+    //
+    // The room opens as soon as the ad is REQUESTED, not when it arrives, and carries a skeleton in
+    // the meantime — otherwise the nav snapped upwards the instant the ad painted.
     private void OnAdHeightChanged(float heightPixels)
     {
         if (root == null) return;
 
-        NativeAdSpace.Apply(root.Q<VisualElement>("native-ad-space"), heightPixels);
+        NativeAdSpace.Apply(root.Q<VisualElement>("native-ad-space"), heightPixels,
+                            AdsManager.Instance != null && AdsManager.Instance.AdPlaceholderVisible);
     }
 
     private void OnUIReload(PanelRenderer renderer, VisualElement rootElement)

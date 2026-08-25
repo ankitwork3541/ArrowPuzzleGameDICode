@@ -96,13 +96,12 @@ public class BannerTestScreenController : MonoBehaviour
         DestroyBanners();
         slots.Clear();
 
-        // Anchored adaptive: hand it the screen's real dp width and the SDK returns the height it
-        // considers right for this device. Shared with BannerAdUnit so the two cannot drift — see
-        // the note there about why AdSize.FullWidth must not be used.
+        // The same two fixed sizes BannerAdUnit serves for styles 1 and 2, taken from it so the
+        // two cannot drift.
         slots.Add(new Slot
         {
-            title = "adaptive",
-            size = BannerAdUnit.AnchoredAdaptiveSize(),
+            title = "BANNER 320x50",
+            size = BannerAdUnit.StandardSize(),
             initialHeightDp = 50,
             spaceName = "ad-space-1",
             resultName = "result-1"
@@ -110,8 +109,8 @@ public class BannerTestScreenController : MonoBehaviour
 
         slots.Add(new Slot
         {
-            title = "large adaptive",
-            size = BannerAdUnit.LargeAnchoredAdaptiveSize(),
+            title = "LARGE_BANNER 320x100",
+            size = BannerAdUnit.LargeSize(),
             initialHeightDp = 100,
             spaceName = "ad-space-2",
             resultName = "result-2"

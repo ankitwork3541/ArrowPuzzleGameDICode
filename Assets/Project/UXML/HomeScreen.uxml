@@ -1,6 +1,7 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/Project/Themes/HomeScreen.uss?fileID=7433441132597879392&amp;guid=374be4457ec7e46788af90c7b240d263&amp;type=3#HomeScreen"/>
     <ui:Template name="BottomNav" src="project://database/Assets/Project/UXML/BottomNav.uxml" />
+    <ui:Template name="AdPlaceholder" src="project://database/Assets/Project/UXML/AdPlaceholder.uxml" />
     <ui:VisualElement name="screen-root" class="screen-root">
         <ui:VisualElement name="content" class="content">
             <ui:Label name="level-label" text="LEVEL 01" class="level-label"/>
@@ -15,6 +16,8 @@
             </ui:Button>
         </ui:VisualElement>
         <ui:Instance template="BottomNav" name="bottom-nav-slot" class="nav-slot" />
-        <ui:VisualElement name="native-ad-space" class="home-ad-space" />
+        <ui:VisualElement name="native-ad-space" class="home-ad-space">
+            <ui:Instance template="AdPlaceholder" name="ad-placeholder-slot" class="ad-placeholder-slot" />
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

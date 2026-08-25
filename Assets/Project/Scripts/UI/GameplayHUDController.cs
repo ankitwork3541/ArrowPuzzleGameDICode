@@ -296,7 +296,8 @@ public class GameplayHUDController : MonoBehaviour
         if (root == null) return;
 
         VisualElement adSpace = root.Q<VisualElement>("native-ad-space");
-        NativeAdSpace.Apply(adSpace, heightPixels);
+        NativeAdSpace.Apply(adSpace, heightPixels,
+                            AdsManager.Instance != null && AdsManager.Instance.AdPlaceholderVisible);
 
         float lift = heightPixels > 0f && adSpace != null
             ? NativeAdSpace.PixelsToPanel(adSpace, heightPixels)
