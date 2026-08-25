@@ -26,8 +26,5 @@ MonoBehaviour:
   interstitialCooldownSeconds: 30
   adClickCount: 3
   nativeRefreshSeconds: 30
-  defaultMainScreenStyle: 2
-  defaultPlayScreenStyle: 1
-  defaultSuccessScreenStyle: 4
   nativeStyles: []
   adMaxAgeMinutes: 30

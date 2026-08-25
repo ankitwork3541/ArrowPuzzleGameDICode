@@ -83,15 +83,7 @@ public class AdConfig : ScriptableObject
              + "that is left to the ad unit's own auto-refresh in the AdMob dashboard.")]
     public int nativeRefreshSeconds = 30;
 
-    [Header("Screen slot fallbacks")]
-    [Tooltip("Only used in test mode — outside it, no backend config means no ads at all. "
-             + "0 none, 1 banner 320x50, 2 large banner 320x100, 3 small native, "
-             + "4 big native. The success screen never shows a banner, so 1 and 2 mean nothing "
-             + "there.")]
-    public int defaultMainScreenStyle = 2;
-    public int defaultPlayScreenStyle = 1;
-    public int defaultSuccessScreenStyle = 4;
-
+    [Header("Native templates")]
     [Tooltip("Leave empty to use the built-in mapping: digit 3 renders Small, digit 4 Medium.")]
     public List<NativeStyleMapping> nativeStyles = new List<NativeStyleMapping>();
 

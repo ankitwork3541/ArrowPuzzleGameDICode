@@ -87,15 +87,12 @@ public class AdSettings
 
     public List<string> TestDeviceIds => baked.testDeviceIds;
 
-    // Digit 0 is a real answer ("no ad here"), so these cannot use Positive() — that treats 0 as
-    // "unset" and falls back to the baked value, which would turn an ad ON that the backend just
-    // switched off.
-    //
-    // The baked default* values behind these are reachable only when NO payload arrives at all —
-    // not even last launch's cached one. With a backend that answers, the remote digit always wins.
-    public int MainScreenStyle => Digit(remote?.main_screen, baked.defaultMainScreenStyle);
-    public int PlayScreenStyle => Digit(remote?.play_screen, baked.defaultPlayScreenStyle);
-    public int SuccessScreenStyle => Digit(remote?.success_screen, baked.defaultSuccessScreenStyle);
+    // The backend is the only source for these. With no payload — not even last launch's cached one
+    // — the answer is 0, "no ad on this screen", not a baked guess: ads do not run without a payload
+    // anyway (AdsEnabled is false), so a fallback digit could only ever be misleading.
+    public int MainScreenStyle => remote != null ? remote.main_screen : 0;
+    public int PlayScreenStyle => remote != null ? remote.play_screen : 0;
+    public int SuccessScreenStyle => remote != null ? remote.success_screen : 0;
 
     public AdSlotKind MainScreenSlot => SlotFor(MainScreenStyle);
     public AdSlotKind PlayScreenSlot => SlotFor(PlayScreenStyle);
@@ -206,12 +203,6 @@ public class AdSettings
     static int Positive(int? remoteValue, int bakedValue)
     {
         return remoteValue.HasValue && remoteValue.Value > 0 ? remoteValue.Value : bakedValue;
-    }
-
-    // Keeps a backend 0, which means "no ad on this screen", instead of reading it as missing.
-    static int Digit(int? remoteValue, int bakedValue)
-    {
-        return remoteValue.HasValue ? remoteValue.Value : bakedValue;
     }
 
     static bool IsAdUnit(string id)
