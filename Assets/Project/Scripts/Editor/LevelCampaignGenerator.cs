@@ -92,6 +92,9 @@ public static class LevelCampaignGenerator
     [MenuItem("ArrowPuzzle/Campaign/Bake 50 Levels")]
     static void Bake50() { Bake(50); }
 
+    [MenuItem("ArrowPuzzle/Campaign/Bake 250 Levels")]
+    static void Bake250() { Bake(250); }
+
     [MenuItem("ArrowPuzzle/Campaign/Bake 1000 Levels")]
     static void Bake1000() { Bake(1000); }
 
