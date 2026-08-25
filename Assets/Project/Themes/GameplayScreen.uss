@@ -177,7 +177,12 @@
 .oct-button__icon--back    { background-image: url("../Sprites/IconBack.png"); }
 .oct-button__icon--restart { background-image: url("../Sprites/IconRestart.png"); }
 .oct-button__icon--grid    { background-image: url("../Sprites/IconGrid.png"); }
-.oct-button__icon--hint    { background-image: url("../Sprites/IconAd.png"); }
+/* The hint button wears one of two glyphs. Free hints are the bulb; once they run out the hint
+   costs a rewarded ad, and the video glyph plus the magenta AD badge is what says so before the
+   player taps. Swapping the icon and not just the badge matters — a bulb with "AD" on it still
+   reads as a free hint at a glance. */
+.oct-button__icon--hint      { background-image: url("../Sprites/IconBulb.png"); }
+.oct-button__icon--hint-ad   { background-image: url("../Sprites/IconAd.png"); }
 
 /* Bottom-bar icons wear their button's neon colour; the small back icon stays
    neutral so the top row has exactly one accent in it. */

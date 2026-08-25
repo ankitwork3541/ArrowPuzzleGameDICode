@@ -26,6 +26,7 @@ public class GameplayHUDController : MonoBehaviour
     private List<VisualElement> hearts;
     private Button gridButton;
     private Button hintButton;
+    private VisualElement hintIcon;
     private VisualElement hintBadge;
     private Label hintBadgeLabel;
 
@@ -113,6 +114,7 @@ public class GameplayHUDController : MonoBehaviour
         hearts = root.Query<VisualElement>(className: "heart").ToList();
         gridButton = root.Q<Button>("grid-button");
         hintButton = root.Q<Button>("hint-button");
+        hintIcon = root.Q<VisualElement>("hint-icon");
         hintBadge = root.Q<VisualElement>("hint-badge");
         hintBadgeLabel = root.Q<Label>("hint-badge-label");
 
@@ -220,49 +222,47 @@ public class GameplayHUDController : MonoBehaviour
         HintManager hintMgr = HintManager.Instance ?? FindAnyObjectByType<HintManager>();
         if (hintMgr == null)
         {
-            if (hintBadge != null) hintBadge.style.display = DisplayStyle.None;
-            hintButton.SetEnabled(true);
-            hintButton.EnableInClassList("oct-button--disabled", false);
+            SetHintState(badgeText: null, adCost: false, enabled: true);
             return;
         }
 
         if (hintMgr.HasFreeHints)
         {
-            if (hintBadge != null)
-            {
-                hintBadge.style.display = DisplayStyle.Flex;
-                hintBadge.EnableInClassList("hint-badge--ad", false);
-            }
-            if (hintBadgeLabel != null)
-            {
-                hintBadgeLabel.text = hintMgr.RemainingHints.ToString();
-            }
-            hintButton.SetEnabled(true);
-            hintButton.EnableInClassList("oct-button--disabled", false);
+            SetHintState(hintMgr.RemainingHints.ToString(), adCost: false, enabled: true);
         }
         else if (hintMgr.IsRewardedAvailable)
         {
-            if (hintBadge != null)
-            {
-                hintBadge.style.display = DisplayStyle.Flex;
-                hintBadge.EnableInClassList("hint-badge--ad", true);
-            }
-            if (hintBadgeLabel != null)
-            {
-                hintBadgeLabel.text = "AD";
-            }
-            hintButton.SetEnabled(true);
-            hintButton.EnableInClassList("oct-button--disabled", false);
+            SetHintState("AD", adCost: true, enabled: true);
         }
         else
         {
-            if (hintBadge != null)
-            {
-                hintBadge.style.display = DisplayStyle.None;
-            }
-            hintButton.SetEnabled(false);
-            hintButton.EnableInClassList("oct-button--disabled", true);
+            SetHintState(badgeText: null, adCost: false, enabled: false);
         }
+    }
+
+    // One place for all three states, so the icon can never disagree with the badge. A null
+    // badgeText means no badge at all: nothing left to spend and no ad to earn one with.
+    private void SetHintState(string badgeText, bool adCost, bool enabled)
+    {
+        if (hintIcon != null)
+        {
+            hintIcon.EnableInClassList("oct-button__icon--hint", !adCost);
+            hintIcon.EnableInClassList("oct-button__icon--hint-ad", adCost);
+        }
+
+        if (hintBadge != null)
+        {
+            hintBadge.style.display = badgeText != null ? DisplayStyle.Flex : DisplayStyle.None;
+            hintBadge.EnableInClassList("hint-badge--ad", adCost);
+        }
+
+        if (hintBadgeLabel != null && badgeText != null)
+        {
+            hintBadgeLabel.text = badgeText;
+        }
+
+        hintButton.SetEnabled(enabled);
+        hintButton.EnableInClassList("oct-button--disabled", !enabled);
     }
 
     private void Apply()

@@ -69,6 +69,21 @@ public class ResultScreenController : MonoBehaviour
 
     private VisualElement AdSpace => root != null ? root.Q<VisualElement>("dialog-ad-space") : null;
 
+    // Reserves the box and fills it with the loading skeleton until the overlay paints. Room here is
+    // only ever opened for an ad already in hand, so this is a short bridge — a couple of frames plus
+    // however long RenderTemplate takes — not an open-ended wait like the bottom slots have.
+    private void ApplyAdSpace(VisualElement space, float heightPixels)
+    {
+        NativeAdSpace.Apply(space, heightPixels);
+
+        bool pending = AdsManager.Instance != null
+                       && AdsManager.Instance.Native != null
+                       && !AdsManager.Instance.Native.ShowingAd;
+
+        AdPlaceholder.SetVisible(space, heightPixels > 0f && pending,
+                                 NativeAdSpace.PixelsToPanel(space, heightPixels));
+    }
+
     private bool adRequested;
 
     // The ad has to be positioned over the reserved box, but that box has no width until UI Toolkit
@@ -139,7 +154,7 @@ public class ResultScreenController : MonoBehaviour
             yield break;
         }
 
-        NativeAdSpace.Apply(space, expectedHeightPx);
+        ApplyAdSpace(space, expectedHeightPx);
 
         // Two frames: one for the box's own height, one for the re-centred group around it. Then wait
         // for a resolved rect, because worldBound reads NaN until UI Toolkit has laid the panel out.
@@ -201,7 +216,7 @@ public class ResultScreenController : MonoBehaviour
         VisualElement space = AdSpace;
         if (space == null) return;
 
-        NativeAdSpace.Apply(space, heightPixels);
+        ApplyAdSpace(space, heightPixels);
 
         // Growing the box re-centres the card-and-ad group, which moves the box. GeometryChangedEvent
         // is supposed to catch that, but it fires only when UI Toolkit decides the rect changed — and

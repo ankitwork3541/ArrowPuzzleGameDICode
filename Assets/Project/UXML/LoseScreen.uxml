@@ -1,5 +1,6 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/Project/Themes/ResultScreen.uss" />
+    <ui:Template name="AdPlaceholder" src="project://database/Assets/Project/UXML/AdPlaceholder.uxml" />
 
     <!-- Same structure as WinScreen, so one controller drives both. What differs is the wording,
          the frame's colour, and that no confetti is added. The board behind is left visible on
@@ -26,6 +27,8 @@
 
         </ui:VisualElement>
 
-        <ui:VisualElement name="dialog-ad-space" class="dialog-ad-space" />
+        <ui:VisualElement name="dialog-ad-space" class="dialog-ad-space">
+            <ui:Instance template="AdPlaceholder" name="ad-placeholder-slot" class="ad-placeholder-slot" />
+        </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

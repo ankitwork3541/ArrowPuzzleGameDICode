@@ -51,10 +51,16 @@
     width: 62%;
 }
 
-.ad-ph__line--body {
-    width: 38%;
-    margin-top: 12px;
-    background-color: rgba(0, 229, 255, 0.06);
+/* Set here rather than inherited: this stylesheet travels with the template, and the result cards
+   do not put it under the same font root the bottom slots sit in. */
+.ad-ph__caption {
+    margin: 0;
+    margin-top: 10px;
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: rgba(0, 229, 255, 0.55);
+    -unity-text-align: middle-left;
+    -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-Bold%20SDF.asset?fileID=11400000&guid=2d8208c2123c041daaecd4a4cf0d1ae2&type=2#Oxanium-Bold SDF");
 }
 
 .ad-ph__cta {

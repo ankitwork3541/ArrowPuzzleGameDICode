@@ -96,6 +96,13 @@ public class AdsManager : MonoBehaviour
             {
                 Debug.Log("[Ads] Fresh config applied.");
                 OnSettingsChanged?.Invoke();
+
+                // The screen the player is already on asked for its ad using whatever settings were
+                // in hand at the time — last launch's cached payload, or the baked fallbacks on a
+                // first ever launch. Home opens in well under a second and the fetch has a five
+                // second timeout, so that is the normal case, not an edge one: without this the
+                // screen keeps a slot the backend has since changed for the rest of the session.
+                ReapplyScreenAd();
             }
         }));
 
@@ -237,6 +244,16 @@ public class AdsManager : MonoBehaviour
                   + " result=" + Settings.SuccessScreenStyle + "(" + Settings.SuccessScreenSlot + ")"
                   + " refresh=" + Settings.NativeRefreshSeconds + "s");
 
+        // Same reasoning as the test-ID error below: a build that ships with a forced digit serves
+        // whatever the last local test asked for and silently ignores the backend, and there is no
+        // way to tell from the outside.
+        if (Settings.HasStyleOverride)
+        {
+            Debug.LogError("[Ads] LOCAL SCREEN STYLE OVERRIDE IS ON — " + Settings.StyleOverrideSummary
+                           + ". The backend's main_screen / play_screen / success_screen are being "
+                           + "ignored. Set every force* field in AdConfig back to -1 before release.");
+        }
+
         // LogError, not LogWarning: shipping with this on serves Google's test inventory to real
         // players and earns nothing, and it also bypasses the "no backend config, no ads" rule.
         if (Settings.UsingTestIds)
@@ -275,14 +292,40 @@ public class AdsManager : MonoBehaviour
     // decides which of the two the screen gets; the position is the screen's, not the format's.
     public void ShowHomeAd()
     {
+        activeScreenAd = ScreenAd.Home;
         ShowScreenAd(Settings != null ? Settings.MainScreenSlot : AdSlotKind.None,
                      Settings != null ? Settings.MainScreenStyle : 0, "home");
     }
 
     public void ShowGameplayAd()
     {
+        activeScreenAd = ScreenAd.Gameplay;
         ShowScreenAd(Settings != null ? Settings.PlayScreenSlot : AdSlotKind.None,
                      Settings != null ? Settings.PlayScreenStyle : 0, "gameplay");
+    }
+
+    // Which screen's ad is currently up, so a settings change can re-ask for it. The screen itself
+    // cannot do this: it has no idea its slot digit just changed underneath it.
+    enum ScreenAd
+    {
+        None,
+        Home,
+        Gameplay
+    }
+
+    ScreenAd activeScreenAd;
+
+    void ReapplyScreenAd()
+    {
+        switch (activeScreenAd)
+        {
+            case ScreenAd.Home:
+                ShowHomeAd();
+                break;
+            case ScreenAd.Gameplay:
+                ShowGameplayAd();
+                break;
+        }
     }
 
     // digit is carried purely for the log: a slot of None prints as "None" and would not say which
@@ -333,6 +376,7 @@ public class AdsManager : MonoBehaviour
     public void HideScreenAds()
     {
         CancelPendingHide();
+        activeScreenAd = ScreenAd.None;
         HideBanner();
         HideNativeAd();
     }
@@ -356,6 +400,10 @@ public class AdsManager : MonoBehaviour
     {
         yield return new WaitForEndOfFrame();
         pendingHide = null;
+
+        // Cleared here rather than when the teardown was queued: a Show that arrived in the meantime
+        // cancels this coroutine, and it has already recorded which screen now owns the ad.
+        activeScreenAd = ScreenAd.None;
         HideBanner();
         HideNativeAd();
     }

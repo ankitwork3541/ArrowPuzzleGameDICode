@@ -166,3 +166,13 @@
     margin-top: 24px;
     display: none;
 }
+
+/* The <ui:Instance> wrapper around the ad-loading skeleton, styled here the same way `.nav-slot` is.
+   Absolute so the skeleton fills whatever height the box was opened to without ever driving it. */
+.ad-placeholder-slot {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}

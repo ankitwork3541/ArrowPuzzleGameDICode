@@ -95,6 +95,17 @@ public class AdConfig : ScriptableObject
     [Tooltip("Leave empty to use the built-in mapping: digit 3 renders Small, digit 4 Medium.")]
     public List<NativeStyleMapping> nativeStyles = new List<NativeStyleMapping>();
 
+    [Header("Local testing overrides")]
+    [Tooltip("Forces a screen's slot digit and ignores the backend entirely, so any combination can "
+             + "be tried without a backend change. -1 leaves the backend in charge, which is what a "
+             + "release build must ship with. 0 none, 1 banner 320x50, 2 large banner 320x100, "
+             + "3 small native, 4 big native. Anything else resolves to no ad.\n\n"
+             + "Unlike the fallbacks above these apply even WITH a backend payload in hand — that is "
+             + "the whole point, and it is why leaving one set is logged as an error.")]
+    public int forceMainScreenStyle = -1;
+    public int forcePlayScreenStyle = -1;
+    public int forceSuccessScreenStyle = -1;
+
     [Header("Ad freshness")]
     [Tooltip("An ad older than this is never shown, whether it was preloaded for a result card or "
              + "kept while the player was on another screen. Google treats a cached ad as stale "

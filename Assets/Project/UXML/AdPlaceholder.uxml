@@ -3,7 +3,9 @@
 
     <!-- Skeleton that fills a reserved ad box while the ad itself is still loading, so the screen
          opens the room once instead of jolting when the ad paints. The blocks mirror what the real
-         creative puts there: icon, headline, body, call-to-action, and a media area on tall slots.
+         creative puts there: icon, headline, call-to-action, and a media area on tall slots. The
+         caption sits where the creative's own body text would, so it needs no room of its own and
+         overlaps nothing — and it is what tells the player this strip is an ad on its way.
 
          Note: `.ad-placeholder-slot` (the <ui:Instance> wrapper) is styled in each host screen's
          stylesheet, the same way `.nav-slot` is. -->
@@ -12,7 +14,7 @@
             <ui:VisualElement class="ad-ph__thumb" picking-mode="Ignore" />
             <ui:VisualElement class="ad-ph__lines" picking-mode="Ignore">
                 <ui:VisualElement class="ad-ph__line ad-ph__line--title" picking-mode="Ignore" />
-                <ui:VisualElement class="ad-ph__line ad-ph__line--body" picking-mode="Ignore" />
+                <ui:Label text="LOADING AD..." class="ad-ph__caption" picking-mode="Ignore" />
             </ui:VisualElement>
             <ui:VisualElement class="ad-ph__cta" picking-mode="Ignore" />
         </ui:VisualElement>

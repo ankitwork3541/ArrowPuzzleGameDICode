@@ -90,9 +90,32 @@ public class AdSettings
     // Digit 0 is a real answer ("no ad here"), so these cannot use Positive() — that treats 0 as
     // "unset" and falls back to the baked value, which would turn an ad ON that the backend just
     // switched off.
-    public int MainScreenStyle => Digit(remote?.main_screen, baked.defaultMainScreenStyle);
-    public int PlayScreenStyle => Digit(remote?.play_screen, baked.defaultPlayScreenStyle);
-    public int SuccessScreenStyle => Digit(remote?.success_screen, baked.defaultSuccessScreenStyle);
+    //
+    // A local override sits in FRONT of the backend, not behind it like the baked fallbacks. That is
+    // deliberate: the backend always answers, so a value that only applied when it did not would
+    // never be reachable, and trying a combination would mean a backend change every time.
+    public int MainScreenStyle =>
+        Forced(baked.forceMainScreenStyle, Digit(remote?.main_screen, baked.defaultMainScreenStyle));
+
+    public int PlayScreenStyle =>
+        Forced(baked.forcePlayScreenStyle, Digit(remote?.play_screen, baked.defaultPlayScreenStyle));
+
+    public int SuccessScreenStyle =>
+        Forced(baked.forceSuccessScreenStyle, Digit(remote?.success_screen, baked.defaultSuccessScreenStyle));
+
+    // Whether any screen digit is being forced locally. Only used to shout about it in the log — a
+    // build that ships with one serves whatever the tester last tried instead of what the backend
+    // asks for, which is invisible from the outside.
+    public bool HasStyleOverride =>
+        baked.forceMainScreenStyle >= 0
+        || baked.forcePlayScreenStyle >= 0
+        || baked.forceSuccessScreenStyle >= 0;
+
+    public string StyleOverrideSummary =>
+        "main=" + Forced(baked.forceMainScreenStyle, -1)
+        + " play=" + Forced(baked.forcePlayScreenStyle, -1)
+        + " success=" + Forced(baked.forceSuccessScreenStyle, -1)
+        + " (-1 means not forced)";
 
     public AdSlotKind MainScreenSlot => SlotFor(MainScreenStyle);
     public AdSlotKind PlayScreenSlot => SlotFor(PlayScreenStyle);
@@ -209,6 +232,13 @@ public class AdSettings
     static int Digit(int? remoteValue, int bakedValue)
     {
         return remoteValue.HasValue ? remoteValue.Value : bakedValue;
+    }
+
+    // Negative means "not forced". 0 has to stay usable as a forced value — turning every screen off
+    // is a case worth being able to test.
+    static int Forced(int forcedValue, int resolvedValue)
+    {
+        return forcedValue >= 0 ? forcedValue : resolvedValue;
     }
 
     static bool IsAdUnit(string id)

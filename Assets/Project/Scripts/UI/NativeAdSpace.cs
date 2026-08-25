@@ -25,6 +25,21 @@ public static class NativeAdSpace
         space.style.height = PixelsToPanel(space, adHeightPixels);
     }
 
+    // What a box was last asked to reserve, kept on the element so it can be converted again once
+    // the panel is able to answer. See Apply() below.
+    class Reservation
+    {
+        public float pixels;
+        public bool placeholder;
+        public float appliedPanelHeight = float.NaN;
+
+        // Runs only while the box has not settled on its final height, and pauses itself once it
+        // has. A GeometryChangedEvent is not enough on its own: a panel that lays out to exactly
+        // the rect it had last visit raises none, and the box would then keep whatever height that
+        // visit left on it.
+        public IVisualElementScheduledItem retry;
+    }
+
     // The variant the anchored bottom slots use: room is opened the moment the ad is requested and
     // filled with a skeleton, so the layout settles once instead of jumping when the ad paints.
     //
@@ -32,6 +47,13 @@ public static class NativeAdSpace
     // flipping display to None cancels a transition mid-flight — which is the jolt this exists to
     // remove. A zero-height box with `flex-shrink: 0` and `overflow: hidden` takes up nothing, so
     // leaving it laid out costs the screen nothing.
+    //
+    // The reservation is REMEMBERED rather than applied once. Pixels to panel units needs the
+    // panel's laid-out height, and a screen that was only just re-activated has not been through a
+    // layout pass yet — PanelScale then falls back to 1, which reserves the raw pixel count and
+    // comes out visibly too tall on any scaled panel. The ad's own height never changes again after
+    // that (the banner is reused across screens), so nothing would ever correct it. Replaying the
+    // reservation each frame until the panel can convert it properly is what fixes that.
     public static void Apply(VisualElement space, float adHeightPixels, bool showPlaceholder)
     {
         if (space == null)
@@ -39,17 +61,78 @@ public static class NativeAdSpace
             return;
         }
 
-        float panelHeight = adHeightPixels > 0f ? PixelsToPanel(space, adHeightPixels) : 0f;
+        if (!(space.userData is Reservation state))
+        {
+            state = new Reservation();
+            space.userData = state;
+            state.retry = space.schedule.Execute(() => Reapply(space)).Every(16);
+        }
+
+        state.pixels = adHeightPixels;
+        state.placeholder = showPlaceholder;
+        state.retry.Resume();
+
+        Reapply(space);
+    }
+
+    static void Reapply(VisualElement space)
+    {
+        if (!(space.userData is Reservation state))
+        {
+            return;
+        }
 
         space.style.display = DisplayStyle.Flex;
-        space.style.height = panelHeight;
 
-        AdPlaceholder.SetVisible(space, showPlaceholder && panelHeight > 0f, panelHeight);
+        // Zero needs no conversion, so it can settle straight away even on an unlaid-out panel.
+        if (state.pixels <= 0f)
+        {
+            if (float.IsNaN(state.appliedPanelHeight)
+                || !Mathf.Approximately(state.appliedPanelHeight, 0f))
+            {
+                state.appliedPanelHeight = 0f;
+                space.style.height = 0f;
+            }
+
+            AdPlaceholder.SetVisible(space, false, 0f);
+            state.retry.Pause();
+            return;
+        }
+
+        // Panel not laid out yet. Converting now would write the raw pixel count and the retry would
+        // correct it a frame later — visible as an oversized gap that shrinks back. Whatever height
+        // is already on the box is the better thing to show until the panel can answer.
+        if (!TryPanelScale(space, out float scale))
+        {
+            if (!float.IsNaN(state.appliedPanelHeight))
+            {
+                AdPlaceholder.SetVisible(space, state.placeholder && state.appliedPanelHeight > 0f,
+                                         state.appliedPanelHeight);
+            }
+
+            return;
+        }
+
+        float panelHeight = state.pixels / scale;
+
+        // Compared against the value last written, NOT against resolvedStyle: mid-transition the
+        // resolved height is wherever the animation has got to, so it would never match and this
+        // would keep rewriting — restarting nothing, but never settling either.
+        if (float.IsNaN(state.appliedPanelHeight)
+            || !Mathf.Approximately(state.appliedPanelHeight, panelHeight))
+        {
+            state.appliedPanelHeight = panelHeight;
+            space.style.height = panelHeight;
+        }
+
+        AdPlaceholder.SetVisible(space, state.placeholder && panelHeight > 0f, panelHeight);
+        state.retry.Pause();
     }
 
     public static void Collapse(VisualElement space)
     {
         Apply(space, 0f);
+        AdPlaceholder.SetVisible(space, false, 0f);
     }
 
     public static float PixelsToPanel(VisualElement element, float pixels)
@@ -146,17 +229,28 @@ public static class NativeAdSpace
     // never be assumed to be 1.
     static float PanelScale(VisualElement element)
     {
+        return TryPanelScale(element, out float scale) ? scale : 1f;
+    }
+
+    // Says whether the panel can answer at all, instead of handing back a 1 that reads as a real
+    // answer. A screen that was only just re-activated has no layout yet, and a caller that treats
+    // 1 as the scale reserves the raw pixel count — too tall by whatever the panel is scaled by.
+    static bool TryPanelScale(VisualElement element, out float scale)
+    {
+        scale = 1f;
+
         if (element == null || element.panel == null)
         {
-            return 1f;
+            return false;
         }
 
         float panelHeight = element.panel.visualTree.layout.height;
         if (panelHeight <= 0f || float.IsNaN(panelHeight) || Screen.height <= 0)
         {
-            return 1f;
+            return false;
         }
 
-        return Screen.height / panelHeight;
+        scale = Screen.height / panelHeight;
+        return true;
     }
 }

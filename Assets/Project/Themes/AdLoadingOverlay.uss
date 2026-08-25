@@ -64,15 +64,13 @@
     -unity-background-image-tint-color: rgba(12, 18, 42, 0.98);
 }
 
+/* No background-image: the ring is drawn in AdLoadingOverlay.DrawSpinner via Painter2D, because a
+   sprite can only be rotated and a symmetric ring looks identical at every angle. This rule only
+   reserves the box it is painted into. */
 .ad-loading-spinner {
     width: 90px;
     height: 90px;
-    background-image: url("../Sprites/Circle01.png");
-    -unity-background-image-tint-color: rgb(0, 229, 255);
     margin-bottom: 28px;
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: contain;
 }
 
 .ad-loading-modal__title {
