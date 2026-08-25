@@ -3,8 +3,8 @@
 # min_api: 26
 # common_typos_disable
 # {"id":"com.android.tools.r8.mapping","version":"2.2"}
-# pg_map_id: 4eaa1a805bff0aa00e8ef2e49da8d7ace59cf7f5b9ac2b621b8cf78e51250c9b
-# pg_map_hash: SHA-256 4eaa1a805bff0aa00e8ef2e49da8d7ace59cf7f5b9ac2b621b8cf78e51250c9b
+# pg_map_id: c03e91725eeeceeacbada27671bae73f66c00acf91f6f6f5951434479d9b83e7
+# pg_map_hash: SHA-256 c03e91725eeeceeacbada27671bae73f66c00acf91f6f6f5951434479d9b83e7
 _COROUTINE.ArtificialStackFrames -> R8$$REMOVED$$CLASS$$0:
 # {"id":"sourceFile","fileName":"CoroutineDebugging.kt"}
 _COROUTINE.CoroutineDebuggingKt -> R8$$REMOVED$$CLASS$$1:
@@ -287681,6 +287681,8 @@ com.unity3d.player.R$color -> com.unity3d.player.R$color:
 com.unity3d.player.R$drawable -> com.unity3d.player.R$drawable:
     1:4:void <init>():0:0 -> <init>
 com.unity3d.player.R$id -> com.unity3d.player.R$id:
+    1:4:void <init>():0:0 -> <init>
+com.unity3d.player.R$layout -> com.unity3d.player.R$layout:
     1:4:void <init>():0:0 -> <init>
 com.unity3d.player.R$string -> com.unity3d.player.R$string:
     1:4:void <init>():0:0 -> <init>

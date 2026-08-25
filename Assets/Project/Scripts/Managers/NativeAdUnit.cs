@@ -575,51 +575,68 @@ public class NativeAdUnit : MonoBehaviour
                   + " px (screen " + Screen.width + " x " + Screen.height + ").");
     }
 
-    // Every field left unset renders exactly as Google ships it — its own font sizes, colours,
-    // image handling and spacing. That alone is NOT enough for the medium template; see below.
+    // Google's shipped medium template (gnt_medium_template_view.xml inside
+    // googlemobileads-unity.aar) is a hard-coded 350dp NativeAdView whose body TextView is
+    // wrap_content with no maxLines, while the CTA button below it carries a 35dp minimum height —
+    // three lines of body text alone can exceed the ~90dp left for both, pushing the CTA past the
+    // view's own bound ("Advertiser assets outside native ad view" in AdMob's validator). No field
+    // here can fix that; NativeTemplateStyle has no maxLines/height control.
     //
-    // Confirmed by extracting gnt_medium_template_view.xml straight out of
-    // googlemobileads-unity.aar: NativeAdView is a hard-coded 350dp tall. 190dp goes to the
-    // MediaView and 60dp to the icon/headline/rating row, leaving ~90dp for body + the CTA button.
-    // body is wrap_content with NO maxLines cap, and cta carries
-    // app:layout_constraintHeight_min="35dp". At the template's own default 12sp, three lines of
-    // body text (Google's own "Test Ad: Google Ads" creative wraps to exactly three) already come
-    // to roughly 90dp before the CTA's 35dp floor is even added — the two literally cannot both fit
-    // inside 90dp. That is Google's own layout, not a size we pushed in; it is why leaving every
-    // field blank still trips the validator with "Advertiser assets outside native ad view."
-    // There is no maxLines/height field on NativeTemplateTextStyle to cap it properly, so the only
-    // lever available is shrinking the body font enough to keep three lines under budget. Not
-    // bulletproof — a device with a large accessibility text-scale setting can still blow the
-    // budget — but it is the only medium-template mitigation NativeTemplateStyle exposes.
-    // The small template has no such defect: its container is wrap_content (grows to fit) and its
-    // body TextView is capped android:lines="1" in Google's own XML, so it cannot overflow itself.
+    // The actual fix is /AndroidResOverride/layout/{gnt,nextgen}_{medium,small}_template_view.xml —
+    // unityLibrary's own resources beat googlemobileads-unity.aar's for a same-named resource (see
+    // mainTemplate.gradle), so those replace Google's layout with a wrap_content NativeAdView, a
+    // body capped at maxLines="3" with ellipsize, and a fixed-height CTA that can never be squeezed.
+    // Both name pairs exist because this project runs the Next-Gen Android SDK architecture
+    // (GoogleMobileAdsSettings.asset: selectedGmaAndroidSdk = NextGen) — RenderTemplate() inflates
+    // nextgen_*_template_view.xml at runtime, not the legacy gnt_* ones; the gnt_* overrides are
+    // kept only in case that setting ever reverts to Standard.
     //
-    // Google's Native Validator (the popup this is fixing) only ever renders on TEST ad requests —
-    // live ad requests never show it — so this is a testing-time integration bug, not something a
-    // real player can see.
+    // With the layout fixed, colours and sizes below are free to differ from Google's defaults —
+    // that risk only existed against the old fixed-height template.
     static NativeTemplateStyle BuildStyle(NativeStyleMapping mapping)
     {
         NativeTemplateSize template = mapping != null ? mapping.template : NativeTemplateSize.Small;
 
-        // Logged so a build can be told apart from its predecessor without reading the source: if a
-        // device still shows our old palette, this line is what proves the APK predates the change.
-        Debug.Log("[NativeAd] Style: template=" + template
-                  + ", no font sizes, colours or backgrounds set — Google's template defaults.");
+        Debug.Log("[NativeAd] Style: template=" + template + ", theme colors applied.");
+
+        Color mainBg = new Color32(12, 18, 42, 255);                 // #0C122A dark sci-fi background
+        Color primaryTextColor = Color.white;                         // #FFFFFF crisp white headline
+        Color secondaryTextColor = new Color32(159, 176, 199, 255);    // #9FB0C7 cool gray secondary
+        Color bodyTextColor = new Color32(197, 209, 232, 255);         // #C5D1E8 readable bright gray-blue
+        Color ctaBgColor = new Color32(0, 229, 255, 255);              // #00E5FF neon cyan
+        Color ctaTextColor = new Color32(5, 11, 24, 255);              // #050B18 dark bold contrast
 
         NativeTemplateStyle style = new NativeTemplateStyle
         {
             TemplateId = template == NativeTemplateSize.Medium
                 ? NativeTemplateId.Medium
-                : NativeTemplateId.Small
+                : NativeTemplateId.Small,
+            MainBackgroundColor = mainBg,
+            PrimaryText = new NativeTemplateTextStyle
+            {
+                TextColor = primaryTextColor,
+                FontSize = template == NativeTemplateSize.Medium ? 15 : 14,
+                BackgroundColor = Color.clear
+            },
+            SecondaryText = new NativeTemplateTextStyle
+            {
+                TextColor = secondaryTextColor,
+                FontSize = 12,
+                BackgroundColor = Color.clear
+            },
+            TertiaryText = new NativeTemplateTextStyle
+            {
+                TextColor = bodyTextColor,
+                FontSize = 12,
+                BackgroundColor = Color.clear
+            },
+            CallToActionText = new NativeTemplateTextStyle
+            {
+                TextColor = ctaTextColor,
+                FontSize = template == NativeTemplateSize.Medium ? 14 : 13,
+                BackgroundColor = ctaBgColor
+            }
         };
-
-        if (template == NativeTemplateSize.Medium)
-        {
-            // 10sp keeps three wrapped lines at roughly 51dp including padding, leaving the CTA's
-            // 35dp floor a few dp of headroom inside the template's fixed ~90dp budget — see the
-            // math above. The default 12sp leaves none.
-            style.SecondaryText = new NativeTemplateTextStyle { FontSize = 10 };
-        }
 
         return style;
     }

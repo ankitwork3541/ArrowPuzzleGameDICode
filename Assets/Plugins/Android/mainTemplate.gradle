@@ -27,10 +27,12 @@ android {
 }
 // Android Resolver Exclusions End
 
-// Native ad template retheme. unityLibrary's own resources override those of its dependencies, and
-// googlemobileads-unity.aar is one of them — so this is the reliable place to replace the template
-// colours. A sibling .androidlib cannot do it: two libraries have no defined priority over each
-// other. Guarded so a missing folder warns instead of failing the build.
+// Native ad template retheme AND layout fix. unityLibrary's own resources override those of its
+// dependencies, and googlemobileads-unity.aar is one of them — so this is the reliable place to
+// replace both the template colours and the medium template's layout XML (see the comment on
+// NativeAdUnit.BuildStyle for why the layout override exists). A sibling .androidlib cannot do it:
+// two libraries have no defined priority over each other. Guarded so a missing folder warns
+// instead of failing the build.
 android {
     def adResDir = new File("**DIR_UNITYPROJECT**/AndroidResOverride")
     if (adResDir.isDirectory()) {
