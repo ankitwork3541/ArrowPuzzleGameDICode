@@ -106,6 +106,8 @@ public class RewardedAdUnit : MonoBehaviour
             }
         }));
 
+        Debug.Log("[RewardedAd] Requesting — unit " + unitId + ".");
+
         RewardedAd.Load(unitId, new AdRequest(), (RewardedAd loadedAd, LoadAdError error) =>
         {
             MobileAdsEventExecutor.ExecuteInUpdate(() =>

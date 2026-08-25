@@ -125,6 +125,11 @@ public class BannerAdUnit : MonoBehaviour
 
     public void Hide()
     {
+        if (wantVisible || banner != null)
+        {
+            Debug.Log("[Banner] Hidden and destroyed.");
+        }
+
         wantVisible = false;
         StopPresent();
         StopReserveTimeout();
@@ -153,6 +158,9 @@ public class BannerAdUnit : MonoBehaviour
         BannerView created = banner;
         RequestCount++;
 
+        Debug.Log("[Banner] Requesting " + (large ? "LARGE_BANNER 320x100" : "BANNER 320x50")
+                  + " — unit " + unitId + ", " + ExpectedHeightPx(large) + "px reserved.");
+
         // Hidden from the moment it exists. A BannerView puts itself on screen as soon as it loads,
         // and a banner that appears before the game's layout has opened room for it lands on top of
         // whatever is at the bottom of the screen — on the gameplay screen, the Hint and Restart
@@ -169,9 +177,11 @@ public class BannerAdUnit : MonoBehaviour
 
             IsLoaded = true;
             FillCount++;
+            Debug.Log("[Banner] Loaded.");
 
             if (!wantVisible)
             {
+                Debug.Log("[Banner] Loaded after the screen was left — held back, not shown.");
                 created.Hide();
                 return;
             }

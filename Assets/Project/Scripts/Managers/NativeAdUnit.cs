@@ -235,6 +235,7 @@ public class NativeAdUnit : MonoBehaviour
 
         isPreloading = true;
         RequestCount++;
+        Debug.Log("[NativeAd] Preloading " + slot + " for the result card — unit " + adUnitId + ".");
 
         NativeOverlayAd.Load(adUnitId, new AdRequest(), BuildOptions(), (ad, error) =>
         {
@@ -308,6 +309,11 @@ public class NativeAdUnit : MonoBehaviour
     // Full teardown. The ad object goes with it, so the next Show pays for a new request.
     public void Hide()
     {
+        if (wantVisible || currentAd != null)
+        {
+            Debug.Log("[NativeAd] Hidden and destroyed.");
+        }
+
         wantVisible = false;
         StopLoadLoop();
         StopMeasure();
@@ -326,6 +332,9 @@ public class NativeAdUnit : MonoBehaviour
     {
         loadInFlight = true;
         RequestCount++;
+
+        Debug.Log("[NativeAd] Requesting " + slot + " — unit " + adUnitId + ", "
+                  + ExpectedHeightPx(slot) + "px reserved.");
 
         NativeOverlayAd.Load(adUnitId, new AdRequest(), BuildOptions(), (ad, error) =>
         {
@@ -357,10 +366,12 @@ public class NativeAdUnit : MonoBehaviour
 
                 FillCount++;
                 consecutiveFailures = 0;
+                Debug.Log("[NativeAd] Loaded " + slot + ".");
 
                 // The player may have left the screen while the request was in flight.
                 if (!wantVisible || !IsAllowed(adUnitId, slot))
                 {
+                    Debug.Log("[NativeAd] Loaded after the screen was left — discarded, not shown.");
                     ad.Destroy();
                     return;
                 }

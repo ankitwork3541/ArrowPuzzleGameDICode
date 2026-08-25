@@ -91,14 +91,14 @@ public class InterstitialAdUnit : MonoBehaviour
 
         if (!manager.Settings.AdsEnabled)
         {
-            Debug.Log("[Ads] Interstitial skipped — ads disabled by config.");
+            Debug.Log("[Interstitial] Skipped — ads disabled by config.");
             return;
         }
 
         string unitId = manager.Settings.InterstitialId;
         if (string.IsNullOrEmpty(unitId))
         {
-            Debug.LogWarning("[Ads] No interstitial unit available — nothing to load.");
+            Debug.LogWarning("[Interstitial] No unit ID available — nothing to load.");
             return;
         }
 
@@ -106,6 +106,8 @@ public class InterstitialAdUnit : MonoBehaviour
         StopRoutine(ref watchdogRoutine);
         loading = true;
         watchdogRoutine = StartCoroutine(LoadWatchdog());
+
+        Debug.Log("[Interstitial] Requesting — unit " + unitId + ".");
 
         InterstitialAd.Load(unitId, new AdRequest(), (InterstitialAd loaded, LoadAdError error) =>
         {
@@ -124,7 +126,7 @@ public class InterstitialAdUnit : MonoBehaviour
 
                 if (error != null || loaded == null)
                 {
-                    Debug.LogWarning("[Ads] Interstitial load failed: "
+                    Debug.LogWarning("[Interstitial] Load failed: "
                                      + (error != null ? error.GetMessage() : "no ad returned"));
                     ScheduleRetry();
                     ReleaseWaiter(false);
@@ -134,7 +136,7 @@ public class InterstitialAdUnit : MonoBehaviour
                 failureStreak = 0;
                 ad = loaded;
                 RegisterEvents(ad);
-                Debug.Log("[Ads] Interstitial loaded.");
+                Debug.Log("[Interstitial] Loaded.");
                 ReleaseWaiter(true);
             });
         });
@@ -147,7 +149,7 @@ public class InterstitialAdUnit : MonoBehaviour
     {
         if (presentingFinished != null || waitingFinished != null)
         {
-            Debug.LogWarning("[Ads] Interstitial request ignored — one is already in progress.");
+            Debug.LogWarning("[Interstitial] Request ignored — one is already in progress.");
             onFinished?.Invoke();
             return;
         }
@@ -164,7 +166,7 @@ public class InterstitialAdUnit : MonoBehaviour
         // there is no point putting a loading modal in front of the player.
         if (!loading)
         {
-            Debug.LogWarning("[Ads] No interstitial in hand and no load could be started. Skipping.");
+            Debug.LogWarning("[Interstitial] No interstitial in hand and no load could be started. Skipping.");
             onFinished?.Invoke();
             return;
         }
@@ -182,7 +184,7 @@ public class InterstitialAdUnit : MonoBehaviour
         yield return new WaitForSecondsRealtime(OnDemandTimeoutSeconds);
         timeoutRoutine = null;
 
-        Debug.LogWarning("[Ads] On-demand interstitial timed out after "
+        Debug.LogWarning("[Interstitial] On-demand load timed out after "
                          + OnDemandTimeoutSeconds + "s. Skipping.");
 
         // The request itself is left running: if it lands late the ad is simply kept for next time.
@@ -199,7 +201,7 @@ public class InterstitialAdUnit : MonoBehaviour
             yield break;
         }
 
-        Debug.LogWarning("[Ads] Interstitial load never answered. Releasing the request.");
+        Debug.LogWarning("[Interstitial] Load never answered. Releasing the request.");
         loading = false;
         ScheduleRetry();
         ReleaseWaiter(false);
@@ -240,17 +242,17 @@ public class InterstitialAdUnit : MonoBehaviour
     private void RegisterEvents(InterstitialAd target)
     {
         target.OnAdPaid += value => MobileAdsEventExecutor.ExecuteInUpdate(() =>
-            Debug.Log("[Ads] Interstitial paid " + value.Value + " micro-" + value.CurrencyCode + "."));
+            Debug.Log("[Interstitial] Paid " + value.Value + " micro-" + value.CurrencyCode + "."));
 
         target.OnAdImpressionRecorded += () => MobileAdsEventExecutor.ExecuteInUpdate(() =>
-            Debug.Log("[Ads] Interstitial impression recorded."));
+            Debug.Log("[Interstitial] Impression recorded."));
 
         target.OnAdClicked += () => MobileAdsEventExecutor.ExecuteInUpdate(() =>
-            Debug.Log("[Ads] Interstitial clicked."));
+            Debug.Log("[Interstitial] Clicked."));
 
         target.OnAdFullScreenContentOpened += () => MobileAdsEventExecutor.ExecuteInUpdate(() =>
         {
-            Debug.Log("[Ads] Interstitial opened.");
+            Debug.Log("[Interstitial] Opened.");
             OnOpened?.Invoke();
         });
 
@@ -264,7 +266,11 @@ public class InterstitialAdUnit : MonoBehaviour
         {
             if (error != null)
             {
-                Debug.LogWarning("[Ads] Interstitial failed to show: " + error.GetMessage());
+                Debug.LogWarning("[Interstitial] Failed to show: " + error.GetMessage());
+            }
+            else
+            {
+                Debug.Log("[Interstitial] Closed by the player. Loading the next one.");
             }
 
             // An interstitial is a single-use object: once shown it can never be shown again, so
@@ -290,7 +296,7 @@ public class InterstitialAdUnit : MonoBehaviour
         int delay = Mathf.Min(MinBackoffSeconds << failureStreak, MaxBackoffSeconds);
         failureStreak = Mathf.Min(failureStreak + 1, 8);
 
-        Debug.Log("[Ads] Interstitial retry in " + delay + "s.");
+        Debug.Log("[Interstitial] Retry in " + delay + "s.");
         retryRoutine = StartCoroutine(RetryAfter(delay));
     }
 
