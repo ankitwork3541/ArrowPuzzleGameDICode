@@ -25,7 +25,7 @@ public static class LevelCampaignGenerator
     // bake reach 160 arrows by level 50, while the first 50 of the real campaign should still be
     // around 37 — so every test bake would be thrown away the moment the full campaign was built.
     // Baking fewer levels now simply produces a PREFIX of the final campaign.
-    const int CampaignLength = 1000;
+    const int CampaignLength = 1500;
 
     // Where the peaks travel. 160 arrows on ~40x50 matches the reference's hardest bucket.
     const int PeakArrowsStart = 36;
@@ -98,6 +98,9 @@ public static class LevelCampaignGenerator
     [MenuItem("ArrowPuzzle/Campaign/Bake 1000 Levels")]
     static void Bake1000() { Bake(1000); }
 
+    [MenuItem("ArrowPuzzle/Campaign/Bake 1500 Levels")]
+    static void Bake1500() { Bake(1500); }
+
     static void Bake(int totalLevels)
     {
         System.Diagnostics.Stopwatch clock = System.Diagnostics.Stopwatch.StartNew();
@@ -113,7 +116,7 @@ public static class LevelCampaignGenerator
 
         shapeFiles = LevelShapeMask.ListShapes();
         Debug.Log(shapeFiles.Length > 0
-            ? $"[Campaign] {shapeFiles.Length} silhouette(s) found — roughly 1 shaped and 2 notched board(s) "
+            ? $"[Campaign] {shapeFiles.Length} silhouette(s) found — roughly 2 shaped and 4 notched board(s) "
               + $"in every {BagSize} levels, order shuffled so it can't be predicted."
             : $"[Campaign] no silhouettes in {LevelShapeMask.FolderPath} — boards will be rectangle or notched only.");
 
@@ -338,9 +341,8 @@ public static class LevelCampaignGenerator
     const int BagSize = 10;
     static readonly BoardType[] BagTemplate =
     {
-        BoardType.Shaped,
-        BoardType.Notched, BoardType.Notched,
-        BoardType.Rectangle, BoardType.Rectangle, BoardType.Rectangle,
+        BoardType.Shaped, BoardType.Shaped,
+        BoardType.Notched, BoardType.Notched, BoardType.Notched, BoardType.Notched,
         BoardType.Rectangle, BoardType.Rectangle, BoardType.Rectangle, BoardType.Rectangle
     };
 
@@ -348,9 +350,8 @@ public static class LevelCampaignGenerator
     // that would only fall back to a rectangle anyway — the notch:rectangle ratio still holds.
     static readonly BoardType[] BagTemplateNoShapes =
     {
-        BoardType.Notched, BoardType.Notched,
-        BoardType.Rectangle, BoardType.Rectangle, BoardType.Rectangle,
-        BoardType.Rectangle, BoardType.Rectangle, BoardType.Rectangle, BoardType.Rectangle
+        BoardType.Notched, BoardType.Notched, BoardType.Notched, BoardType.Notched, BoardType.Notched,
+        BoardType.Rectangle, BoardType.Rectangle, BoardType.Rectangle, BoardType.Rectangle, BoardType.Rectangle
     };
 
     // A tiny onboarding board has no room to lose a corner and still teach the mechanic clearly —
