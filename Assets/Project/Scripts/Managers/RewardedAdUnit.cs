@@ -174,6 +174,11 @@ public class RewardedAdUnit : MonoBehaviour
                     Debug.Log("[RewardedAd] Reward earned: " + reward.Amount + " " + reward.Type);
                 }));
             });
+
+            loadedAd.OnAdPaid += (AdValue adValue) =>
+            {
+                AndroidDataBridge.SendDataToAndroid(adValue.Value,adValue.CurrencyCode,"Rewarded");
+            };
         });
 
         return true;

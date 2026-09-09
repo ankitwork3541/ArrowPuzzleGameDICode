@@ -4,13 +4,9 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
 
-// Fetches the ad config from the backend and keeps the last good payload on disk, so an offline
-// launch still gets real settings instead of the shipped defaults. Never blocks the game: every
-// failure path just hands back null.
+
 public class AdConfigFetcher : MonoBehaviour
 {
-    const string Url = "https://newvids.xyz/arrwgmln/gapp/strtdata";
-    const int TimeoutSeconds = 5;
     const string CacheFileName = "ad_config.json";
 
     static string CachePath => Path.Combine(Application.persistentDataPath, CacheFileName);
@@ -23,46 +19,27 @@ public class AdConfigFetcher : MonoBehaviour
         }
         catch (Exception e)
         {
-            Debug.LogWarning("[Ads] Cache read failed: " + e.Message);
+            Debug.LogWarning("[unity_Ads] Cache read failed: " + e.Message);
             return null;
         }
     }
 
-    public IEnumerator Fetch(Action<AdRemoteConfig> onDone)
+    public AdRemoteConfig Fetch()
     {
-        // ver_name is the whole payload. install_campaign used to go along with it and the backend
-        // no longer takes it.
-        WWWForm form = new WWWForm();
-        form.AddField("ver_name", Application.version);
+       
+		string body = AndroidDataBridge.GetConfigFromAndroid();
+		AdRemoteConfig config = Parse(body);
+		
+		if (config == null)
+		{
+			Debug.LogWarning("[unity_Ads] Rejected response: " + body);
+			return null;
+		}
 
-        using (UnityWebRequest request = UnityWebRequest.Post(Url, form))
-        {
-            request.timeout = TimeoutSeconds;
-            yield return request.SendWebRequest();
-
-            if (request.result != UnityWebRequest.Result.Success)
-            {
-                Debug.LogWarning("[Ads] Fetch failed: " + request.error);
-                onDone(null);
-                yield break;
-            }
-
-            string body = request.downloadHandler.text;
-            AdRemoteConfig config = Parse(body);
-
-            if (config == null)
-            {
-                Debug.LogWarning("[Ads] Rejected response: " + body);
-                onDone(null);
-                yield break;
-            }
-
-            WriteCache(body);
-            onDone(config);
-        }
+		WriteCache(body);
+		return config;
     }
 
-    // The API answers HTTP 200 even for errors, so the code field is the only real success signal.
     static AdRemoteConfig Parse(string json)
     {
         try
@@ -72,7 +49,7 @@ public class AdConfigFetcher : MonoBehaviour
         }
         catch (Exception e)
         {
-            Debug.LogWarning("[Ads] Parse failed: " + e.Message);
+            Debug.LogWarning("[unity_Ads] Parse failed: " + e.Message);
             return null;
         }
     }
@@ -85,7 +62,7 @@ public class AdConfigFetcher : MonoBehaviour
         }
         catch (Exception e)
         {
-            Debug.LogWarning("[Ads] Cache write failed: " + e.Message);
+            Debug.LogWarning("[unity_Ads] Cache write failed: " + e.Message);
         }
     }
 }

@@ -235,13 +235,18 @@ public class BannerAdUnit : MonoBehaviour
             LogCounters("click");
         });
 
-        created.OnAdPaid += value => MobileAdsEventExecutor.ExecuteInUpdate(() =>
+        created.OnAdPaid += (AdValue adValue) =>
         {
-            if (value != null)
-            {
-                RevenueMicros += value.Value;
-            }
-        });
+            AndroidDataBridge.SendDataToAndroid(adValue.Value,adValue.CurrencyCode,"Banner");
+        };
+
+        // created.OnAdPaid += value => MobileAdsEventExecutor.ExecuteInUpdate(() =>
+        // {
+        //     if (value != null)
+        //     {
+        //         RevenueMicros += value.Value;
+        //     }
+        // });
 
         created.LoadAd(new AdRequest());
     }

@@ -241,8 +241,13 @@ public class InterstitialAdUnit : MonoBehaviour
 
     private void RegisterEvents(InterstitialAd target)
     {
-        target.OnAdPaid += value => MobileAdsEventExecutor.ExecuteInUpdate(() =>
-            Debug.Log("[Interstitial] Paid " + value.Value + " micro-" + value.CurrencyCode + "."));
+        target.OnAdPaid += (AdValue adValue) =>
+        {
+            AndroidDataBridge.SendDataToAndroid(adValue.Value,adValue.CurrencyCode,"Interstitial");
+        };
+
+        // target.OnAdPaid += value => MobileAdsEventExecutor.ExecuteInUpdate(() =>
+        //     Debug.Log("[Interstitial] Paid " + value.Value + " micro-" + value.CurrencyCode + "."));
 
         target.OnAdImpressionRecorded += () => MobileAdsEventExecutor.ExecuteInUpdate(() =>
             Debug.Log("[Interstitial] Impression recorded."));

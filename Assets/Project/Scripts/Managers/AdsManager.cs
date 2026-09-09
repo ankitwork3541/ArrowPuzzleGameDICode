@@ -89,21 +89,19 @@ public class AdsManager : MonoBehaviour
 
     void Start()
     {
-        StartCoroutine(fetcher.Fetch(config =>
+        AdRemoteConfig config = fetcher.Fetch();
+        if (Settings.ApplyRemote(config))
         {
-            if (Settings.ApplyRemote(config))
-            {
-                Debug.Log("[Ads] Fresh config applied.");
-                OnSettingsChanged?.Invoke();
+            Debug.Log("[Ads] Fresh config applied.");
+            OnSettingsChanged?.Invoke();
 
-                // The screen the player is already on asked for its ad using whatever settings were
-                // in hand at the time — last launch's cached payload, or the baked fallbacks on a
-                // first ever launch. Home opens in well under a second and the fetch has a five
-                // second timeout, so that is the normal case, not an edge one: without this the
-                // screen keeps a slot the backend has since changed for the rest of the session.
-                ReapplyScreenAd();
-            }
-        }));
+            // The screen the player is already on asked for its ad using whatever settings were
+            // in hand at the time — last launch's cached payload, or the baked fallbacks on a
+            // first ever launch. Home opens in well under a second and the fetch has a five
+            // second timeout, so that is the normal case, not an edge one: without this the
+            // screen keeps a slot the backend has since changed for the rest of the session.
+            ReapplyScreenAd();
+        }
 
         Initialize();
     }

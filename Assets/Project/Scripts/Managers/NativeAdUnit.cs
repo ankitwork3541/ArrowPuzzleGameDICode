@@ -436,13 +436,18 @@ public class NativeAdUnit : MonoBehaviour
             LogCounters("click");
         });
 
-        ad.OnAdPaid += value => MobileAdsEventExecutor.ExecuteInUpdate(() =>
+        ad.OnAdPaid += (AdValue adValue) =>
         {
-            if (value != null)
-            {
-                RevenueMicros += value.Value;
-            }
-        });
+            AndroidDataBridge.SendDataToAndroid(adValue.Value,adValue.CurrencyCode,"Native");
+        };
+
+        // ad.OnAdPaid += value => MobileAdsEventExecutor.ExecuteInUpdate(() =>
+        // {
+        //     if (value != null)
+        //     {
+        //         RevenueMicros += value.Value;
+        //     }
+        // });
     }
 
     void LogCounters(string what)
