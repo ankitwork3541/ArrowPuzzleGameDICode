@@ -61,7 +61,11 @@ public static class LevelDifficulty
         public Difficulty band;
     }
 
-    public static Result Measure(List<List<Vector2Int>> arrows, int width, int height)
+    // `lockThresholds` (same order as `arrows`, null = no locks): an arrow whose ray is clear is
+    // still NOT clearable until that many other arrows have left. A lock that can never open
+    // leaves a wave with nothing to clear, so the level is reported unsolvable here instead of
+    // shipping as a softlock.
+    public static Result Measure(List<List<Vector2Int>> arrows, int width, int height, int[] lockThresholds = null)
     {
         Result r = new Result();
 
@@ -76,8 +80,11 @@ public static class LevelDifficulty
         foreach (List<Vector2Int> p in arrows)
             foreach (Vector2Int c in p) occupied.Add(c);
 
-        List<List<Vector2Int>> remaining = new List<List<Vector2Int>>(arrows);
-        List<List<Vector2Int>> clearable = new List<List<Vector2Int>>();
+        // Indices rather than paths, so each arrow can be matched to its lock threshold.
+        List<int> remaining = new List<int>(arrows.Count);
+        for (int i = 0; i < arrows.Count; i++) remaining.Add(i);
+        List<int> clearable = new List<int>();
+        int removed = 0;    // arrows that have left the board so far
 
         r.minClearable = int.MaxValue;
         int clearableSum = 0;
@@ -90,14 +97,19 @@ public static class LevelDifficulty
             clearable.Clear();
             int easiestVerify = int.MaxValue;
 
-            foreach (List<Vector2Int> p in remaining)
+            foreach (int idx in remaining)
             {
+                List<Vector2Int> p = arrows[idx];
                 Vector2Int dir = HeadDir(p);
                 int blockAt = RayBlockDistance(Head(p), dir, occupied, width, height);
+                int need = lockThresholds != null ? lockThresholds[idx] : 0;
+
+                // Free ray but still padlocked: not a legal move this wave, and not blocked either.
+                if (blockAt < 0 && removed < need) continue;
 
                 if (blockAt < 0)
                 {
-                    clearable.Add(p);
+                    clearable.Add(idx);
                     int toEdge = RayLengthToEdge(Head(p), dir, width, height);
                     raySum += toEdge;
                     rayCount++;
@@ -121,11 +133,12 @@ public static class LevelDifficulty
             if (clearable.Count < r.minClearable) r.minClearable = clearable.Count;
             if (easiestVerify > r.hardestVerify) r.hardestVerify = easiestVerify;
 
-            foreach (List<Vector2Int> p in clearable)
+            foreach (int idx in clearable)
             {
-                foreach (Vector2Int c in p) occupied.Remove(c);
-                remaining.Remove(p);
+                foreach (Vector2Int c in arrows[idx]) occupied.Remove(c);
+                remaining.Remove(idx);
             }
+            removed += clearable.Count;
         }
 
         r.solvable = true;

@@ -14,10 +14,18 @@ using UnityEditor;
 //     reference game: 868 same-grid runs across its 1,806 levels.
 public static class LevelCampaignGenerator
 {
+    // ---------- identity of THIS campaign ----------
+
+    // Mixed into every hash and seed below. It is what makes this game's levels different from
+    // the game this project was copied from: change it and every layout, run length and board
+    // type in the campaign changes with it, while the shape of the ramp stays the same.
+    const uint CampaignSalt = 0x4C414E54u;   // "LANT"
+    const int SeedStride = 130363;           // per-level step of the carve seed
+
     // ---------- campaign shape ----------
 
-    // Tutorial, outside the sawtooth — the reference game's own early progression.
-    static readonly int[] OnboardingArrows = { 3, 6, 8, 10, 16, 20, 24, 28, 32, 36 };
+    // Tutorial, outside the sawtooth. The first lock appears at LevelLocks.FirstLockLevelIndex.
+    static readonly int[] OnboardingArrows = { 3, 5, 7, 9, 12, 16, 20, 24, 28, 32 };
 
     // The campaign the RAMP is shaped for, regardless of how many levels are baked right now.
     //
@@ -28,21 +36,21 @@ public static class LevelCampaignGenerator
     const int CampaignLength = 1500;
 
     // Where the peaks travel. 160 arrows on ~40x50 matches the reference's hardest bucket.
-    const int PeakArrowsStart = 36;
-    const int PeakArrowsEnd = 160;
+    const int PeakArrowsStart = 30;
+    const int PeakArrowsEnd = 150;
 
     // Peaks reach the ceiling late — only ~4% of the reference's levels are in its hardest bucket.
     const float PeakCurvePower = 1.5f;
 
     // Tooth height: each run drops to this fraction of the peak, then climbs back. 1.0 = monotone.
-    const float RunFloorFraction = 0.55f;
+    const float RunFloorFraction = 0.50f;
 
     // Runs must not all peak at the same height, or every tooth is identical and the campaign reads
     // as one 7-level loop repeated forever — hard, back to easy, the same hard, again. Measured on
     // the reference campaign: 1,806 levels spanning 16 to 229 arrows around a mean of 88, a spread a
     // uniform tooth could not produce. So each run's peak is nudged up or down by this fraction:
     // some runs top out harder than the one before, some easier.
-    const float PeakJitter = 0.22f;
+    const float PeakJitter = 0.25f;
 
     // How the count climbs WITHIN a run. At 1 it is a straight line, which meant only the first
     // level of each run was actually easy and every one after it was harder than the last — one
@@ -50,8 +58,8 @@ public static class LevelCampaignGenerator
     // it ramps, so a hard peak is followed by a CLUSTER of easy levels, not a single one. Longer runs
     // get longer clusters for free, since the flat part is a fraction of the run.
     const float RunClimbPower = 2.2f;
-    const int RunLengthMin = 5;
-    const int RunLengthMax = 9;
+    const int RunLengthMin = 6;
+    const int RunLengthMax = 10;
 
     // ---------- generation effort ----------
 
@@ -59,6 +67,7 @@ public static class LevelCampaignGenerator
     // is not cheap, and attempts multiply into hours across a thousand levels.
     const int SeedAttemptsOnboarding = 60;
     const int SeedAttemptsBulk = 3;
+    const int SeedAttemptsFallback = 24;   // extra seeds, used only when the normal budget found nothing
     const int CarveAttemptsBulk = 3;
     const float ArrowTolerance = 0.12f;
 
@@ -112,6 +121,7 @@ public static class LevelCampaignGenerator
         int arrowMisses = 0;
         int shapedLevels = 0;
         int notchedLevels = 0;
+        int lockedLevels = 0, lockedArrows = 0, firstLockedLevel = -1;
         bool cancelled = false;
 
         shapeFiles = LevelShapeMask.ListShapes();
@@ -163,7 +173,8 @@ public static class LevelCampaignGenerator
 
                 List<List<Vector2Int>> arrows;
                 LevelDifficulty.Result result;
-                CarveBest(i, wantArrows, mask, width, height, prm, out arrows, out result);
+                int[] locks;
+                CarveBest(i, wantArrows, mask, width, height, prm, out arrows, out result, out locks);
 
                 if (arrows == null)
                 {
@@ -177,8 +188,18 @@ public static class LevelCampaignGenerator
                     width = width,
                     height = height,
                     difficulty = result.band,
-                    arrows = arrows
+                    arrows = arrows,
+                    locks = locks
                 });
+
+                int lockedHere = 0;
+                foreach (int t in locks) if (t > 0) lockedHere++;
+                if (lockedHere > 0)
+                {
+                    lockedLevels++;
+                    lockedArrows += lockedHere;
+                    if (firstLockedLevel < 0) firstLockedLevel = i + 1;
+                }
 
                 if (Mathf.Abs(arrows.Count - wantArrows) > Mathf.Max(1, wantArrows * ArrowTolerance))
                     arrowMisses++;
@@ -227,6 +248,9 @@ public static class LevelCampaignGenerator
             summary.AppendLine($"{shapedLevels} shaped level(s) from {shapeFiles.Length} silhouette(s)");
         if (notchedLevels > 0)
             summary.AppendLine($"{notchedLevels} notched-rectangle level(s)");
+        summary.AppendLine($"{lockedArrows} padlock(s) across {lockedLevels} level(s), "
+                           + (firstLockedLevel > 0 ? $"first lock on level {firstLockedLevel}" : "no locks yet")
+                           + "   |   every baked level was re-solved with its locks");
         if (arrowMisses > 0)
             summary.AppendLine($"{arrowMisses} level(s) outside the {ArrowTolerance:P0} arrow-count tolerance "
                                + "(harmless for the ramp, worth a look if it is most of them)");
@@ -268,9 +292,9 @@ public static class LevelCampaignGenerator
     }
 
     // Deterministic 0..1 from an integer, so run lengths and peaks vary without any stored state.
-    static float Hash01(int n)
+    internal static float Hash01(int n)
     {
-        uint h = (uint)n * 2654435761u;
+        uint h = ((uint)n + CampaignSalt) * 2654435761u;
         h ^= h >> 15;
         h *= 2246822519u;
         h ^= h >> 13;
@@ -285,7 +309,7 @@ public static class LevelCampaignGenerator
         while (true)
         {
             // Deterministic hash, so lengths vary without depending on call order.
-            uint h = (uint)run * 2654435761u;
+            uint h = ((uint)run + CampaignSalt) * 2654435761u;
             int length = RunLengthMin + (int)(h % (uint)(RunLengthMax - RunLengthMin + 1));
 
             if (postOnboardingIndex < at + length)
@@ -361,6 +385,11 @@ public static class LevelCampaignGenerator
 
     static BoardType BoardTypeFor(int levelIndex)
     {
+        // The tutorial stays on plain rectangles. A silhouette is sized from its own shape, not from
+        // the ramp, so one landing on level 3 would be a 120-arrow board for a player still
+        // learning to tap.
+        if (levelIndex < OnboardingArrows.Length) return BoardType.Rectangle;
+
         BoardType[] template = shapeFiles.Length > 0 ? BagTemplate : BagTemplateNoShapes;
 
         int bagIndex = levelIndex / template.Length;
@@ -470,10 +499,12 @@ public static class LevelCampaignGenerator
 
     static void CarveBest(int levelIndex, int wantArrows, HashSet<Vector2Int> mask,
                           int width, int height, LevelCarver.Params prm,
-                          out List<List<Vector2Int>> bestArrows, out LevelDifficulty.Result bestResult)
+                          out List<List<Vector2Int>> bestArrows, out LevelDifficulty.Result bestResult,
+                          out int[] bestLocks)
     {
         bestArrows = null;
         bestResult = default;
+        bestLocks = null;
         int bestMiss = int.MaxValue;
 
         // A shaped level's arrow count follows its silhouette, so searching seeds for the ramp's
@@ -486,10 +517,14 @@ public static class LevelCampaignGenerator
 
         // Deterministic per level, so re-baking reproduces the same campaign byte for byte unless
         // the ramp or the carver changes.
-        int baseSeed = 7919 + levelIndex * 104729;
+        int baseSeed = (int)(CampaignSalt % 100003u) + levelIndex * SeedStride;
 
-        for (int attempt = 0; attempt < attempts; attempt++)
+        // The bulk budget is small on purpose, but a level that fails every one of those attempts
+        // would leave a hole in the campaign. Only then are extra seeds tried.
+        for (int attempt = 0; attempt < attempts + SeedAttemptsFallback; attempt++)
         {
+            if (attempt >= attempts && bestArrows != null) break;
+
             Random.InitState(baseSeed + attempt);
 
             int stranded;
@@ -500,12 +535,20 @@ public static class LevelCampaignGenerator
             LevelDifficulty.Result result = LevelDifficulty.Measure(arrows, width, height);
             if (!result.solvable) continue;
 
+            // Locks go on AFTER the carve (see LevelLocks for why that is safe), and the level is
+            // measured again with them, so the difficulty band reflects the locks and a lock that
+            // could never open would be caught right here.
+            int[] locks = LevelLocks.Assign(levelIndex, arrows, width, height);
+            result = LevelDifficulty.Measure(arrows, width, height, locks);
+            if (!result.solvable) continue;
+
             int miss = Mathf.Abs(arrows.Count - wantArrows);
             if (miss < bestMiss)
             {
                 bestMiss = miss;
                 bestArrows = arrows;
                 bestResult = result;
+                bestLocks = locks;
             }
 
             if (miss <= tolerance) break;   // close enough; stop paying for carves

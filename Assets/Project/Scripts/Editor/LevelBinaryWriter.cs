@@ -16,6 +16,7 @@ public static class LevelBinaryWriter
         public int width, height;
         public Difficulty difficulty;
         public List<List<Vector2Int>> arrows;    // each path is tail-first, same as LevelData
+        public int[] locks;                      // lock threshold per arrow, same order; null = no locks
     }
 
     public const string OutputFolder = "Assets/Project/Resources/Levels";
@@ -86,8 +87,9 @@ public static class LevelBinaryWriter
         data.Add((byte)(level.arrows.Count & 0xFF));
         data.Add((byte)((level.arrows.Count >> 8) & 0xFF));
 
-        foreach (List<Vector2Int> path in level.arrows)
+        for (int arrowIndex = 0; arrowIndex < level.arrows.Count; arrowIndex++)
         {
+            List<Vector2Int> path = level.arrows[arrowIndex];
             int tailIndex = path[0].y * level.width + path[0].x;
             data.Add((byte)(tailIndex & 0xFF));
             data.Add((byte)((tailIndex >> 8) & 0xFF));
@@ -105,6 +107,8 @@ public static class LevelBinaryWriter
                 int bitPos = s * 2;
                 data[start + (bitPos >> 3)] |= (byte)(dir << (bitPos & 7));
             }
+
+            data.Add((byte)(level.locks != null ? level.locks[arrowIndex] : 0));
         }
     }
 
@@ -133,6 +137,25 @@ public static class LevelBinaryWriter
             {
                 error = $"level {i}: {level.arrows.Count} arrows — count must fit a ushort";
                 return false;
+            }
+
+            if (level.locks != null && level.locks.Length != level.arrows.Count)
+            {
+                error = $"level {i}: {level.locks.Length} lock entries for {level.arrows.Count} arrows";
+                return false;
+            }
+
+            if (level.locks != null)
+            {
+                for (int a = 0; a < level.locks.Length; a++)
+                {
+                    // A lock needs `threshold` OTHER arrows to leave, so it can never exceed arrows - 1.
+                    if (level.locks[a] < 0 || level.locks[a] > 255 || level.locks[a] > level.arrows.Count - 1)
+                    {
+                        error = $"level {i} arrow {a}: lock {level.locks[a]} is outside 0..{level.arrows.Count - 1}";
+                        return false;
+                    }
+                }
             }
 
             foreach (List<Vector2Int> path in level.arrows)
@@ -207,6 +230,13 @@ public static class LevelBinaryWriter
                     {
                         List<Vector2Int> want = expected.arrows[a];
                         List<Vector2Int> got = scratch.arrows[a].path;
+
+                        int wantLock = expected.locks != null ? expected.locks[a] : 0;
+                        if (scratch.arrows[a].lockThreshold != wantLock)
+                        {
+                            error = $"chunk {chunk} level {i} arrow {a}: lock {scratch.arrows[a].lockThreshold} != {wantLock}";
+                            return false;
+                        }
 
                         if (got.Count != want.Count)
                         {

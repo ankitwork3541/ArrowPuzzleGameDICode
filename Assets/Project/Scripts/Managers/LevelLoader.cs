@@ -159,6 +159,7 @@ public class LevelLoader : MonoBehaviour
             ArrowController newArrow = Instantiate(arrowPrefab);
             newArrow.Init(new List<Vector2Int>(arrowData.path), gridBuilder);
             newArrow.SetBaseColor(colors.Next());
+            newArrow.SetLock(arrowData.lockThreshold);
             spawnedArrows.Add(newArrow);
         }
 

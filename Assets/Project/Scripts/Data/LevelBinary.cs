@@ -12,7 +12,9 @@ public static class LevelBinary
 {
     // 'A' 'P' 'L' 'C' — Arrow Puzzle Level Chunk.
     public const uint Magic = 0x434C5041;
-    public const ushort Version = 1;
+    // 2: every arrow record ends with a lock-threshold byte. A version-1 chunk is refused by
+    // IsValidChunk with a clear message, never half-read.
+    public const ushort Version = 2;
 
     // 50 files at 50,000 levels — few enough that Resources' index cost stays irrelevant.
     public const int LevelsPerChunk = 1000;
@@ -67,6 +69,7 @@ public static class LevelBinary
     //   0  tailIndex        uint16    (y * gridWidth + x of the TAIL cell)
     //   2  length           uint8     (cells, always >= 2)
     //   3  direction bits   ceil((length - 1) * 2 / 8) bytes, 2 bits per step, low bits first
+    //   .  lockThreshold    uint8     (0 = unlocked; follows the direction bits)
 
     public const int HeaderSize = 16;
 
@@ -157,6 +160,9 @@ public static class LevelBinary
             }
 
             at = bitsAt + DirectionBytes(length);
+
+            arrow.lockThreshold = ReadU8(bytes, at);
+            at += 1;
         }
     }
 }
