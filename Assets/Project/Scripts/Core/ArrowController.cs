@@ -50,6 +50,92 @@ public class ArrowController : MonoBehaviour
     // not something the player needs pointed at, and it can't be pulsed safely either.
     public bool IsBusy => isMoving;
 
+    // How many OTHER arrows must still leave the board before this one can be tapped.
+    // 0 means unlocked. Set through SetLock() so the padlock label stays in step.
+    public int lockRemaining = 0;
+
+    public bool IsLocked => lockRemaining > 0;
+
+    // Placeholder padlock: a world-space number on the arrow's middle cell. Story 004 swaps in
+    // real art; the lock RULE does not depend on how it is drawn.
+    private TextMesh lockLabel;
+    private Tween lockTween;
+
+    public void SetLock(int remaining)
+    {
+        lockRemaining = Mathf.Max(0, remaining);
+
+        if (lockRemaining == 0)
+        {
+            RemoveLockLabel();
+            return;
+        }
+
+        if (lockLabel == null) CreateLockLabel();
+        lockLabel.text = lockRemaining.ToString();
+    }
+
+    void CreateLockLabel()
+    {
+        GameObject go = new GameObject("LockLabel");
+        go.transform.SetParent(transform, true);
+        go.transform.position = gridBuilder.GridToWorld(path[path.Count / 2]);
+
+        Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        lockLabel = go.AddComponent<TextMesh>();
+        lockLabel.font = font;
+        lockLabel.fontSize = 64;
+        lockLabel.characterSize = gridBuilder.spacing * 0.08f;
+        lockLabel.anchor = TextAnchor.MiddleCenter;
+        lockLabel.alignment = TextAlignment.Center;
+        lockLabel.color = Color.white;
+
+        MeshRenderer meshRenderer = go.GetComponent<MeshRenderer>();
+        meshRenderer.sharedMaterial = font.material;
+        meshRenderer.sortingOrder = 50;
+    }
+
+    void RemoveLockLabel()
+    {
+        if (lockLabel == null) return;
+        Destroy(lockLabel.gameObject);
+        lockLabel = null;
+    }
+
+    // Every arrow that leaves the board counts one off the lock. At zero the lock opens.
+    void OnOtherArrowLeft()
+    {
+        if (!IsLocked) return;
+
+        lockRemaining--;
+        if (lockRemaining > 0)
+        {
+            lockLabel.text = lockRemaining.ToString();
+            return;
+        }
+
+        // Unlock: a quick pop on the label, then it disappears.
+        TextMesh label = lockLabel;
+        lockLabel = null;
+        if (label == null) return;
+        Tween.PunchScale(label.transform, strength: Vector3.one * 1.2f, duration: 0.3f)
+            .OnComplete(label.gameObject, warnIfTargetDestroyed: false, onComplete: go => Destroy(go));
+    }
+
+    void ShakeLock()
+    {
+        if (lockLabel == null) return;
+        if (lockTween.isAlive) lockTween.Complete();
+        lockTween = Tween.ShakeLocalPosition(lockLabel.transform,
+            strength: new Vector3(gridBuilder.spacing * 0.15f, 0f, 0f), duration: 0.25f, frequency: 20f);
+    }
+
+    void OnDestroy()
+    {
+        if (LevelManager.Instance != null)
+            LevelManager.Instance.OnArrowLeft -= OnOtherArrowLeft;
+    }
+
     // This arrow's own neon colour, handed out by LevelLoader at spawn. White is only the
     // fallback for an arrow dropped into the scene by hand, so the Editor still shows something.
     public Color baseColor = Color.white;
@@ -98,6 +184,9 @@ public class ArrowController : MonoBehaviour
         gridBuilder = builder;
         DrawPath();
         ClaimOccupancy();
+
+        if (LevelManager.Instance != null)
+            LevelManager.Instance.OnArrowLeft += OnOtherArrowLeft;
     }
 
     void ClaimOccupancy()
@@ -120,6 +209,13 @@ public class ArrowController : MonoBehaviour
     // reference game has thinner lines and no touch trouble at all.
     public void HandleTap()
     {
+        // A locked arrow never starts a run: no move, no bump, no life lost. Only the padlock reacts.
+        if (IsLocked)
+        {
+            ShakeLock();
+            return;
+        }
+
         // A fresh tap starts a new run, so the wind-up starts from slow again. Guarded by
         // isMoving because TryAdvance() also re-enters itself to continue the current run.
         if (!isMoving) BeginRun();
@@ -564,6 +660,9 @@ public class ArrowController : MonoBehaviour
     // Hint mate: aa arrow ne have tap karay to e exit sudhi (bina blocked thaya) pahochi shake ke nahi
     public bool CanExit()
     {
+        // A locked arrow cannot be tapped, so hint and guide lines must not treat it as a way out.
+        if (IsLocked) return false;
+
         int n = path.Count;
         if (n < 2) return false;
 
