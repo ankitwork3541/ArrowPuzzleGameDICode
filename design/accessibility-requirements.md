@@ -1,4 +1,4 @@
-# Accessibility Requirements: Lantern Dragons
+# Accessibility Requirements: Arrow Dragon Puzzle
 
 > **Committed tier**: **Standard**
 > **Status**: ASSUMED on 2026-10-20 (the developer asked to go fast and did not choose a tier). It can be raised or lowered by editing this file; until then every UI review gates on it.

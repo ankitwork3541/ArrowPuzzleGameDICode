@@ -1,4 +1,4 @@
-# Game Brief: Lantern Dragons
+# Game Brief: Arrow Dragon Puzzle (working theme: Lantern Dragons)
 
 **One-sentence pitch:** Tap paper dragons to slide them off a warm paper festival board, but padlocked dragons stay stuck until enough other dragons have escaped.
 

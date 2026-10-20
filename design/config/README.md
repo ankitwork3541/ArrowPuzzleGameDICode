@@ -47,7 +47,8 @@ without it only if the generator is data-driven, otherwise informational), `diff
 
 ## `ui`
 
-`options_rows.*` (show or hide each Options row), `reduce_motion_default`, `confetti`, `level_map`.
+`options_rows.*` (show or hide each Options row), `reduce_motion_default`, `confetti`, `level_map`, `lock_tutorial`
+(the one-time coach overlay on the first padlock level; `false` = it never shows).
 (`nav_unlock_levels` was removed on 2026-10-20: the bottom dock is not configurable from the API.)
 
 ## `message`

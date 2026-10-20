@@ -5218,3 +5218,121 @@ production/session-logs/session-cost.md
 production/session-logs/session-log.md
 ---
 
+## Session End: 20261020_135914
+### Commits
+0a79927 docs: audio design document, SFX spec and audio research report
+bd97844 feat: real CC0 audio, eight new sound events, SoundDirector rewrite and light haptics
+d6f2842 docs: game config schema and README, Story 007 evidence and frames, updated specs
+4f7e684 feat: new package id, standalone ad/config stack, fully dynamic game config, two-item dock
+8369eba docs: QA evidence, rename report, accessibility tier, sprint plan and Layout v2 spec
+f341ca0 refactor: rename the whole project to Lantern Dragons names, plus review fixes and accessibility
+0063ab5 chore: safety snapshot before the file rename (light paper theme, new UI, shapes, level map)
+---
+
+## Session End: 20261020_140243
+### Commits
+0a79927 docs: audio design document, SFX spec and audio research report
+bd97844 feat: real CC0 audio, eight new sound events, SoundDirector rewrite and light haptics
+d6f2842 docs: game config schema and README, Story 007 evidence and frames, updated specs
+4f7e684 feat: new package id, standalone ad/config stack, fully dynamic game config, two-item dock
+8369eba docs: QA evidence, rename report, accessibility tier, sprint plan and Layout v2 spec
+f341ca0 refactor: rename the whole project to Lantern Dragons names, plus review fixes and accessibility
+0063ab5 chore: safety snapshot before the file rename (light paper theme, new UI, shapes, level map)
+### Uncommitted Changes
+Assets/Project/Scripts/Core/DragonController.cs
+production/session-logs/.session-end.hash
+production/session-logs/session-cost.md
+production/session-logs/session-log.md
+---
+
+## Session End: 20261020_140533
+### Commits
+0a79927 docs: audio design document, SFX spec and audio research report
+bd97844 feat: real CC0 audio, eight new sound events, SoundDirector rewrite and light haptics
+d6f2842 docs: game config schema and README, Story 007 evidence and frames, updated specs
+4f7e684 feat: new package id, standalone ad/config stack, fully dynamic game config, two-item dock
+8369eba docs: QA evidence, rename report, accessibility tier, sprint plan and Layout v2 spec
+f341ca0 refactor: rename the whole project to Lantern Dragons names, plus review fixes and accessibility
+0063ab5 chore: safety snapshot before the file rename (light paper theme, new UI, shapes, level map)
+### Uncommitted Changes
+Assets/Project/Scripts/Core/DragonController.cs
+Assets/Project/Scripts/Data/GameConfig.cs
+Assets/Project/Themes/IntroScreen.uss
+Assets/Project/UXML/HallScreen.uxml
+Assets/Project/UXML/IntroScreen.uxml
+design/config/game-config.sample.json
+design/game-brief.md
+production/session-logs/.session-end.hash
+production/session-logs/session-cost.md
+production/session-logs/session-log.md
+---
+
+## Session End: 20261020_141946
+### Commits
+0a79927 docs: audio design document, SFX spec and audio research report
+bd97844 feat: real CC0 audio, eight new sound events, SoundDirector rewrite and light haptics
+d6f2842 docs: game config schema and README, Story 007 evidence and frames, updated specs
+4f7e684 feat: new package id, standalone ad/config stack, fully dynamic game config, two-item dock
+8369eba docs: QA evidence, rename report, accessibility tier, sprint plan and Layout v2 spec
+f341ca0 refactor: rename the whole project to Lantern Dragons names, plus review fixes and accessibility
+0063ab5 chore: safety snapshot before the file rename (light paper theme, new UI, shapes, level map)
+### Uncommitted Changes
+Assets/Project/Scripts/Core/DragonController.cs
+Assets/Project/Scripts/Data/GameConfig.cs
+Assets/Project/Scripts/Data/ProgressData.cs
+Assets/Project/Scripts/Managers/StageLoader.cs
+Assets/Project/Sprites/Padlock.png
+Assets/Project/Themes/IntroScreen.uss
+Assets/Project/UXML/HallScreen.uxml
+Assets/Project/UXML/IntroScreen.uxml
+Assets/Project/UXML/PlayScreen.uxml
+Assets/Tests/EditMode/Editor/GameConfigTests.cs
+CLAUDE.md
+ProjectSettings/ProjectSettings.asset
+design/accessibility-requirements.md
+design/audio/audio-lantern-dragons-sfx.md
+design/config/README.md
+design/config/game-config.sample.json
+design/game-brief.md
+design/ux/ui-redesign.md
+production/session-logs/.session-end.hash
+production/session-logs/session-cost.md
+production/session-logs/session-log.md
+---
+
+## Session End: 20261020_142946
+### Commits
+0a79927 docs: audio design document, SFX spec and audio research report
+bd97844 feat: real CC0 audio, eight new sound events, SoundDirector rewrite and light haptics
+d6f2842 docs: game config schema and README, Story 007 evidence and frames, updated specs
+4f7e684 feat: new package id, standalone ad/config stack, fully dynamic game config, two-item dock
+8369eba docs: QA evidence, rename report, accessibility tier, sprint plan and Layout v2 spec
+f341ca0 refactor: rename the whole project to Lantern Dragons names, plus review fixes and accessibility
+0063ab5 chore: safety snapshot before the file rename (light paper theme, new UI, shapes, level map)
+### Uncommitted Changes
+Assets/Project/Scripts/Core/DragonController.cs
+Assets/Project/Scripts/Data/GameConfig.cs
+Assets/Project/Scripts/Data/ProgressData.cs
+Assets/Project/Scripts/Managers/ShotCapture.cs
+Assets/Project/Scripts/Managers/StageLoader.cs
+Assets/Project/Scripts/UI/PlayScreenController.cs
+Assets/Project/Sprites/Padlock.png
+Assets/Project/Themes/IntroScreen.uss
+Assets/Project/UXML/HallScreen.uxml
+Assets/Project/UXML/IntroScreen.uxml
+Assets/Project/UXML/PlayScreen.uxml
+Assets/Tests/EditMode/Editor/GameConfigTests.cs
+CLAUDE.md
+ProjectSettings/ProjectSettings.asset
+design/accessibility-requirements.md
+design/audio/audio-lantern-dragons-sfx.md
+design/config/README.md
+design/config/game-config.sample.json
+design/game-brief.md
+design/ux/interaction-patterns.md
+design/ux/ui-redesign.md
+production/session-logs/.session-end.hash
+production/session-logs/session-cost.md
+production/session-logs/session-log.md
+---
+

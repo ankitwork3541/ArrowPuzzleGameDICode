@@ -4,7 +4,7 @@
   "config_version": 2,
 
   "app": {
-    "name": "Lantern Dragons",
+    "name": "Arrow Dragon Puzzle",
     "min_app_version": "1.0.0",
     "force_update": false,
     "update_url": "https://play.google.com/store/apps/details?id=in.dicodeinfotech.arrowdragonpuzzle",
@@ -18,7 +18,7 @@
     "terms": "https://example.com/arrowdragon/terms",
     "support_email": "support@example.com",
     "more_games": "",
-    "share_text": "Slide the dragons off the board! Play Lantern Dragons:",
+    "share_text": "Slide the dragons off the board! Play Arrow Dragon Puzzle:",
     "share_url": "https://play.google.com/store/apps/details?id=in.dicodeinfotech.arrowdragonpuzzle"
   },
 
@@ -89,7 +89,8 @@
     },
     "reduce_motion_default": false,
     "confetti": true,
-    "level_map": true
+    "level_map": true,
+    "lock_tutorial": true
   },
 
   "message": {

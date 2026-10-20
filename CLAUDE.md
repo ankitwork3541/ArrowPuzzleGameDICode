@@ -49,7 +49,10 @@ The user is a **complete Unity/programming beginner**. This drives everything:
 - Arrow body = **`LineRenderer`** (+ `EdgeCollider2D` for click detection), with `numCornerVertices`
   giving free rounded corners. Separate head/tail sprite objects ride the line's ends.
 - Grid background = one pooled `Dot` GameObject (`SpriteRenderer`) per empty cell.
-- Art direction (changed 2026-10-20): **Lantern Dragons, light paper theme, no dark mode** — warm
+- Product name (2026-10-20): **Arrow Dragon Puzzle** (two-line brand "ARROW DRAGON" / "PUZZLE"); the art
+  direction keeps the lantern / paper theme (names like `LanternMixer`, `LanternBackdrop`, `LanternDragons.unity`
+  and "lantern red" are theme or identifiers, not the product name).
+- Art direction (changed 2026-10-20): **light paper lantern theme, no dark mode** — warm
   cream `#FFF8EC` base, ink `#3A2418`, lantern red `#C43448`, gold-orange `#E88C00`, hint teal
   `#007A96`. No bloom, no glow. The old neon cyan/magenta/navy look is gone. Full spec:
   `design/ux/ui-redesign.md`.
@@ -233,6 +236,16 @@ Keep this updated as work progresses — add an entry after each meaningful step
     jingle; `HapticPulse` replaces the 400 ms `Handheld.Vibrate()` with 12-22 ms Android pulses and adds a light
     pulse for the padlock shake. EditMode 212 of 212, `[EvidenceCheck]` 11 of 11. **Nobody has listened to it yet**
     (gongs are phone recordings; the lock shake is wood ticks): listen first to bump, win jingle, 10 rapid taps.
+  - **Padlock readability + first-lock tutorial (verified 2026-10-20)**: `Padlock.png` redrawn with a big flat
+    body for the digit (ink, `LockDigitSize` 0.075, fed as a linear colour because the TextMesh shader converts to sRGB);
+    `LockCoach` overlay (UXML in `PlayScreen.uxml`, `Themes/LockCoach.uss`) shows once on the first padlock level
+    (derived from the baked data via `StageLoader.FirstLockLevelIndex`, flag `ProgressData.lockTutorialSeen`, config key
+    `ui.lock_tutorial`); the card is placed from the ring so it never covers the padlock; tapping a locked dragon shows
+    "Free N more". The game's display name is now **Arrow Dragon Puzzle** (splash/Home fit at 720x1280 and 360x640);
+    the dragon-exit whoosh no longer plays. EditMode 229 of 229, `[EvidenceCheck]` 11 of 11 + lock run 5 of 5; one
+    flaky full run (a dragon left before frame 05) did not reproduce. Evidence: `production/qa/evidence/lock-ux-evidence.md`.
+    Editor hang rule: one Editor operation at a time, everything long detached (two hangs came from overlapping a
+    recompile with a test job).
   - Still open: pearl tail marker is hard to see; animation feel, backdrop drift and Android look
     unverified.
   - (superseded) Open: screenshots for Story 008 evidence. `capture_game_view` with a size drops UI Toolkit, and

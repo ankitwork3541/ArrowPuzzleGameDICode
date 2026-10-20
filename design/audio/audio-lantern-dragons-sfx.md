@@ -1,4 +1,4 @@
-# Audio Design: Lantern Dragons SFX
+# Audio Design: Arrow Dragon Puzzle SFX
 
 > **Status**: Implemented, **not yet listened to by a human** (2026-10-20). Compiled from the sound-designer spec
 > (`production/audio/lantern-dragons-sfx/sfx-spec.md`) and the sourcing/implementation report

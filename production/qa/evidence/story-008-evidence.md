@@ -102,3 +102,10 @@ Frames: `story-008-v4/` (21 frames from a Windows development player, `--evidenc
 - Darker muted ink text, enlarged touch targets and the Reduce Motion row were checked by eye and read correctly.
 - Still PARTIAL: pearl tail marker small at full size. Still unverified: device feel, animation feel, Android look.
 - Sign-off remains with the developer.
+
+## Round 4 (2026-10-20, Fork V): lock UX, game name, frames in `story-008-v6/`
+
+- New frames (720x1280 plus the 360x640 set) taken after the rename to "Arrow Dragon Puzzle": splash and Home show
+  "ARROW DRAGON / PUZZLE" without overflow; HUD, hint, bump, unlock, win, lose, options, map and the 4-digit title
+  are unchanged and fine. The padlock now shows its number on a flat gold body in ink (see `lock-ux-evidence.md`).
+- EditMode 229 of 229, `[EvidenceCheck]` 11 of 11. Sign-off still unticked.

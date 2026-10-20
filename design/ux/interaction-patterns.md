@@ -85,6 +85,16 @@ Shared tokens: paper `rgb(255,248,236)`, card `rgb(255,252,244)`, ink `rgb(58,36
 **When to use**: the first screen only. Brand at the top (name over the logo), empty middle so the backdrop drifts through, a wide capsule progress bar near the bottom with a "Loading..." caption above it. The progress bar's own title text is hidden through `.unity-progress-bar__title`.
 **USS**: `.splash-root`, `.splash-top`, `.splash-title`, `.splash-icon`, `.splash-bottom`, `.splash-caption`, `.neon-progress` (the class name is a leftover; it is only a name).
 
+## P11. Coach overlay (one-time tutorial)
+
+**When to use**: teaching one rule the first time it matters, on the screen where it matters. Used once, for the first padlock level.
+**Look**: a cream scrim (80%) over the whole screen, a ghost copy of the thing being taught drawn ABOVE the scrim (a world-space object sits under the UI, so the scrim would dim the real one), a pulsing lantern-red ring around it, and one rounded paper card with a title, one or two sentences using the real numbers, an illustrative row, and one red capsule button (GOT IT). The card sits on the side of the screen the subject is not on.
+**Illustrative row** (padlock): `N > ... > 1 > OPEN`, shortened when N is small; each step lights in turn.
+**Reduce Motion**: the ring and the row do not pulse or cycle; everything is simply shown.
+**Rules**: the overlay swallows every tap and pan (`PlayScreenController.IsPointerOverUI` returns true while it is up); it shows once per install (`ProgressData.lockTutorialSeen`), never when the player already beat that level before the feature existed, and never when `ui.lock_tutorial` is false in the game config. Hiding it for a level restart does not count as "seen"; only GOT IT does.
+**Reminder** after the tutorial: tapping a locked dragon shows "Free N more" above its padlock for about a second (static, no sound change).
+**USS**: `LockCoach.uss`: `.coach`, `.coach--hidden`, `.coach__ring`, `.coach__ring--big`, `.coach__ghost`, `.coach__ghost-count`, `.coach__card`, `.coach__card--top|bottom`, `.coach__title`, `.coach__body`, `.coach__steps`, `.coach__step`, `.coach__step--dim`, `.coach__mini`, `.coach__mini-count`, `.coach__dots`, `.coach__arrow`, `.coach__open`, `.coach__open-label`, `.coach__button`.
+
 ---
 
 ## Not yet a pattern (open)
