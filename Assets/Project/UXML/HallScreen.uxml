@@ -9,7 +9,7 @@
             <ui:VisualElement name="home-top" class="hall-top">
                 <ui:VisualElement class="crest" picking-mode="Ignore">
                     <ui:VisualElement class="crest__logo" picking-mode="Ignore" />
-                    <ui:Label text="LANTERN&#10;DRAGONS" class="crest__name" picking-mode="Ignore" />
+                    <ui:Label text="ARROW DRAGON&#10;PUZZLE" class="crest__name" picking-mode="Ignore" />
                 </ui:VisualElement>
                 <ui:Button name="options-button" class="disc-button">
                     <ui:VisualElement class="disc-button__icon disc-button__icon--settings" picking-mode="Ignore" />

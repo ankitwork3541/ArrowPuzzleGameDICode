@@ -1,0 +1,187 @@
+/* ============ Lock coach (one-time "locked dragon" tutorial) ============
+   A cream scrim over the whole play screen, a ghost copy of the padlock drawn ABOVE the scrim (the real
+   one is a world-space object under the UI, so the scrim would otherwise dim it), a pulsing red ring
+   around the ghost, and one rounded paper card with the explanation and a GOT IT button. The card sits
+   at the bottom or the top, whichever side the padlock is NOT on (set from code). Tokens: design/ux/ui-redesign.md. */
+
+.coach {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 248, 236, 0.62);
+}
+
+.coach--hidden {
+    display: none;
+}
+
+/* ---- ring + ghost padlock (position and size are set from code in panel units) ---- */
+.coach__ring {
+    position: absolute;
+    border-width: 8px;
+    border-color: rgb(196, 52, 72);
+    border-radius: 999px;
+    background-color: rgba(255, 252, 244, 0.0);
+    transition-property: scale;
+    transition-duration: 0.6s;
+    transition-timing-function: ease-in-out;
+}
+
+.coach__ring--big {
+    scale: 1.14 1.14;
+}
+
+.coach__ghost {
+    position: absolute;
+    background-image: url("../Sprites/Padlock.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+/* The padlock body is the lower ~52% of the sprite; the digit is centred on it (see Padlock.png). */
+.coach__ghost-count {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 41%;
+    height: 50%;
+    margin: 0;
+    padding: 0;
+    -unity-text-align: middle-center;
+    -unity-font-style: bold;
+    color: rgb(58, 36, 24);
+}
+
+/* ---- card ---- */
+.coach__card {
+    position: absolute;
+    left: 6%;
+    right: 6%;
+    align-items: center;
+    padding: 36px 40px 32px 40px;
+    border-radius: 44px;
+    border-width: 4px;
+    border-color: rgba(58, 36, 24, 0.12);
+    background-color: rgb(255, 252, 244);
+}
+
+.coach__card--bottom {
+    bottom: 300px;
+}
+
+.coach__card--top {
+    top: 280px;
+}
+
+.coach__title {
+    font-size: 46px;
+    letter-spacing: 4px;
+    color: rgb(196, 52, 72);
+    margin: 0;
+    -unity-text-align: middle-center;
+}
+
+.coach__body {
+    font-size: 32px;
+    color: rgba(58, 36, 24, 0.82);
+    white-space: normal;
+    -unity-text-align: middle-center;
+    margin-top: 14px;
+    margin-bottom: 0;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+/* ---- the illustrative row: [N] > ... > [1] > OPEN ---- */
+.coach__steps {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+    margin-bottom: 24px;
+}
+
+.coach__step {
+    align-items: center;
+    justify-content: center;
+    transition-property: opacity;
+    transition-duration: 0.25s;
+}
+
+.coach__step--dim {
+    opacity: 0.35;
+}
+
+.coach__mini {
+    width: 84px;
+    height: 84px;
+    background-image: url("../Sprites/Padlock.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+.coach__mini-count {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 41%;
+    height: 50%;
+    margin: 0;
+    padding: 0;
+    font-size: 36px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    color: rgb(58, 36, 24);
+}
+
+.coach__dots {
+    font-size: 44px;
+    letter-spacing: 4px;
+    color: rgba(58, 36, 24, 0.82);
+    margin: 0;
+}
+
+.coach__arrow {
+    font-size: 44px;
+    color: rgba(58, 36, 24, 0.82);
+    margin: 0 18px;
+}
+
+.coach__open {
+    height: 64px;
+    padding: 0 26px;
+    justify-content: center;
+    border-radius: 32px;
+    border-width: 4px;
+    border-color: rgb(232, 140, 0);
+    background-color: rgb(255, 252, 244);
+}
+
+.coach__open-label {
+    font-size: 34px;
+    letter-spacing: 3px;
+    color: rgb(150, 92, 0);
+    margin: 0;
+}
+
+/* ---- GOT IT: the same red capsule with a darker lip as the result sheets ---- */
+.coach__button {
+    width: 100%;
+    max-width: 620px;
+    height: 108px;
+    border-radius: 54px;
+    border-width: 0;
+    border-bottom-width: 5px;
+    border-bottom-color: rgb(150, 36, 54);
+    margin: 0;
+    padding: 0;
+    background-color: rgb(196, 52, 72);
+    font-size: 40px;
+    letter-spacing: 5px;
+    color: rgb(255, 248, 236);
+}
+
+.coach__button:active {
+    border-bottom-width: 1px;
+    translate: 0 4px;
+}

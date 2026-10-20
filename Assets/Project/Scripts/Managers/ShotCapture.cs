@@ -46,6 +46,10 @@ public class ShotCapture : MonoBehaviour
         ProgressStore.Data.highestLevelCompleted = DemoLevelNumber - 1;
         ProgressStore.Data.currentLevelIndex = DemoLevelNumber - 1;
 
+        // The first-lock coach overlay would sit over every level-6 frame, so every run except the dedicated
+        // lock run (--evidence-lock) starts with it already seen.
+        ProgressStore.Data.lockTutorialSeen = !HasFlag("--evidence-lock");
+
         // A game config to run on, read from a file instead of the API, so the config-driven screens
         // (hidden options rows, notices, maintenance, force update, lives) can be shot on demand.
         string configPath = GetArg("--evidence-config");
@@ -128,6 +132,14 @@ public class ShotCapture : MonoBehaviour
         if (HasFlag("--evidence-small"))
         {
             yield return SmallRun();
+            Debug.Log("[ShotCapture] done");
+            Application.Quit();
+            yield break;
+        }
+
+        if (HasFlag("--evidence-lock"))
+        {
+            yield return LockRun(GetArg("--evidence-prefix") ?? "lock");
             Debug.Log("[ShotCapture] done");
             Application.Quit();
             yield break;
@@ -333,6 +345,93 @@ public class ShotCapture : MonoBehaviour
             EmberManager.Instance.maxLives == config.game.lives.max,
             $"lives {EmberManager.Instance.lives}/{EmberManager.Instance.maxLives}, config {config.game.lives.max}");
         yield return Shoot(prefix + "-hud");
+    }
+
+    // The lock UX run (--evidence-lock): the one-time coach overlay on the first padlock level (shown by the
+    // game itself, because this run does not mark it seen), the padlock digit at 1, 4 and 12, and the
+    // "Free N more" reminder after a tap on a locked dragon.
+    private IEnumerator LockRun(string prefix)
+    {
+        yield return new WaitForSecondsRealtime(1.2f);
+        yield return new WaitUntil(() => flow.homeRoot.activeSelf);
+        yield return new WaitForSecondsRealtime(1.5f);
+        yield return Shoot(prefix + "-0-home");
+
+        int first = loader.FirstLockLevelIndex();
+        Report("lock tutorial: first lock level is derived from the baked data", first >= 0 && first == DemoLevelNumber - 1,
+            $"first lock level index {first} (level {first + 1})");
+
+        flow.OnPlayButtonClicked();
+        yield return new WaitUntil(() => flow.gameplayRoot.activeSelf);
+        yield return new WaitForSecondsRealtime(7f);
+
+        PlayScreenController play = PlayScreenController.Instance;
+        Vector2 middle = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
+        Report("lock tutorial: shows by itself on the first lock level and keeps taps off the board",
+            play != null && play.IsPointerOverUI(middle), "overlay up, middle of the screen counts as UI");
+        yield return Shoot(prefix + "-1-coach");
+
+        // Reduce Motion: same overlay, nothing cycles or pulses.
+        OptionsManager options = OptionsManager.Instance;
+        if (options != null && play != null)
+        {
+            options.SetReduceMotion(true);
+            play.HideLockCoachForEvidence();
+            play.ShowLockCoachForEvidence();
+            yield return new WaitForSecondsRealtime(1.0f);
+            yield return Shoot(prefix + "-2-coach-reduce-motion");
+            options.SetReduceMotion(false);
+        }
+
+        // GOT IT saves the flag and the overlay must not come back on a re-entry of the same level.
+        if (play != null) play.DismissLockCoachForEvidence();
+        Report("lock tutorial: GOT IT saves the seen flag", ProgressStore.Data.lockTutorialSeen, "lockTutorialSeen is set");
+        Report("lock tutorial: board taps work again after GOT IT", play != null && !play.IsPointerOverUI(middle),
+            "middle of the screen is board again");
+
+        loader.LoadLevel();
+        yield return new WaitForSecondsRealtime(7f);
+        Report("lock tutorial: does not show a second time", play != null && !play.IsPointerOverUI(middle),
+            "re-entered the same level, no overlay");
+        yield return Shoot(prefix + "-3-board-after");
+
+        // The digit on the padlock at 1, 4 and 12, then the reminder after a tap.
+        DragonController locked = loader.FirstLockedDragon();
+        if (locked == null)
+        {
+            Report("lock digit close-ups", false, "no padlocked dragon on this level");
+            yield break;
+        }
+
+        foreach (int count in new[] { 1, 4, 12 })
+        {
+            locked.SetLock(count);
+            yield return new WaitForSecondsRealtime(0.6f);
+            yield return ShootBadgeCrop(locked, prefix + "-digit-" + count);
+        }
+
+        locked.SetLock(3);
+        locked.HandleTap();
+        yield return new WaitForSecondsRealtime(0.25f);
+        yield return ShootBadgeCrop(locked, prefix + "-hint-free-n-more");
+    }
+
+    // A close-up of the padlock badge: a square window around it in screen space, enlarged.
+    private IEnumerator ShootBadgeCrop(DragonController dragon, string name)
+    {
+        Vector3 world;
+        float size;
+        Camera cam = Camera.main;
+        if (cam == null || !dragon.TryGetLockBadge(out world, out size))
+            yield break;
+
+        Vector3 screen = cam.WorldToScreenPoint(world);
+        float half = Mathf.Abs(cam.WorldToScreenPoint(world + cam.transform.right * size).x - screen.x) * 1.1f;
+        float x = Mathf.Clamp01((screen.x - half) / Screen.width);
+        float y = Mathf.Clamp01((screen.y - half * 1.5f) / Screen.height);
+        float w = Mathf.Min(1f - x, 2f * half / Screen.width);
+        float h = Mathf.Min(1f - y, 3f * half / Screen.height);
+        yield return ShootCrop(name, new Rect(x, y, w, h), 3);
     }
 
     // The 360x640 run: the four screens most likely to overflow on a narrow phone.

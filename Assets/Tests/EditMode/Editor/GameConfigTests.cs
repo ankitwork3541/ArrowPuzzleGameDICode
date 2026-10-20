@@ -13,7 +13,7 @@ public class GameConfigTests
   ""msg"": ""ok"",
   ""config_version"": 2,
   ""app"": {
-    ""name"": ""Lantern Dragons"",
+    ""name"": ""Arrow Dragon Puzzle"",
     ""min_app_version"": ""1.0.0"",
     ""force_update"": false,
     ""update_url"": ""https://play.google.com/store/apps/details?id=in.dicodeinfotech.arrowdragonpuzzle"",
@@ -26,7 +26,7 @@ public class GameConfigTests
     ""terms"": ""https://example.com/arrowdragon/terms"",
     ""support_email"": ""support@example.com"",
     ""more_games"": """",
-    ""share_text"": ""Slide the dragons off the board! Play Lantern Dragons:"",
+    ""share_text"": ""Slide the dragons off the board! Play Arrow Dragon Puzzle:"",
     ""share_url"": ""https://play.google.com/store/apps/details?id=in.dicodeinfotech.arrowdragonpuzzle""
   },
   ""ads"": {
@@ -131,7 +131,7 @@ public class GameConfigTests
     {
         GameConfig c = Parse(SampleJson);
 
-        Assert.AreEqual("Lantern Dragons", c.app.name);
+        Assert.AreEqual("Arrow Dragon Puzzle", c.app.name);
         Assert.AreEqual("1.0.0", c.app.min_app_version);
         Assert.IsFalse(c.app.force_update);
         Assert.IsFalse(c.app.maintenance_mode);
@@ -713,7 +713,7 @@ public class GameConfigTests
 
             Assert.IsTrue(GameConfigService.LoadCache());
             Assert.IsTrue(GameConfigService.HasPayload);
-            Assert.AreEqual("Lantern Dragons", GameConfigService.Current.app.name);
+            Assert.AreEqual("Arrow Dragon Puzzle", GameConfigService.Current.app.name);
         }
         finally
         {

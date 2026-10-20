@@ -1,5 +1,6 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <Style src="project://database/Assets/Project/Themes/PlayScreen.uss?fileID=7433441132597879392&amp;guid=b4369a12a23684b82832b80a76b589b0&amp;type=3#GameplayScreen" />
+    <Style src="../Themes/LockCoach.uss" />
     <ui:Template name="PromoPlaceholder" src="project://database/Assets/Project/UXML/PromoPlaceholder.uxml" />
 
     <!-- Layout v2 (design/ux/ui-redesign.md): back on the left, the level title centred as plain text
@@ -87,6 +88,22 @@
 
         <ui:VisualElement name="sponsor-space" class="play-sponsor-space">
             <ui:Instance template="PromoPlaceholder" name="ad-placeholder-slot" class="sponsor-slot" />
+        </ui:VisualElement>
+
+        <!-- One-time coach for the first padlock level (LockCoach.cs). Last child so it draws above the HUD;
+             hidden (display none) unless LockCoach.Show() runs. The ghost padlock and the ring are placed
+             from code over the real padlock; the steps row is filled from code. -->
+        <ui:VisualElement name="lock-coach" class="coach coach--hidden" picking-mode="Position">
+            <ui:VisualElement name="coach-ring" class="coach__ring" picking-mode="Ignore" />
+            <ui:VisualElement name="coach-ghost" class="coach__ghost" picking-mode="Ignore">
+                <ui:Label name="coach-ghost-count" text="4" class="coach__ghost-count" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:VisualElement name="coach-card" class="coach__card coach__card--bottom">
+                <ui:Label text="LOCKED DRAGON" class="coach__title" picking-mode="Ignore" />
+                <ui:Label name="coach-body" text="" class="coach__body" picking-mode="Ignore" />
+                <ui:VisualElement name="coach-steps" class="coach__steps" picking-mode="Ignore" />
+                <ui:Button name="coach-ok" text="GOT IT" class="coach__button" />
+            </ui:VisualElement>
         </ui:VisualElement>
 
     </ui:VisualElement>

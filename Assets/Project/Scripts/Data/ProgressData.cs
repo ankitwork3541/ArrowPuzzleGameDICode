@@ -24,4 +24,8 @@ public class ProgressData
     // locked), the frontier rule and the ad rules that depend on progress. The bottom-dock level
     // milestones it once also fed were removed; the field itself stays because it is saved.
     public int highestLevelCompleted;
+
+    // The one-time "locked dragon" coach overlay has been shown (or was skipped because the first padlock
+    // level was already beaten). A field added later is safe for old saves: JsonUtility leaves it false.
+    public bool lockTutorialSeen;
 }

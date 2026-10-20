@@ -35,6 +35,11 @@ public class PlayScreenController : MonoBehaviour
     private int remainingDragons, totalDragons;
     private bool hudVisible;
 
+    // The one-time "locked dragon" coach overlay (first padlock level). `coachPending` remembers an entrance
+    // that finished before the UI had loaded, so the overlay still shows once the tree exists.
+    private LockCoach lockCoach;
+    private bool coachPending;
+
     // Versioned overload of the reload callback (the plain one is obsolete). The lambda only drops the
     // version: these handlers rebuild their bindings from scratch on every reload, so a repeat of the
     // same version is harmless. Kept in a field so OnDisable removes the very same delegate.
@@ -70,6 +75,7 @@ public class PlayScreenController : MonoBehaviour
 
     private void OnDisable()
     {
+        lockCoach?.Hide();
         if (Instance == this) Instance = null;
         panelRenderer.UnregisterUIReloadCallback(reloadCallback);
         livesManager.OnLivesChanged -= OnLivesChanged;
@@ -97,6 +103,8 @@ public class PlayScreenController : MonoBehaviour
     private void OnEntranceStart()
     {
         hudVisible = false;
+        coachPending = false;
+        lockCoach?.Hide();
         Apply();
     }
 
@@ -104,6 +112,54 @@ public class PlayScreenController : MonoBehaviour
     {
         hudVisible = true;
         Apply();
+        TryShowLockCoach();
+    }
+
+    // Shows the coach once, on the first padlock level, after the board has drawn in.
+    private void TryShowLockCoach()
+    {
+        if (lockCoach == null)
+        {
+            coachPending = true;
+            return;
+        }
+
+        coachPending = false;
+        int levelIndex = levelLoader.CurrentLevelNumber() - 1;
+        bool show = LockTutorialRule.ShouldShow(
+            GameConfigService.Current.ui.lock_tutorial,
+            ProgressStore.Data.lockTutorialSeen,
+            levelIndex,
+            levelLoader.FirstLockLevelIndex(),
+            ProgressStore.Data.highestLevelCompleted);
+        if (!show) return;
+
+        DragonController dragon = levelLoader.FirstLockedDragon();
+        if (dragon != null) lockCoach.Show(dragon);
+    }
+
+    // Dev-build screenshot hook (ShotCapture): show the overlay for the first padlocked dragon on the board
+    // without touching the saved flag or the rule.
+    public bool ShowLockCoachForEvidence()
+    {
+        if (lockCoach == null) return false;
+
+        DragonController dragon = levelLoader.FirstLockedDragon();
+        if (dragon == null) return false;
+
+        lockCoach.Show(dragon);
+        return true;
+    }
+
+    public void HideLockCoachForEvidence()
+    {
+        lockCoach?.Hide();
+    }
+
+    // Presses GOT IT (saves the seen flag), for the evidence run.
+    public void DismissLockCoachForEvidence()
+    {
+        lockCoach?.Dismiss();
     }
 
     private void OnUIReload(PanelRenderer renderer, VisualElement rootElement)
@@ -126,6 +182,9 @@ public class PlayScreenController : MonoBehaviour
         Bind(root.Q<Button>("redo-button"), gameFlowManager.OnRestartLevelClicked);
         Bind(hintButton, gameFlowManager.OnHintButtonClicked);
         Bind(gridButton, ToggleGuideLines);
+
+        lockCoach = new LockCoach(root);
+        if (coachPending && hudVisible) TryShowLockCoach();
 
         Apply();
     }
@@ -388,6 +447,9 @@ public class PlayScreenController : MonoBehaviour
     // toggle ALSO moves whatever arrow happens to sit underneath it.
     public bool IsPointerOverUI(Vector2 screenPos)
     {
+        // The lock coach covers the whole screen and must keep every tap and pan off the board.
+        if (lockCoach != null && lockCoach.Visible) return true;
+
         // A hidden HUD must not eat board taps — during the entrance the whole root is
         // `visibility: hidden`, so the board really is visible under the top bar.
         if (root == null || root.panel == null || !hudVisible) return false;

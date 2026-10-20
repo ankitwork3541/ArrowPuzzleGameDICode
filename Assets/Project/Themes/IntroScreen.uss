@@ -32,6 +32,13 @@
     -unity-text-align: middle-center;
 }
 
+/* "ARROW DRAGON" is the long first line (12 characters), so it runs smaller than the one-word second
+   line to stay inside a narrow portrait panel. */
+.intro-title--long {
+    font-size: 74px;
+    letter-spacing: 2px;
+}
+
 /* 300px square on a normal screen; on a narrow one the box gets narrower (max-width) and
    scale-to-fit keeps the logo square and centred inside it. */
 .intro-icon {

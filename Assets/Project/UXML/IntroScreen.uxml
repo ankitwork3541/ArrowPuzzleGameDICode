@@ -8,8 +8,8 @@
     <ui:VisualElement name="splash-root" class="intro-root">
 
         <ui:VisualElement name="splash-top" class="intro-top" picking-mode="Ignore">
-            <ui:Label name="title-line-1" text="LANTERN" class="intro-title" picking-mode="Ignore" />
-            <ui:Label name="title-line-2" text="DRAGONS" class="intro-title" picking-mode="Ignore" />
+            <ui:Label name="title-line-1" text="ARROW DRAGON" class="intro-title intro-title--long" picking-mode="Ignore" />
+            <ui:Label name="title-line-2" text="PUZZLE" class="intro-title" picking-mode="Ignore" />
             <ui:VisualElement name="app-icon" class="intro-icon" picking-mode="Ignore" />
         </ui:VisualElement>
 

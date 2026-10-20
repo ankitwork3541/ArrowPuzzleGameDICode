@@ -37,7 +37,7 @@ public class GameConfig
 [Serializable]
 public class AppSection
 {
-    public string name = "Lantern Dragons";
+    public string name = "Arrow Dragon Puzzle";
     public string min_app_version = "";
     public bool force_update;
     public string update_url = "";
@@ -204,6 +204,8 @@ public class UiSection
     public bool reduce_motion_default;
     public bool confetti = true;
     public bool level_map = true;
+    // The one-time coach overlay shown on the first padlock level.
+    public bool lock_tutorial = true;
 }
 
 [Serializable]

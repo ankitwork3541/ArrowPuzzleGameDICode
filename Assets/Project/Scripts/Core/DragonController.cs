@@ -63,10 +63,18 @@ public class DragonController : MonoBehaviour
 
     // Badge size as a fraction of one grid cell, and the digit height relative to the badge.
     const float LockBadgeCells = 1.25f;
-    const float LockDigitSize = 0.17f;
+    // Digit size and position are tuned against Padlock.png (256 px, one world unit): the body is a big flat
+    // gold rounded rectangle from y 104 to 236, so its centre sits (128 - 170) / 256 below the sprite centre.
+    const float LockDigitSize = 0.075f;
+    const float LockDigitY = -0.164f;
+    const float LockHintSize = 0.085f;
     // Ink, the same dark tone as the HUD text: the badge is gold, and a purple digit on gold was the
     // weakest text on the board.
-    static readonly Color LockDigitColor = new Color(0.227f, 0.141f, 0.094f);
+    // The built-in TextMesh font shader converts linear to sRGB on output in a linear project, so the same
+    // ink value drawn straight came out as a washed-out grey-brown on the badge. Feed it the linear value.
+    static readonly Color LockDigitInk = new Color(0.227f, 0.141f, 0.094f);
+    static Color LockDigitColor =>
+        QualitySettings.activeColorSpace == ColorSpace.Linear ? LockDigitInk.linear : LockDigitInk;
 
     private Transform lockBadge;
     private TextMesh lockText;
@@ -104,8 +112,8 @@ public class DragonController : MonoBehaviour
 
         GameObject textGo = new GameObject("Count");
         textGo.transform.SetParent(lockBadge, false);
-        // The padlock body sits in the lower part of the sprite, so the digit goes there.
-        textGo.transform.localPosition = padlockSprite != null ? new Vector3(0f, -0.13f, 0f) : Vector3.zero;
+        // The padlock body sits in the lower part of the sprite, so the digit goes there (centred on the body).
+        textGo.transform.localPosition = padlockSprite != null ? new Vector3(0f, LockDigitY, 0f) : Vector3.zero;
 
         Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         lockText = textGo.AddComponent<TextMesh>();
@@ -129,6 +137,9 @@ public class DragonController : MonoBehaviour
         lockBadge = null;
         lockText = null;
         lockSprite = null;
+        lockHintGo = null;
+        lockHintText = null;
+        lockHintOutline = null;
     }
 
     // Every arrow that leaves the board counts one off the lock. At zero the lock opens.
@@ -147,6 +158,7 @@ public class DragonController : MonoBehaviour
         // child of the arrow, so it is destroyed with it. The fields are cleared first, so
         // RemoveLockBadge and the exit never touch it while the tween finishes the fade.
         SoundDirector.Instance.PlayUnlock();
+        if (lockHintGo != null) lockHintGo.SetActive(false);
         float swell = OptionsManager.ReduceMotionOn ? 0f : 0.6f;
         Transform badge = lockBadge;
         TextMesh text = lockText;
@@ -166,6 +178,81 @@ public class DragonController : MonoBehaviour
             if (sprite != null) { Color c = sprite.color; c.a = alpha; sprite.color = c; }
             if (text != null) { Color c = textStart; c.a = alpha; text.color = c; }
         }).OnComplete(badge.gameObject, warnIfTargetDestroyed: false, onComplete: go => Destroy(go));
+    }
+
+    // World position and on-screen size (in world units) of the padlock badge, for the one-time coach overlay.
+    // False when this dragon has no badge.
+    public bool TryGetLockBadge(out Vector3 worldPosition, out float worldSize)
+    {
+        if (lockBadge == null)
+        {
+            worldPosition = Vector3.zero;
+            worldSize = 0f;
+            return false;
+        }
+
+        worldPosition = lockBadge.position;
+        worldSize = gridBuilder.spacing * LockBadgeCells;
+        return true;
+    }
+
+    private GameObject lockHintGo;
+    private TextMesh lockHintText;
+    private TextMesh lockHintOutline;
+    private Tween lockHintTween;
+
+    // A short "Free N more" reminder above the padlock, shown for about a second when the player taps a locked
+    // dragon. Static on purpose (nothing animated, so nothing to reduce for Reduce Motion) and it is a child of
+    // the badge, so it goes when the badge goes.
+    void ShowLockHint()
+    {
+        if (lockBadge == null) return;
+
+        if (lockHintGo == null)
+        {
+            lockHintGo = new GameObject("LockHint");
+            lockHintGo.transform.SetParent(lockBadge, false);
+            lockHintGo.transform.localPosition = new Vector3(0f, 0.7f, 0f);
+
+            Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            // A cream copy one pixel-ish behind the ink text keeps it readable over any dragon colour.
+            lockHintOutline = AddHintText(lockHintGo.transform, font, new Vector3(0.012f, -0.012f, 0f),
+                                          new Color(1f, 0.973f, 0.925f), 53);
+            lockHintText = AddHintText(lockHintGo.transform, font, Vector3.zero, LockDigitColor, 54);
+        }
+
+        string label = LockTutorialRule.RemainingLabel(lockRemaining);
+        lockHintText.text = label;
+        lockHintOutline.text = label;
+        lockHintGo.SetActive(true);
+
+        if (lockHintTween.isAlive) lockHintTween.Stop();
+        GameObject hint = lockHintGo;
+        lockHintTween = Tween.Delay(lockBadge, 1f, () =>
+        {
+            if (hint != null) hint.SetActive(false);
+        });
+    }
+
+    static TextMesh AddHintText(Transform parent, Font font, Vector3 localPosition, Color color, int sortingOrder)
+    {
+        GameObject go = new GameObject("Text");
+        go.transform.SetParent(parent, false);
+        go.transform.localPosition = localPosition;
+
+        TextMesh text = go.AddComponent<TextMesh>();
+        text.font = font;
+        text.fontSize = 64;
+        text.characterSize = LockHintSize;
+        text.anchor = TextAnchor.MiddleCenter;
+        text.alignment = TextAlignment.Center;
+        text.fontStyle = FontStyle.Bold;
+        text.color = color;
+
+        MeshRenderer meshRenderer = go.GetComponent<MeshRenderer>();
+        meshRenderer.sharedMaterial = font.material;
+        meshRenderer.sortingOrder = sortingOrder;
+        return text;
     }
 
     void ShakeLock()
@@ -401,6 +488,7 @@ public class DragonController : MonoBehaviour
         if (IsLocked)
         {
             ShakeLock();
+            ShowLockHint();
             SoundDirector.Instance.PlayLockShake();
             HapticPulse.Light();
             return;
@@ -810,7 +898,8 @@ public class DragonController : MonoBehaviour
 
             if (IsFullyOffScreen())
             {
-                SoundDirector.Instance.PlayDragonExit();
+                // No sound here on purpose: the progress bar fills as the dragon leaves, and the developer
+                // wants that moment silent (the tap sound already played when the exit started).
                 StageManager.Instance.DragonExited();
                 Destroy(gameObject);
             }

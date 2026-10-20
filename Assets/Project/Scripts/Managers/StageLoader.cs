@@ -73,6 +73,50 @@ public class StageLoader : MonoBehaviour
         }
     }
 
+    // -2 = not looked up yet, -1 = the campaign has no padlock.
+    private int firstLockLevelIndex = -2;
+
+    // Zero-based index of the first level that has a padlock, read from the baked campaign (never hard-coded,
+    // so a re-bake moves it) and cached. Used by the one-time lock coach overlay.
+    public int FirstLockLevelIndex()
+    {
+        if (firstLockLevelIndex != -2) return firstLockLevelIndex;
+
+        firstLockLevelIndex = -1;
+        TextAsset asset = Resources.Load<TextAsset>(StagePack.ChunkResourcePath(0));
+        if (asset == null) return firstLockLevelIndex;
+
+        byte[] bytes = asset.bytes;
+        Resources.UnloadAsset(asset);
+
+        string error;
+        if (!StagePack.IsValidChunk(bytes, out error)) return firstLockLevelIndex;
+
+        StageData scratch = ScriptableObject.CreateInstance<StageData>();
+        firstLockLevelIndex = LockTutorialRule.FirstLockLevelIndex(levelIndex =>
+        {
+            StagePack.ReadLevelInto(bytes, levelIndex, scratch);
+            if (scratch.dragons == null) return false;
+
+            foreach (DragonPathData dragonData in scratch.dragons)
+                if (dragonData.lockThreshold > 0) return true;
+
+            return false;
+        }, StagePack.LevelCountIn(bytes));
+        Destroy(scratch);
+
+        return firstLockLevelIndex;
+    }
+
+    // The first padlocked dragon on the board that is loaded now, or null. The coach overlay points at it.
+    public DragonController FirstLockedDragon()
+    {
+        foreach (DragonController dragon in spawnedDragons)
+            if (dragon != null && dragon.IsLocked) return dragon;
+
+        return null;
+    }
+
     // Cheap to call repeatedly — Home asks for the difficulty label before the board exists.
     private StageData EnsureCurrent()
     {
