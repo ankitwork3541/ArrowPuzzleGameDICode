@@ -18,15 +18,22 @@ public class ResultScreenController : MonoBehaviour
     private Label levelLabel;
     private ConfettiView confetti;
 
+    // Versioned overload of the reload callback (the plain one is obsolete). The lambda only drops the
+    // version: these handlers rebuild their bindings from scratch on every reload, so a repeat of the
+    // same version is harmless. Kept in a field so OnDisable removes the very same delegate.
+    private PanelRenderer.VersionedUIReloadCallback reloadCallback;
+
     private void OnEnable()
     {
-        panelRenderer.RegisterUIReloadCallback(OnUIReload);
+        reloadCallback = (reloaded, rootElement, version) => OnUIReload(reloaded, rootElement);
+        panelRenderer.RegisterUIReloadCallback(reloadCallback);
 
         // On a second win the panel is already loaded, so OnUIReload will not fire again and
         // `root` is still the one from last time. Refreshing here is what keeps the level number
         // correct — same reason HomeScreenController does it.
         Refresh();
         StartConfetti();
+        PlaySheetIn();
 
         if (AdsManager.Instance != null)
         {
@@ -38,7 +45,7 @@ public class ResultScreenController : MonoBehaviour
 
     private void OnDisable()
     {
-        panelRenderer.UnregisterUIReloadCallback(OnUIReload);
+        panelRenderer.UnregisterUIReloadCallback(reloadCallback);
         if (confetti != null) confetti.Stop();
 
         if (AdsManager.Instance != null)
@@ -325,9 +332,25 @@ public class ResultScreenController : MonoBehaviour
 
         Refresh();
         StartConfetti();
+        PlaySheetIn();
 
         // On the first show this fires after OnEnable, which ran with no root to query yet.
         HookAdSpace();
+    }
+
+    // The card is a bottom sheet: park it below the screen, then let it slide up. The hidden class
+    // has a zero-length transition so it snaps down at once; removing it a beat later is what runs
+    // the slow slide in ResultScreen.uss. The beat is needed because both class changes in one frame
+    // would be resolved together and no transition would play.
+    private void PlaySheetIn()
+    {
+        if (root == null) return;
+
+        VisualElement card = root.Q<VisualElement>("result-card");
+        if (card == null) return;
+
+        card.AddToClassList("result-card--hidden");
+        card.schedule.Execute(() => card.RemoveFromClassList("result-card--hidden")).StartingIn(60);
     }
 
     // Unregister before registering so a second UI reload cannot stack duplicate handlers.

@@ -18,9 +18,15 @@ public class SettingsScreenController : MonoBehaviour
     private VisualElement root;
     private VisualElement soundSwitch, vibrationSwitch, refreshSwitch;
 
+    // Versioned overload of the reload callback (the plain one is obsolete). The lambda only drops the
+    // version: these handlers rebuild their bindings from scratch on every reload, so a repeat of the
+    // same version is harmless. Kept in a field so OnDisable removes the very same delegate.
+    private PanelRenderer.VersionedUIReloadCallback reloadCallback;
+
     private void OnEnable()
     {
-        panelRenderer.RegisterUIReloadCallback(OnUIReload);
+        reloadCallback = (reloaded, rootElement, version) => OnUIReload(reloaded, rootElement);
+        panelRenderer.RegisterUIReloadCallback(reloadCallback);
         Apply();
 
         // Settings is reached from Home's own bottom nav and is the same shell, so it carries the
@@ -34,7 +40,7 @@ public class SettingsScreenController : MonoBehaviour
 
     private void OnDisable()
     {
-        panelRenderer.UnregisterUIReloadCallback(OnUIReload);
+        panelRenderer.UnregisterUIReloadCallback(reloadCallback);
 
         if (AdsManager.Instance != null)
         {
@@ -71,6 +77,12 @@ public class SettingsScreenController : MonoBehaviour
         BindLink("link-rate", rateUsUrl);
         BindLink("link-privacy", privacyUrl);
         BindLink("link-terms", termsUrl);
+
+        // The round back button at the top left does the same as the nav's Home item.
+        Button backButton = root.Q<Button>("settings-back-button");
+        UIClickSound.Attach(backButton);
+        backButton.clicked -= gameFlowManager.OnHomeNavClicked;
+        backButton.clicked += gameFlowManager.OnHomeNavClicked;
 
         // Settings is the current screen, so its own nav item only highlights.
         BottomNavBinder.Bind(root, "nav-settings", OnHomeNavClicked, null);

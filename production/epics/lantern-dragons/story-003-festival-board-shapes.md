@@ -1,12 +1,12 @@
 # Story 003: Festival board shapes
 
 > **Epic**: Lantern Dragons
-> **Status**: Ready
+> **Status**: Complete except commit (2026-10-20: preview and 1500-level bake pass, see `production/qa/smoke-2026-10-20.md`; AC1/AC5 wait for a git commit)
 > **Layer**: Core
 > **Type**: Config/Data
 > **Estimate**: [fill before starting]
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: [set by /dev-story when implementation begins]
+> **Last Updated**: 2026-10-19
 
 ## Context
 

@@ -5,8 +5,8 @@
          PanelRenderer, so it can cover home, gameplay and the result cards alike. -->
     <ui:VisualElement name="ad-loading-modal" class="ad-loading-modal ad-loading-modal--hidden">
         <ui:VisualElement class="ad-loading-modal__backdrop" picking-mode="Position" />
-        <ui:VisualElement class="ad-loading-modal__card oct">
-            <ui:VisualElement class="oct__frame oct__frame--cyan" picking-mode="Ignore" />
+        <ui:VisualElement class="ad-loading-modal__card round">
+            <ui:VisualElement class="round__frame round__frame--red" picking-mode="Ignore" />
             <ui:VisualElement name="ad-loading-spinner" class="ad-loading-spinner" picking-mode="Ignore" />
             <ui:Label text="LOADING AD..." class="ad-loading-modal__title" picking-mode="Ignore" />
             <ui:Label text="Please wait a moment" class="ad-loading-modal__subtitle" picking-mode="Ignore" />

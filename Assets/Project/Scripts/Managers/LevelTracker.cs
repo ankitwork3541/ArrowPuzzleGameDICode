@@ -7,6 +7,10 @@ using UnityEngine.Networking;
 // screen that sits there waiting on the network.
 public class LevelTracker : MonoBehaviour
 {
+    // NOTE: this endpoint belongs to the PREVIOUS game and the form carries no game id, so wins from
+    // this game would be counted as that game's. The backend owner has to confirm a new endpoint (or
+    // that an extra field is safe) before a release build. Not changed here on purpose: nothing in
+    // this repo can show how the old backend treats unknown fields.
     const string Url = "https://newvids.xyz/arrwgmln/gapp/completelevel";
     const int TimeoutSeconds = 5;
 

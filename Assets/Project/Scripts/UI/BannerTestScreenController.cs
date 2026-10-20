@@ -38,14 +38,20 @@ public class BannerTestScreenController : MonoBehaviour
         public Vector2Int placedAtDp = new Vector2Int(int.MinValue, int.MinValue);
     }
 
+    // Versioned overload of the reload callback (the plain one is obsolete). The lambda only drops the
+    // version: these handlers rebuild their bindings from scratch on every reload, so a repeat of the
+    // same version is harmless. Kept in a field so OnDisable removes the very same delegate.
+    private PanelRenderer.VersionedUIReloadCallback reloadCallback;
+
     private void OnEnable()
     {
-        panelRenderer.RegisterUIReloadCallback(OnUIReload);
+        reloadCallback = (reloaded, rootElement, version) => OnUIReload(reloaded, rootElement);
+        panelRenderer.RegisterUIReloadCallback(reloadCallback);
     }
 
     private void OnDisable()
     {
-        panelRenderer.UnregisterUIReloadCallback(OnUIReload);
+        panelRenderer.UnregisterUIReloadCallback(reloadCallback);
 
         if (placeRoutine != null)
         {

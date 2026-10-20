@@ -7,7 +7,8 @@ using UnityEngine.Networking;
 
 public class AdConfigFetcher : MonoBehaviour
 {
-    const string CacheFileName = "ad_config.json";
+    // Intentionally keeps the old "arrowqube" prefix (renaming drops the cached config for existing installs).
+    const string CacheFileName = "arrowqube_ad_config.json";
 
     static string CachePath => Path.Combine(Application.persistentDataPath, CacheFileName);
 

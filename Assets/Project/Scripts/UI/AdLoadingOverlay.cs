@@ -28,16 +28,22 @@ public class AdLoadingOverlay : MonoBehaviour
         if (Instance != null) Instance.SetVisible(false);
     }
 
+    // Versioned overload of the reload callback (the plain one is obsolete). The lambda only drops the
+    // version: these handlers rebuild their bindings from scratch on every reload, so a repeat of the
+    // same version is harmless. Kept in a field so OnDisable removes the very same delegate.
+    private PanelRenderer.VersionedUIReloadCallback reloadCallback;
+
     private void OnEnable()
     {
         Instance = this;
-        panelRenderer.RegisterUIReloadCallback(OnUIReload);
+        reloadCallback = (reloaded, rootElement, version) => OnUIReload(reloaded, rootElement);
+        panelRenderer.RegisterUIReloadCallback(reloadCallback);
     }
 
     private void OnDisable()
     {
         if (Instance == this) Instance = null;
-        panelRenderer.UnregisterUIReloadCallback(OnUIReload);
+        panelRenderer.UnregisterUIReloadCallback(reloadCallback);
     }
 
     // Unscaled: an interstitial or rewarded ad is usually shown with the game paused, and a spinner
@@ -55,8 +61,8 @@ public class AdLoadingOverlay : MonoBehaviour
     private const float RotationDegreesPerSecond = 260f;
     private const float SweepSeconds = 1.4f;
 
-    private static readonly Color TrackColor = new Color(0f, 0.898f, 1f, 0.16f);
-    private static readonly Color ArcColor = new Color(0f, 0.898f, 1f, 1f);
+    private static readonly Color TrackColor = new Color(0.227f, 0.141f, 0.094f, 0.12f);
+    private static readonly Color ArcColor = new Color(0.769f, 0.204f, 0.282f, 1f);
 
     // Drawn rather than assembled from a sprite. A ring image can only be spun, and spinning a
     // radially symmetric one changes nothing on screen — which is why the old spinner read as a

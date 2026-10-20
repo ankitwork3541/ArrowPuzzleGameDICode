@@ -1,6 +1,6 @@
 # Game Brief: Lantern Dragons
 
-**One-sentence pitch:** Tap paper dragons to slide them off a midnight festival board, but padlocked dragons stay stuck until enough other dragons have escaped.
+**One-sentence pitch:** Tap paper dragons to slide them off a warm paper festival board, but padlocked dragons stay stuck until enough other dragons have escaped.
 
 ## Core loop
 - Read the board, tap a free dragon: it slides forward and exits, or bumps another dragon (flashes red, costs a life).
@@ -13,7 +13,7 @@
 - Every generated level is solvable with the locks respected.
 
 ## MVP — what must exist to be the game
-1. Lantern theme: palette, dragon head/tail sprites, lantern-cloud backdrop (replaces the neon arrow silhouettes).
+1. Lantern theme: palette, dragon head/tail sprites, lantern-cloud backdrop (replaces the neon arrow silhouettes). **Light theme only** (decided 2026-10-20): the whole game is warm cream paper, with no dark mode — see Story 008.
 2. Locked arrows: padlock visual, shake on tap, countdown, unlock animation.
 3. New level pipeline: generator and solver respect locks (threshold never above the arrow's carve position), new seed constants and hash salts so no level matches the old game, new pacing ramp with an early lock introduction curve, binary format version bumped, levels re-baked.
 4. New board shapes: about 20 festival silhouettes (AI-generated PNGs in `LevelShapeSources/`: dragon, lantern, koi, drum, coin...) replacing the old ones.
@@ -37,6 +37,6 @@
 ---
 **Who it's for / what they feel:** Casual mobile puzzle fans who want short, satisfying "I outsmarted it" sessions with a festive feel.
 
-**Art & audio direction:** Midnight navy board, glowing red/gold/jade dragons, drifting lantern clouds; bells, soft drums and a gong on clear.
+**Art & audio direction:** Warm cream paper board (~`#FFF8EC`), saturated red/gold/jade dragons with a darker outline and soft drop shadow (no bloom), faint drifting lantern clouds; bells, soft drums and a gong on clear. Light theme only, no dark mode.
 
 **Reference game:** Our own previous arrow-path game: about 90% kept (grid, ads, lives, hints, generator); only the skin and the lock rule change.

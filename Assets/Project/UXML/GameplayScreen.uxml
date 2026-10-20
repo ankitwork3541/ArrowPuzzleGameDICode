@@ -2,62 +2,63 @@
     <Style src="project://database/Assets/Project/Themes/GameplayScreen.uss?fileID=7433441132597879392&amp;guid=b4369a12a23684b82832b80a76b589b0&amp;type=3#GameplayScreen" />
     <ui:Template name="AdPlaceholder" src="project://database/Assets/Project/UXML/AdPlaceholder.uxml" />
 
-    <!-- Every octagonal container is TWO layers: the element itself carries the dark fill sprite,
-         and a `__frame` child laid over it carries the neon edge. They are separate because they
-         need opposite tints, and -unity-background-image-tint-color applies to the whole image.
-         Frames are picking-mode="Ignore" so they never swallow a tap meant for their button. -->
+    <!-- Layout v2 (design/ux/ui-redesign.md): back on the left, the level title centred as plain text
+         with the difficulty chip under it, lives as a compact capsule on the right, and the progress
+         capsule directly under the title. The three actions live together in ONE floating dock.
+         The back button is a rounded square drawn from two sprite layers: the element carries the cream
+         paper fill, and a `card-frame` child laid over it carries the coloured edge. They are separate
+         because they need different tints, and -unity-background-image-tint-color applies to the whole
+         image. Frames are picking-mode="Ignore" so they never swallow a tap meant for their button.
+         Everything else is drawn with USS border-radius, so it needs no frame child. -->
 
     <ui:VisualElement name="gameplay-root" class="gameplay-root">
 
         <ui:VisualElement name="top-panel" class="top-panel">
 
-            <!-- Back on the left, badge on the right, lives floated over the middle. The pill is
-                 absolutely centred rather than laid out between the two, because back (120) and the
-                 badge (240+) are different widths — in flow it would sit off-centre by half that
-                 difference, and the badge grows again on five-digit level numbers. -->
+            <!-- The title is absolutely centred rather than laid out between back and lives, because the
+                 two are different widths — in flow it would sit off-centre by half that difference. -->
             <ui:VisualElement name="top-row" class="top-row">
 
-                <ui:Button name="back-button" class="oct-button oct-button--small oct">
-                    <ui:VisualElement class="oct__frame oct__frame--purple" picking-mode="Ignore" />
-                    <ui:VisualElement class="oct-button__icon oct-button__icon--back" picking-mode="Ignore" />
+                <ui:Button name="back-button" class="action-button action-button--small card-fill">
+                    <ui:VisualElement class="card-frame card-frame--purple" picking-mode="Ignore" />
+                    <ui:VisualElement class="action-button__icon action-button__icon--back" picking-mode="Ignore" />
                 </ui:Button>
 
-                <ui:VisualElement name="level-badge" class="level-badge oct" picking-mode="Ignore">
-                    <ui:VisualElement class="oct__frame oct__frame--magenta" picking-mode="Ignore" />
-                    <ui:Label name="difficulty-label" text="EASY" class="hud-difficulty" picking-mode="Ignore" />
-                    <ui:VisualElement class="level-badge__row" picking-mode="Ignore">
-                        <ui:Label text="LEVEL" class="level-badge__caption" picking-mode="Ignore" />
-                        <ui:Label name="level-number" text="1" class="level-badge__number" picking-mode="Ignore" />
+                <ui:VisualElement class="title-centre" picking-mode="Ignore">
+                    <ui:VisualElement name="level-title" class="level-title" picking-mode="Ignore">
+                        <ui:Label text="LEVEL" class="level-title__caption" picking-mode="Ignore" />
+                        <ui:Label name="level-number" text="1" class="level-title__number" picking-mode="Ignore" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="difficulty-chip" class="difficulty-chip" picking-mode="Ignore">
+                        <ui:Label name="difficulty-label" text="EASY" class="hud-difficulty" picking-mode="Ignore" />
                     </ui:VisualElement>
                 </ui:VisualElement>
 
-                <ui:VisualElement class="lives-centre" picking-mode="Ignore">
-                    <ui:VisualElement name="lives-pill" class="lives-pill" picking-mode="Ignore">
-                        <ui:VisualElement class="lives-pill__frame" picking-mode="Ignore" />
-                        <ui:VisualElement name="hearts" class="hearts" picking-mode="Ignore">
-                            <ui:VisualElement name="heart-0" class="heart" />
-                            <ui:VisualElement name="heart-1" class="heart" />
-                            <ui:VisualElement name="heart-2" class="heart" />
-                        </ui:VisualElement>
+                <ui:VisualElement name="lives-pill" class="lives-pill" picking-mode="Ignore">
+                    <ui:VisualElement name="hearts" class="hearts" picking-mode="Ignore">
+                        <ui:VisualElement name="heart-0" class="heart" />
+                        <ui:VisualElement name="heart-1" class="heart" />
+                        <ui:VisualElement name="heart-2" class="heart" />
                     </ui:VisualElement>
                 </ui:VisualElement>
 
             </ui:VisualElement>
 
-            <!-- Runs the full width under the row, so it doubles as the line that separates the
-                 HUD from the board. -->
+            <!-- A narrower capsule centred under the title; it no longer doubles as the full-width
+                 line that separates the HUD from the board — the opaque top panel does that. -->
             <ui:VisualElement name="progress-track" class="progress-track" picking-mode="Ignore">
                 <ui:VisualElement name="progress-fill" class="progress-fill" picking-mode="Ignore" />
             </ui:VisualElement>
 
         </ui:VisualElement>
 
+        <!-- The dock is the measured `bottom-bar` itself, so the camera's board insets and the HUD
+             hit-test both see exactly the floating card and nothing around it. -->
         <ui:VisualElement name="bottom-bar" class="bottom-bar">
 
             <ui:VisualElement class="action">
-                <ui:Button name="hint-button" class="oct-button oct">
-                    <ui:VisualElement class="oct__frame oct__frame--cyan" picking-mode="Ignore" />
-                    <ui:VisualElement name="hint-icon" class="oct-button__icon oct-button__icon--hint oct-button__icon--cyan" picking-mode="Ignore" />
+                <ui:Button name="hint-button" class="action-button dock-button dock-button--teal">
+                    <ui:VisualElement name="hint-icon" class="action-button__icon action-button__icon--hint action-button__icon--teal" picking-mode="Ignore" />
                     <ui:VisualElement name="hint-badge" class="hint-badge" picking-mode="Ignore">
                         <ui:Label name="hint-badge-label" text="3" class="hint-badge__label" picking-mode="Ignore" />
                     </ui:VisualElement>
@@ -66,17 +67,15 @@
             </ui:VisualElement>
 
             <ui:VisualElement class="action">
-                <ui:Button name="grid-button" class="oct-button oct">
-                    <ui:VisualElement class="oct__frame oct__frame--magenta" picking-mode="Ignore" />
-                    <ui:VisualElement class="oct-button__icon oct-button__icon--grid oct-button__icon--magenta" picking-mode="Ignore" />
+                <ui:Button name="grid-button" class="action-button dock-button dock-button--red">
+                    <ui:VisualElement class="action-button__icon action-button__icon--grid action-button__icon--red" picking-mode="Ignore" />
                 </ui:Button>
                 <ui:Label text="GRID" class="action__label" picking-mode="Ignore" />
             </ui:VisualElement>
 
             <ui:VisualElement class="action">
-                <ui:Button name="restart-button" class="oct-button oct">
-                    <ui:VisualElement class="oct__frame oct__frame--purple" picking-mode="Ignore" />
-                    <ui:VisualElement class="oct-button__icon oct-button__icon--restart oct-button__icon--purple" picking-mode="Ignore" />
+                <ui:Button name="restart-button" class="action-button dock-button dock-button--purple">
+                    <ui:VisualElement class="action-button__icon action-button__icon--restart action-button__icon--purple" picking-mode="Ignore" />
                 </ui:Button>
                 <ui:Label text="RESTART" class="action__label" picking-mode="Ignore" />
             </ui:VisualElement>

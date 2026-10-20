@@ -1,32 +1,32 @@
 /* Styles for the shared ad-loading modal. Self-contained on purpose: this overlay renders on its
-   own panel, so it cannot borrow the octagon rules from any single screen's stylesheet. */
+   own panel, so it cannot borrow the card rules from any single screen's stylesheet. */
 
-.oct {
-    background-image: url("../Sprites/UIOctagonFill.png");
-    -unity-background-image-tint-color: rgba(12, 18, 42, 0.88);
-    -unity-slice-left: 44;
-    -unity-slice-top: 44;
-    -unity-slice-right: 44;
-    -unity-slice-bottom: 44;
+.round {
+    background-image: url("../Sprites/UIRoundFill.png");
+    -unity-background-image-tint-color: rgb(255, 252, 244);
+    -unity-slice-left: 40;
+    -unity-slice-top: 40;
+    -unity-slice-right: 40;
+    -unity-slice-bottom: 40;
     background-color: rgba(0, 0, 0, 0);
     border-width: 0;
 }
 
-.oct__frame {
+.round__frame {
     position: absolute;
     left: 0;
     top: 0;
     right: 0;
     bottom: 0;
-    background-image: url("../Sprites/UIOctagonFrame.png");
-    -unity-slice-left: 44;
-    -unity-slice-top: 44;
-    -unity-slice-right: 44;
-    -unity-slice-bottom: 44;
+    background-image: url("../Sprites/UIRoundFrame.png");
+    -unity-slice-left: 40;
+    -unity-slice-top: 40;
+    -unity-slice-right: 40;
+    -unity-slice-bottom: 40;
 }
 
-.oct__frame--cyan {
-    -unity-background-image-tint-color: rgb(0, 229, 255);
+.round__frame--red {
+    -unity-background-image-tint-color: rgb(196, 52, 72);
 }
 
 /* The font is set here rather than inherited: this overlay is its own panel, so it no longer sits
@@ -52,7 +52,7 @@
     top: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(5, 8, 22, 0.88);
+    background-color: rgba(58, 36, 24, 0.55);
 }
 
 .ad-loading-modal__card {
@@ -60,8 +60,6 @@
     padding: 60px 40px;
     align-items: center;
     justify-content: center;
-    background-image: url("../Sprites/UIOctagonFill.png");
-    -unity-background-image-tint-color: rgba(12, 18, 42, 0.98);
 }
 
 /* No background-image: the ring is drawn in AdLoadingOverlay.DrawSpinner via Painter2D, because a
@@ -76,8 +74,7 @@
 .ad-loading-modal__title {
     font-size: 38px;
     letter-spacing: 4px;
-    color: rgb(0, 218, 243);
-    text-shadow: 0 0 16px rgba(0, 218, 243, 0.6);
+    color: rgb(196, 52, 72);
     margin: 0;
     margin-bottom: 12px;
 }
@@ -85,6 +82,6 @@
 .ad-loading-modal__subtitle {
     font-size: 24px;
     letter-spacing: 2px;
-    color: rgba(220, 228, 245, 0.7);
+    color: rgba(58, 36, 24, 0.6);
     margin: 0;
 }

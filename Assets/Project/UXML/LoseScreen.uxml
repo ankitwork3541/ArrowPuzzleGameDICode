@@ -10,10 +10,12 @@
     <ui:VisualElement name="screen-root" class="result-root">
         <ui:VisualElement class="result-scrim" picking-mode="Ignore" />
 
-        <ui:ScrollView mode="Vertical" name="result-scroll" class="result-scroll">
+        <ui:ScrollView mode="Vertical" name="result-scroll" class="result-scroll" vertical-scroller-visibility="Hidden">
 
             <ui:VisualElement name="result-card" class="result-card">
-                <ui:VisualElement class="result-card__frame result-card__frame--lose" picking-mode="Ignore" />
+                <ui:VisualElement class="result-badge result-badge--lose" picking-mode="Ignore">
+                    <ui:VisualElement class="result-badge__glyph result-badge__glyph--lose" picking-mode="Ignore" />
+                </ui:VisualElement>
 
                 <ui:Label name="level-label" text="LEVEL 01" class="result-card__level result-card__level--lose" picking-mode="Ignore" />
                 <ui:Label text="OUT OF LIVES" class="result-card__title" picking-mode="Ignore" />

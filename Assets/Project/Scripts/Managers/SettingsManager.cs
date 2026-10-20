@@ -9,10 +9,11 @@ public class SettingsManager : MonoBehaviour
 {
     public static SettingsManager Instance;
 
-    // Never rename once shipped — a changed key silently resets that option for every player.
-    private const string SoundKey = "settings.sound";
-    private const string VibrationKey = "settings.vibration";
-    private const string RefreshKey = "settings.nativeRefreshRate";
+    // Never rename once shipped — a changed key silently resets that option for every player. The
+    // "arrowqube" prefix is the previous game's name and is kept on purpose for that reason.
+    private const string SoundKey = "arrowqube.settings.sound";
+    private const string VibrationKey = "arrowqube.settings.vibration";
+    private const string RefreshKey = "arrowqube.settings.nativeRefreshRate";
 
     public bool SoundEnabled { get; private set; }
     public bool VibrationEnabled { get; private set; }

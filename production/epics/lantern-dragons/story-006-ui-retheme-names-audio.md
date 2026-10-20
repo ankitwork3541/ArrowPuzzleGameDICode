@@ -1,7 +1,7 @@
 # Story 006: UI retheme, names, audio
 
 > **Epic**: Lantern Dragons
-> **Status**: Ready
+> **Status**: In Progress (2026-10-20: UI retheme done via Stories 008; name "Lantern Dragons", new logo and Android icon, 7 synthesised LD_* clips and lock shake/unlock sounds are in code. Open: the clips were never listened to, the Settings toggles were not run, and the old name still lives in save/pref keys, the package id and comments; no evidence doc of its own, screenshots are in `story-008/`)
 > **Layer**: Presentation
 > **Type**: UI
 > **Estimate**: [fill before starting]

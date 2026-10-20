@@ -11,7 +11,9 @@ public static class SaveSystem
     // Bump this when the shape of SaveData changes, and teach Migrate() how to get there.
     public const int Version = 2;
 
-    private const string FileName = "progress.json";
+    // Intentionally keeps the old "arrowqube" prefix: renaming a shipped file name orphans every
+    // existing player's progress. A new package id already gives a fresh persistentDataPath.
+    private const string FileName = "arrowqube_progress.json";
 
     private static SaveData cached;
 

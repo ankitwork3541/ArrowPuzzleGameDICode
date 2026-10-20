@@ -1,17 +1,85 @@
-/* Height: badhe ek j value — 40px (tamne game te value rakhi shako) */
-.neon-progress,
-.neon-progress .unity-progress-bar__container {
-    height: 72px;
-    min-height: 72px;
+/* Splash, Layout v2. The root stays transparent: the camera's cream and the drifting backdrop are
+   what the page background is. Everything below is placed in percent so it holds its position on
+   any portrait aspect ratio. */
+.splash-root {
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 248, 236, 0);
 }
 
-/* Track */
+/* Name over icon, hanging from the top. */
+.splash-top {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 12%;
+    align-items: center;
+}
+
+/* The panel scales with the screen (1080x1920 reference, match 0.5), so a normal phone sees the
+   same layout. On a very narrow aspect the panel gets fewer width units; 104px keeps "DRAGONS"
+   (about 750 units) inside the width down to roughly 9:24. */
+.splash-title {
+    color: rgb(196, 52, 72);
+    font-size: 104px;
+    letter-spacing: 3px;
+    white-space: nowrap;
+    -unity-font-style: bold;
+    -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-Bold%20SDF.asset?fileID=11400000&guid=2d8208c2123c041daaecd4a4cf0d1ae2&type=2#Oxanium-Bold SDF");
+    margin: 0;
+    padding: 0;
+    -unity-text-align: middle-center;
+}
+
+/* 300px square on a normal screen; on a narrow one the box gets narrower (max-width) and
+   scale-to-fit keeps the logo square and centred inside it. */
+.splash-icon {
+    width: 300px;
+    min-width: 180px;
+    max-width: 40%;
+    height: 300px;
+    margin-top: 56px;
+    background-image: url("../Sprites/LogoRound.png");
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+/* Caption over bar, sitting near the bottom edge. */
+.splash-bottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 10%;
+    align-items: center;
+}
+
+.splash-caption {
+    color: rgba(58, 36, 24, 0.6);
+    font-size: 42px;
+    -unity-font-style: bold;
+    -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-Regular.ttf?fileID=12800000&guid=89fa6345cd24145a79a0365efa7553ea&type=3#Oxanium-Regular");
+    margin: 0;
+    margin-bottom: 24px;
+}
+
+/* ProgressBar: one capsule, ~80% of the width. */
+.neon-progress {
+    width: 80%;
+    margin: 0;
+}
+
+.neon-progress,
+.neon-progress .unity-progress-bar__container {
+    height: 56px;
+    min-height: 56px;
+}
+
+/* Track: a flat capsule, ink at 12% on the cream page. No frame, no glow. */
 .neon-progress .unity-progress-bar__background {
     height: 100%;
-    border-radius: 36px;              /* height / 2 */
-    background-color: rgb(20, 24, 40);
-    border-width: 3px;
-    border-color: rgb(0, 229, 255);
+    border-radius: 28px;              /* height / 2 */
+    background-color: rgba(58, 36, 24, 0.12);
+    border-width: 0;
     overflow: hidden;
 }
 
@@ -19,11 +87,12 @@
 .neon-progress .unity-progress-bar__progress {
     height: 100%;
     margin: 0;
-    border-radius: 36px;              /* same */
-    background-color: rgb(0, 229, 255);
+    border-radius: 28px;              /* same */
+    background-color: rgb(232, 140, 0);
 }
 
+/* The bar is a pure loading strip: the built-in title label would print its `title` text over it. */
+.neon-progress .unity-progress-bar__title-container,
 .neon-progress .unity-progress-bar__title {
-    font-size: 44px;
-    color: rgb(255, 255, 255);
+    display: none;
 }

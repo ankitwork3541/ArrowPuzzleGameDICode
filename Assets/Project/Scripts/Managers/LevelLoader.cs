@@ -338,6 +338,20 @@ public class LevelLoader : MonoBehaviour
         SaveProgress();
     }
 
+    // Jump to a level picked on the level map, WITHOUT loading it — same contract as AdvanceLevel().
+    // A level past the frontier (the first one not yet beaten) is refused here as well as on the
+    // map, so a stray caller cannot skip ahead.
+    public void SelectLevel(int levelNumber)
+    {
+        EnsureCurrent();        // so totalLevels is known before it is compared against
+
+        int frontier = SaveSystem.Data.highestLevelCompleted + 1;
+        int number = Mathf.Min(levelNumber, frontier);
+
+        currentLevelIndex = Mathf.Clamp(number - 1, 0, Mathf.Max(0, totalLevels - 1));
+        SaveProgress();
+    }
+
     public void GoToNextLevel()
     {
         AdvanceLevel();

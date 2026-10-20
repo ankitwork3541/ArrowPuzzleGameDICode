@@ -25,6 +25,10 @@ public class AudioManager : MonoBehaviour
 
     public AudioClip levelFailedClip;
 
+    // Padlocked dragons: a dry rattle when a locked one is tapped, a bright bell when its lock opens.
+    public AudioClip lockShakeClip;
+    public AudioClip unlockClip;
+
     void Awake()
     {
         Instance = this;
@@ -45,6 +49,16 @@ public class AudioManager : MonoBehaviour
     public void PlayUIClick()
     {
         PlaySfx(uiClickClip);
+    }
+
+    public void PlayLockShake()
+    {
+        PlaySfx(lockShakeClip);
+    }
+
+    public void PlayUnlock()
+    {
+        PlaySfx(unlockClip);
     }
 
     public void PlayLevelComplete()

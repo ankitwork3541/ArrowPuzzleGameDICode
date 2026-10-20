@@ -1,0 +1,15 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Project/Themes/LevelMapScreen.uss" />
+    <ui:VisualElement name="level-map" class="level-map">
+        <ui:VisualElement class="map-header">
+            <ui:Button name="map-back-button" class="map-back">
+                <ui:VisualElement class="map-back__icon" picking-mode="Ignore" />
+            </ui:Button>
+            <ui:VisualElement class="map-titles" picking-mode="Ignore">
+                <ui:Label name="map-title" text="LEVELS" class="map-title" picking-mode="Ignore" />
+                <ui:Label name="map-progress" text="0 / 0" class="map-progress" picking-mode="Ignore" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:ListView name="map-list" class="map-list" />
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,5 +1,5 @@
 /* ============ Root ============
-   No background-color: the starfield FX behind the panel must stay visible,
+   No background-color: the cream camera background behind the panel must stay visible,
    same as the Home screen. */
 .screen-root {
     flex-grow: 1;
@@ -29,16 +29,45 @@
 
 /* ============ Header ============ */
 .settings-header {
+    align-items: flex-start;
+    padding-top: 72px;
+    padding-bottom: 36px;
+    padding-left: 48px;
+    padding-right: 48px;
+}
+
+/* Round-cornered square back button, the same language as the HUD and the level map. */
+.settings-back {
+    width: 120px;
+    height: 120px;
+    margin: 0;
+    margin-bottom: 28px;
+    padding: 0;
+    border-radius: 36px;
+    border-width: 6px;
+    border-color: rgb(104, 66, 176);
+    background-color: rgb(255, 252, 244);
     align-items: center;
-    padding-top: 80px;
-    padding-bottom: 40px;
+    justify-content: center;
+}
+
+.settings-back:active {
+    scale: 0.93;
+}
+
+.settings-back__icon {
+    width: 52px;
+    height: 52px;
+    background-image: url("../Sprites/IconBack.png");
+    -unity-background-image-tint-color: rgba(58, 36, 24, 0.85);
 }
 
 .settings-title {
-    font-size: 64px;
-    letter-spacing: 8px;
-    color: rgb(0, 218, 243);
-    text-shadow: 0 0 24px rgba(0, 218, 243, 0.7);
+    font-size: 84px;
+    letter-spacing: 6px;
+    margin: 0;
+    -unity-text-align: middle-left;
+    color: rgb(58, 36, 24);
     -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-ExtraBold%20SDF.asset?fileID=11400000&guid=a1b658a48c21246d783d8c4f4c297d45&type=2#Oxanium-ExtraBold SDF");
 }
 
@@ -52,17 +81,17 @@
 }
 
 .settings-list {
-    padding-left: 40px;
-    padding-right: 40px;
+    padding-left: 48px;
+    padding-right: 48px;
     padding-bottom: 50px;
 }
 
 /* ============ Option group card ============ */
 .card {
-    background-color: rgba(16, 25, 54, 0.55);
-    border-radius: 36px;
-    border-width: 1px;
-    border-color: rgba(0, 229, 255, 0.14);
+    background-color: rgb(255, 252, 244);
+    border-radius: 40px;
+    border-width: 4px;
+    border-color: rgba(58, 36, 24, 0.12);
     padding-left: 30px;
     padding-right: 30px;
     margin-bottom: 34px;
@@ -79,10 +108,10 @@
    is marked explicitly in the UXML rather than derived. */
 .row--sep {
     border-top-width: 1px;
-    border-top-color: rgba(0, 229, 255, 0.1);
+    border-top-color: rgba(58, 36, 24, 0.12);
 }
 
-/* Link rows deliberately have NO :hover / :active highlight — a cyan wash across
+/* Link rows deliberately have NO :hover / :active highlight — a coloured wash across
    a whole row read as an accidental selection rather than as feedback. */
 
 .row__icon {
@@ -92,7 +121,7 @@
     background-repeat: no-repeat;
     background-position: center;
     background-size: contain;
-    -unity-background-image-tint-color: rgb(0, 229, 255);
+    -unity-background-image-tint-color: rgb(196, 52, 72);
 }
 
 /* flex-grow pushes whatever follows (switch or chevron) to the right edge. */
@@ -100,14 +129,14 @@
     flex-grow: 1;
     font-size: 36px;
     letter-spacing: 1px;
-    color: rgb(220, 228, 229);
+    color: rgb(58, 36, 24);
 }
 
 /* ">" rather than a typographic chevron glyph — the Oxanium SDF atlas is not
    guaranteed to contain "›", and a missing glyph renders as nothing at all. */
 .row__chevron {
     font-size: 38px;
-    color: rgba(0, 229, 255, 0.7);
+    color: rgba(58, 36, 24, 0.6);
     margin-right: 8px;
 }
 
@@ -144,9 +173,9 @@
     width: 104px;
     height: 56px;
     border-radius: 28px;
-    background-color: rgba(255, 255, 255, 0.08);
+    background-color: rgba(58, 36, 24, 0.12);
     border-width: 2px;
-    border-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(58, 36, 24, 0.18);
     transition-property: background-color, border-color;
     transition-duration: 0.18s;
     transition-timing-function: ease-out;
@@ -159,21 +188,23 @@
     width: 40px;
     height: 40px;
     border-radius: 20px;
-    background-color: rgb(112, 124, 152);
+    background-color: rgba(58, 36, 24, 0.45);
     transition-property: left, background-color;
     transition-duration: 0.18s;
     transition-timing-function: ease-out;
 }
 
+/* On: solid gold-orange capsule with a cream knob, so on/off differs by position and fill, not
+   by hue alone. */
 .switch--on {
-    background-color: rgba(0, 229, 255, 0.22);
-    border-color: rgb(0, 229, 255);
+    background-color: rgb(232, 140, 0);
+    border-color: rgb(232, 140, 0);
 }
 
 /* 104 total - 2+2 border - 40 knob - 4 right gap = 56 */
 .switch--on .switch__knob {
     left: 56px;
-    background-color: rgb(0, 229, 255);
+    background-color: rgb(255, 248, 236);
 }
 
 /* The <ui:Instance> wrapper around the ad-loading skeleton, styled here the same way `.nav-slot` is.

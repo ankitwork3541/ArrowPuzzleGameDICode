@@ -1,12 +1,12 @@
 # Story 004: Lantern theme art
 
 > **Epic**: Lantern Dragons
-> **Status**: Ready
+> **Status**: Superseded by Story 008 (2026-10-20: the game moved to a light paper theme; the sprites are reused)
 > **Layer**: Presentation
 > **Type**: Visual/Feel
 > **Estimate**: [fill before starting]
 > **Manifest Version**: N/A (minimal — no control manifest)
-> **Last Updated**: [set by /dev-story when implementation begins]
+> **Last Updated**: 2026-10-19
 
 ## Context
 

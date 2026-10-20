@@ -22,7 +22,7 @@ public class GuideLines : MonoBehaviour
     [Tooltip("World-space thickness of a ray. Arrow bodies are 0.25 of a cell.")]
     public float lineWidth = 0.04f;
 
-    public Color lineColor = new Color(0.62f, 0.69f, 1f, 0.22f);
+    public Color lineColor = new Color(0.47f, 0.35f, 0.24f, 0.22f);   // warm brown, reads on cream
 
     [Tooltip("How far past the visible screen edge each ray extends, in cells.")]
     public float screenMarginCells = 2f;

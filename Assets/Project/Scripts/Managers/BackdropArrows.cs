@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Scatters a handful of huge, near-invisible arrow silhouettes behind the board and drifts them
-// very slowly, so the backdrop reads as this game's rather than as a generic dark screen.
+// Scatters a handful of huge, near-invisible silhouettes behind the board and drifts them
+// very slowly, so the backdrop reads as this game's rather than as a generic plain cream screen.
 [ExecuteAlways]
 public class BackdropArrows : MonoBehaviour
 {
@@ -27,7 +27,9 @@ public class BackdropArrows : MonoBehaviour
     public int seed = 20260816;
 
     [Header("Look")]
-    public Color tint = new Color(0.039f, 0.059f, 0.133f, 1f);
+    [Tooltip("Faint warm beige a few percent off the cream camera background (#FFF8EC). Any more "
+             + "contrast and the silhouettes start competing with the board.")]
+    public Color tint = new Color(0.980f, 0.933f, 0.863f, 1f);
     public int sortingOrder = -100;
 
     [Header("Drift")]

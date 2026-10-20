@@ -1,7 +1,7 @@
 # Story 005: Level display and level map
 
 > **Epic**: Lantern Dragons
-> **Status**: Ready
+> **Status**: In Review (2026-10-20: code and Layout v2 screenshots done, see `production/qa/evidence/story-005-evidence.md`; AC-3, AC-4, AC-5 NOT TESTED, AC-6 PARTIAL; waiting for the developer's sign-off)
 > **Layer**: Presentation
 > **Type**: UI
 > **Estimate**: [fill before starting]
@@ -68,5 +68,5 @@
 
 ## Dependencies
 
-- Depends on: Story 002
+- Depends on: Story 002, Story 008 (light paper theme — the HUD and map are styled on the cream look)
 - Unlocks: None

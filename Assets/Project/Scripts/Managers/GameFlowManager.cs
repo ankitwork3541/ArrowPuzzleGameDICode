@@ -50,7 +50,15 @@ public class GameFlowManager : MonoBehaviour
         if (winRoot.activeSelf) { OnBackFromWin(); return; }
         if (loseRoot.activeSelf) { OnBackFromLose(); return; }
         if (gameplayRoot.activeSelf) { OnBackToHomeClicked(); return; }
-        if (homeRoot.activeSelf) { Application.Quit(); return; }
+        if (homeRoot.activeSelf)
+        {
+            // An open level map is a screen of its own: back closes it rather than leaving the app.
+            HomeScreenController home = FindAnyObjectByType<HomeScreenController>();
+            if (home != null && home.TryCloseMap()) return;
+
+            Application.Quit();
+            return;
+        }
 
         // Splash is the only screen left, and it has nowhere to go back to — it advances by itself.
     }
@@ -81,6 +89,17 @@ public class GameFlowManager : MonoBehaviour
     {
         InterstitialManager.ShowClickAd(() =>
         {
+            homeRoot.SetActive(false);
+            StartLevel();
+        });
+    }
+
+    // A level tapped on the Home level map. Same path as PLAY, after pointing the campaign at it.
+    public void OnLevelSelected(int levelNumber)
+    {
+        InterstitialManager.ShowClickAd(() =>
+        {
+            levelLoader.SelectLevel(levelNumber);
             homeRoot.SetActive(false);
             StartLevel();
         });

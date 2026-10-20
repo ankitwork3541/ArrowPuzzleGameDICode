@@ -56,9 +56,21 @@ public class ArrowController : MonoBehaviour
 
     public bool IsLocked => lockRemaining > 0;
 
-    // Placeholder padlock: a world-space number on the arrow's middle cell. Story 004 swaps in
-    // real art; the lock RULE does not depend on how it is drawn.
-    private TextMesh lockLabel;
+    // The padlock: a gold lock sprite on the arrow's middle cell with the remaining count on its
+    // body. One parent transform so a shake or a pop moves the sprite and the number together.
+    // Assigned on the arrow prefab; without it the number is still drawn, just on bare water.
+    public Sprite padlockSprite;
+
+    // Badge size as a fraction of one grid cell, and the digit height relative to the badge.
+    const float LockBadgeCells = 1.25f;
+    const float LockDigitSize = 0.17f;
+    // Ink, the same dark tone as the HUD text: the badge is gold, and a purple digit on gold was the
+    // weakest text on the board.
+    static readonly Color LockDigitColor = new Color(0.227f, 0.141f, 0.094f);
+
+    private Transform lockBadge;
+    private TextMesh lockText;
+    private SpriteRenderer lockSprite;
     private Tween lockTween;
 
     public void SetLock(int remaining)
@@ -67,39 +79,56 @@ public class ArrowController : MonoBehaviour
 
         if (lockRemaining == 0)
         {
-            RemoveLockLabel();
+            RemoveLockBadge();
             return;
         }
 
-        if (lockLabel == null) CreateLockLabel();
-        lockLabel.text = lockRemaining.ToString();
+        if (lockBadge == null) CreateLockBadge();
+        lockText.text = lockRemaining.ToString();
     }
 
-    void CreateLockLabel()
+    void CreateLockBadge()
     {
-        GameObject go = new GameObject("LockLabel");
+        GameObject go = new GameObject("LockBadge");
         go.transform.SetParent(transform, true);
         go.transform.position = gridBuilder.GridToWorld(path[path.Count / 2]);
+        go.transform.localScale = Vector3.one * (gridBuilder.spacing * LockBadgeCells);
+        lockBadge = go.transform;
+
+        if (padlockSprite != null)
+        {
+            lockSprite = go.AddComponent<SpriteRenderer>();
+            lockSprite.sprite = padlockSprite;
+            lockSprite.sortingOrder = 51;
+        }
+
+        GameObject textGo = new GameObject("Count");
+        textGo.transform.SetParent(lockBadge, false);
+        // The padlock body sits in the lower part of the sprite, so the digit goes there.
+        textGo.transform.localPosition = padlockSprite != null ? new Vector3(0f, -0.13f, 0f) : Vector3.zero;
 
         Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-        lockLabel = go.AddComponent<TextMesh>();
-        lockLabel.font = font;
-        lockLabel.fontSize = 64;
-        lockLabel.characterSize = gridBuilder.spacing * 0.08f;
-        lockLabel.anchor = TextAnchor.MiddleCenter;
-        lockLabel.alignment = TextAlignment.Center;
-        lockLabel.color = Color.white;
+        lockText = textGo.AddComponent<TextMesh>();
+        lockText.font = font;
+        lockText.fontSize = 64;
+        lockText.characterSize = LockDigitSize;
+        lockText.anchor = TextAnchor.MiddleCenter;
+        lockText.alignment = TextAlignment.Center;
+        lockText.fontStyle = FontStyle.Bold;
+        lockText.color = padlockSprite != null ? LockDigitColor : Color.white;
 
-        MeshRenderer meshRenderer = go.GetComponent<MeshRenderer>();
+        MeshRenderer meshRenderer = textGo.GetComponent<MeshRenderer>();
         meshRenderer.sharedMaterial = font.material;
-        meshRenderer.sortingOrder = 50;
+        meshRenderer.sortingOrder = 52;
     }
 
-    void RemoveLockLabel()
+    void RemoveLockBadge()
     {
-        if (lockLabel == null) return;
-        Destroy(lockLabel.gameObject);
-        lockLabel = null;
+        if (lockBadge == null) return;
+        Destroy(lockBadge.gameObject);
+        lockBadge = null;
+        lockText = null;
+        lockSprite = null;
     }
 
     // Every arrow that leaves the board counts one off the lock. At zero the lock opens.
@@ -110,23 +139,38 @@ public class ArrowController : MonoBehaviour
         lockRemaining--;
         if (lockRemaining > 0)
         {
-            lockLabel.text = lockRemaining.ToString();
+            lockText.text = lockRemaining.ToString();
             return;
         }
 
-        // Unlock: a quick pop on the label, then it disappears.
-        TextMesh label = lockLabel;
-        lockLabel = null;
-        if (label == null) return;
-        Tween.PunchScale(label.transform, strength: Vector3.one * 1.2f, duration: 0.3f)
-            .OnComplete(label.gameObject, warnIfTargetDestroyed: false, onComplete: go => Destroy(go));
+        // Unlock: the badge swells and fades out, then goes. It detaches from the arrow's lifetime
+        // on purpose, so it finishes even if the arrow starts its own exit straight away.
+        AudioManager.Instance.PlayUnlock();
+        Transform badge = lockBadge;
+        TextMesh text = lockText;
+        SpriteRenderer sprite = lockSprite;
+        lockBadge = null;
+        lockText = null;
+        lockSprite = null;
+        if (badge == null) return;
+
+        if (lockTween.isAlive) lockTween.Stop();
+        Vector3 startScale = badge.localScale;
+        Color textStart = text != null ? text.color : Color.white;
+        Tween.Custom(badge.gameObject, 0f, 1f, duration: 0.35f, ease: Ease.OutQuad, onValueChange: (go, t) =>
+        {
+            go.transform.localScale = startScale * (1f + 0.6f * t);
+            float alpha = 1f - t;
+            if (sprite != null) { Color c = sprite.color; c.a = alpha; sprite.color = c; }
+            if (text != null) { Color c = textStart; c.a = alpha; text.color = c; }
+        }).OnComplete(badge.gameObject, warnIfTargetDestroyed: false, onComplete: go => Destroy(go));
     }
 
     void ShakeLock()
     {
-        if (lockLabel == null) return;
+        if (lockBadge == null) return;
         if (lockTween.isAlive) lockTween.Complete();
-        lockTween = Tween.ShakeLocalPosition(lockLabel.transform,
+        lockTween = Tween.ShakeLocalPosition(lockBadge,
             strength: new Vector3(gridBuilder.spacing * 0.15f, 0f, 0f), duration: 0.25f, frequency: 20f);
     }
 
@@ -136,16 +180,43 @@ public class ArrowController : MonoBehaviour
             LevelManager.Instance.OnArrowLeft -= OnOtherArrowLeft;
     }
 
-    // This arrow's own neon colour, handed out by LevelLoader at spawn. White is only the
+    // This arrow's own colour, handed out by LevelLoader at spawn. White is only the
     // fallback for an arrow dropped into the scene by hand, so the Editor still shows something.
     public Color baseColor = Color.white;
 
-    // A travelling arrow lifts towards white instead of switching to one shared "active" colour —
-    // that used to be cyan, which would wipe out the arrow's identity the moment it moved.
+    // The board is light, so "ink" is the one dark tone the whole look hangs on: it is what a
+    // travelling arrow deepens towards, what the bump flashes, and what outlines are mixed from.
+    static readonly Color Ink = new Color(0.10f, 0.08f, 0.14f);
+
+    // A travelling arrow deepens towards ink instead of switching to one shared "active" colour —
+    // a shared colour would wipe out the arrow's identity the moment it moved.
     // Set to 0 in the Inspector to make a run keep the base colour exactly.
     [Range(0f, 1f)] public float activeBoost = 0.35f;
 
-    Color ActiveColor() => Color.Lerp(baseColor, Color.white, activeBoost);
+    Color ActiveColor() => Color.Lerp(baseColor, Ink, activeBoost);
+
+    // Outline and shadow: a light board has no Bloom to lift a dragon off the paper, so each body is
+    // drawn three times — a soft shadow, a darker slightly wider outline, then the coloured body.
+    [Header("Outline and shadow")]
+    public float outlineWidthScale = 1.4f;                 // outline width relative to the body
+    public float outlineDarken = 0.55f;                    // how far the outline mixes towards ink
+    public Vector2 shadowOffset = new Vector2(0.03f, -0.05f);
+    [Range(0f, 1f)] public float shadowAlpha = 0.22f;
+    public float spriteOutlineScale = 1.3f;               // head / pearl outline relative to the sprite
+    // The pearl marks where the tail is, so it has to read at a glance on a small board: bigger than
+    // the prefab's sprite, a fixed gold fill whatever the dragon's own colour, and a full-ink outline.
+    public float pearlScale = 1.25f;
+    public Color pearlFill = new Color(1f, 0.78f, 0.24f);
+
+    const int OutlineSortingOffset = -2;
+    const int ShadowSortingOffset = -3;
+
+    private LineRenderer outlineLine;
+    private LineRenderer shadowLine;
+    private SpriteRenderer headOutline;
+    private SpriteRenderer tailOutline;
+    private bool outlineDirty;       // geometry was rewritten outside a tween (DrawPath etc.)
+    private bool outlineSettle;      // one more mirror after the last animated frame
 
     // Safe before or after Init() — Awake() has already cached the renderers by the time
     // Instantiate() returns, so the colour lands whichever order LevelLoader calls in.
@@ -158,7 +229,10 @@ public class ArrowController : MonoBehaviour
     [Header("Hint pulse")]
     public float hintPulseScale = 1.25f;   // how far the body swells at the peak
     public float hintPulseTime = 0.2f;     // one half-pulse; 10 yoyo cycles = 5 swells
-    public Color hintColor = new Color(1f, 0.85f, 0.2f);
+    // Flash when an arrow runs into another. Near-black ink rather than red or white: red is a
+    // resting dragon colour, and white vanishes on cream paper.
+    public Color bumpColor = new Color(0.07f, 0.05f, 0.10f);
+    public Color hintColor = new Color(0f, 0.467f, 0.714f);   // strong blue #0077B6: no dragon is blue
 
     private Tween hintTween;
     private Vector3[] hintBasePoints;      // non-null only while a pulse is running
@@ -175,7 +249,85 @@ public class ArrowController : MonoBehaviour
         if (headVisual != null)
             headSprite = headVisual.GetComponent<SpriteRenderer>();
         if (tailVisual != null)
+        {
             tailSprite = tailVisual.GetComponent<SpriteRenderer>();
+            tailVisual.localScale *= pearlScale;
+        }
+
+        CreateOutlineLine(ShadowSortingOffset, out shadowLine, "Shadow");
+        CreateOutlineLine(OutlineSortingOffset, out outlineLine, "Outline");
+        headOutline = CreateSpriteOutline(headSprite);
+        tailOutline = CreateSpriteOutline(tailSprite);
+        SetLineColor(baseColor);
+    }
+
+    // A second LineRenderer that copies the body's look and shares its material, so it batches the
+    // same way. World-space like the body; LateUpdate() keeps its points in step.
+    void CreateOutlineLine(int sortingOffset, out LineRenderer result, string objectName)
+    {
+        GameObject go = new GameObject(objectName);
+        go.layer = gameObject.layer;
+        go.transform.SetParent(transform, false);
+
+        LineRenderer lr = go.AddComponent<LineRenderer>();
+        lr.useWorldSpace = true;
+        lr.sharedMaterial = line.sharedMaterial;
+        lr.widthCurve = line.widthCurve;
+        lr.widthMultiplier = line.widthMultiplier * outlineWidthScale;
+        lr.numCornerVertices = line.numCornerVertices;
+        lr.numCapVertices = line.numCapVertices;
+        lr.alignment = line.alignment;
+        lr.textureMode = line.textureMode;
+        lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        lr.receiveShadows = false;
+        lr.sortingLayerID = line.sortingLayerID;
+        lr.sortingOrder = line.sortingOrder + sortingOffset;
+        lr.positionCount = 0;
+        result = lr;
+    }
+
+    // A darker, slightly larger copy of a head / pearl sprite parented to it, so it inherits the
+    // sprite's position, rotation and the hint pulse's scaling for free.
+    SpriteRenderer CreateSpriteOutline(SpriteRenderer source)
+    {
+        if (source == null) return null;
+
+        GameObject go = new GameObject("Outline");
+        go.layer = source.gameObject.layer;
+        go.transform.SetParent(source.transform, false);
+        go.transform.localScale = Vector3.one * spriteOutlineScale;
+
+        SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
+        sr.sprite = source.sprite;
+        sr.sharedMaterial = source.sharedMaterial;
+        sr.sortingLayerID = source.sortingLayerID;
+        sr.sortingOrder = source.sortingOrder + OutlineSortingOffset;
+        return sr;
+    }
+
+    // Mirrors the body's points into the outline and the (offset) shadow. Runs only while something
+    // is animating, plus one settling frame after it stops — the last tween frame writes the final
+    // points and then clears isMoving in the same call, so without the settle frame it would be
+    // skipped. No allocations: points are copied one by one.
+    void LateUpdate()
+    {
+        bool active = isMoving || hintBasePoints != null || outlineDirty;
+        if (!active && !outlineSettle) return;
+
+        outlineSettle = active;
+        outlineDirty = false;
+
+        int count = line.positionCount;
+        outlineLine.positionCount = count;
+        shadowLine.positionCount = count;
+
+        Vector3 offset = new Vector3(shadowOffset.x, shadowOffset.y, 0f);
+        for (int i = 0; i < count; i++)
+        {
+            Vector3 p = line.GetPosition(i);
+            outlineLine.SetPosition(i, p);
+            shadowLine.SetPosition(i, p + offset);
+        }
     }
 
     public void Init(List<Vector2Int> newPath, GridBuilder builder)
@@ -213,6 +365,7 @@ public class ArrowController : MonoBehaviour
         if (IsLocked)
         {
             ShakeLock();
+            AudioManager.Instance.PlayLockShake();
             return;
         }
 
@@ -224,6 +377,7 @@ public class ArrowController : MonoBehaviour
 
     void DrawPath()
     {
+        outlineDirty = true;
         line.positionCount = path.Count;
 
         for (int i = 0; i < path.Count; i++)
@@ -278,6 +432,7 @@ public class ArrowController : MonoBehaviour
     // Draw only the first `fraction` of the path, measured as length from the tail.
     void DrawPartial(Vector3[] full, float totalLength, float fraction)
     {
+        outlineDirty = true;
         float target = totalLength * fraction;
         float walked = 0f;
         int lastWhole = 0;              // last point the stroke has fully reached
@@ -467,7 +622,9 @@ public class ArrowController : MonoBehaviour
     void BlockedBounce()
     {
         AudioManager.Instance.PlayArrowClickBlocked();
+#if UNITY_ANDROID || UNITY_IOS
         if (SettingsManager.Instance.VibrationEnabled) Handheld.Vibrate();
+#endif
         LivesManager.Instance.LoseLife();
 
         int n = path.Count;
@@ -478,7 +635,7 @@ public class ArrowController : MonoBehaviour
         Vector2Int dir = head - prev;
         Vector3 bumpHeadWorld = originalHeadWorld + new Vector3(dir.x, dir.y, 0f) * gridBuilder.spacing * 0.3f;
 
-        SetLineColor(Color.red);
+        SetLineColor(bumpColor);
 
         isMoving = true;
 
@@ -643,10 +800,27 @@ public class ArrowController : MonoBehaviour
         line.startColor = c;
         line.endColor = c;
 
+        Color edge = Color.Lerp(c, Ink, outlineDarken);
+        if (outlineLine != null)
+        {
+            outlineLine.startColor = edge;
+            outlineLine.endColor = edge;
+        }
+        if (shadowLine != null)
+        {
+            Color shade = new Color(Ink.r, Ink.g, Ink.b, shadowAlpha);
+            shadowLine.startColor = shade;
+            shadowLine.endColor = shade;
+        }
+
         if (headSprite != null)
             headSprite.color = c;
         if (tailSprite != null)
-            tailSprite.color = c;
+            tailSprite.color = pearlFill;
+        if (headOutline != null)
+            headOutline.color = edge;
+        if (tailOutline != null)
+            tailOutline.color = Ink;
     }
 
     public Bounds GetBounds()

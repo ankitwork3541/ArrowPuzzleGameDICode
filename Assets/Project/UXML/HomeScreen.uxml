@@ -2,19 +2,46 @@
     <Style src="project://database/Assets/Project/Themes/HomeScreen.uss?fileID=7433441132597879392&amp;guid=374be4457ec7e46788af90c7b240d263&amp;type=3#HomeScreen"/>
     <ui:Template name="BottomNav" src="project://database/Assets/Project/UXML/BottomNav.uxml" />
     <ui:Template name="AdPlaceholder" src="project://database/Assets/Project/UXML/AdPlaceholder.uxml" />
+    <ui:Template name="LevelMap" src="project://database/Assets/Project/UXML/LevelMapScreen.uxml" />
     <ui:VisualElement name="screen-root" class="screen-root">
         <ui:VisualElement name="content" class="content">
-            <ui:Label name="level-label" text="LEVEL 01" class="level-label"/>
-            <ui:VisualElement name="difficulty-pill" class="difficulty-pill">
-                <ui:Label name="difficulty-text" text="EASY" class="difficulty-text"/>
-            </ui:VisualElement>
-            <ui:Button name="play-button" class="play-button">
-                <ui:VisualElement picking-mode="Ignore" class="play-button__inner">
-                    <ui:Label text="PLAY" picking-mode="Ignore" class="play-button__label"/>
-                    <ui:Label text="&gt;" picking-mode="Ignore" class="play-button__chevron"/>
+
+            <ui:VisualElement name="home-top" class="home-top">
+                <ui:VisualElement class="brand" picking-mode="Ignore">
+                    <ui:VisualElement class="brand__logo" picking-mode="Ignore" />
+                    <ui:Label text="LANTERN&#10;DRAGONS" class="brand__name" picking-mode="Ignore" />
                 </ui:VisualElement>
-            </ui:Button>
+                <ui:Button name="settings-button" class="round-button">
+                    <ui:VisualElement class="round-button__icon round-button__icon--settings" picking-mode="Ignore" />
+                </ui:Button>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="home-center" class="home-center">
+                <ui:VisualElement name="level-card" class="level-card">
+                    <ui:Label name="level-label" text="LEVEL 01" class="level-label"/>
+                    <ui:VisualElement name="difficulty-pill" class="difficulty-pill">
+                        <ui:Label name="difficulty-text" text="EASY" class="difficulty-text"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="card-progress" picking-mode="Ignore">
+                        <ui:Label name="card-progress-text" text="0 CLEARED" class="card-progress__text" picking-mode="Ignore" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="home-actions" class="home-actions">
+                <ui:Button name="levels-button" class="levels-button round-button">
+                    <ui:VisualElement class="round-button__icon round-button__icon--levels" picking-mode="Ignore" />
+                </ui:Button>
+                <ui:Button name="play-button" class="play-button">
+                    <ui:VisualElement picking-mode="Ignore" class="play-button__inner">
+                        <ui:Label text="PLAY" picking-mode="Ignore" class="play-button__label"/>
+                        <ui:Label text="&gt;" picking-mode="Ignore" class="play-button__chevron"/>
+                    </ui:VisualElement>
+                </ui:Button>
+            </ui:VisualElement>
+
         </ui:VisualElement>
+        <ui:Instance template="LevelMap" name="level-map-slot" class="map-slot" />
         <ui:Instance template="BottomNav" name="bottom-nav-slot" class="nav-slot" />
         <ui:VisualElement name="native-ad-space" class="home-ad-space">
             <ui:Instance template="AdPlaceholder" name="ad-placeholder-slot" class="ad-placeholder-slot" />

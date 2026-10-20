@@ -20,45 +20,41 @@
     visibility: hidden;
 }
 
-/* ============ Octagon chrome ============
-   The design's chamfered corners and neon outer glow have no USS equivalent —
-   there is border-radius but no clip-path, and text-shadow but no box-shadow —
-   so both are baked into sprites. The sprites are drawn white and recoloured
-   here, which is why three neon variants cost one file instead of three.
+/* ============ Paper-lantern chrome ============
+   The back button is a rounded square in two layers: `.card-fill` carries the cream paper interior,
+   and a `.card-frame` child laid over it carries the coloured edge. Two elements because the two need
+   different tints and -unity-background-image-tint-color applies to the whole image. Both sprites are
+   drawn white and recoloured here, so the accent colours cost one file instead of several.
 
-   `.oct` carries the dark interior; `.oct__frame` is an overlay child carrying
-   the edge. Two elements, because the two need opposite tints and the tint
-   property applies to a whole image.
-
-   Sliced at 44px: the sprite's 24px chamfer plus its 16px glow margin both sit
-   inside that, so a stretched badge keeps its corners undistorted. */
-.oct {
-    background-image: url("../Sprites/UIOctagonFill.png");
-    -unity-background-image-tint-color: rgba(12, 18, 42, 0.88);
-    -unity-slice-left: 44;
-    -unity-slice-top: 44;
-    -unity-slice-right: 44;
-    -unity-slice-bottom: 44;
+   Sliced at 40px on a 128px sprite: that is the whole rounded corner (radius 36), so a button of any
+   size keeps its corners undistorted. No glow margin anywhere — the edge is crisp so it reads on
+   cream. Everything else in the HUD (title chip, lives pill, dock, dock buttons) is drawn with USS
+   border-radius, see below. */
+.card-fill {
+    background-image: url("../Sprites/UIRoundFill.png");
+    -unity-background-image-tint-color: rgb(255, 252, 244);
+    -unity-slice-left: 40;
+    -unity-slice-top: 40;
+    -unity-slice-right: 40;
+    -unity-slice-bottom: 40;
     background-color: rgba(0, 0, 0, 0);
     border-width: 0;
 }
 
-.oct__frame {
+.card-frame {
     position: absolute;
     left: 0;
     top: 0;
     right: 0;
     bottom: 0;
-    background-image: url("../Sprites/UIOctagonFrame.png");
-    -unity-slice-left: 44;
-    -unity-slice-top: 44;
-    -unity-slice-right: 44;
-    -unity-slice-bottom: 44;
+    background-image: url("../Sprites/UIRoundFrame.png");
+    -unity-slice-left: 40;
+    -unity-slice-top: 40;
+    -unity-slice-right: 40;
+    -unity-slice-bottom: 40;
 }
 
-.oct__frame--cyan    { -unity-background-image-tint-color: rgb(0, 229, 255); }
-.oct__frame--magenta { -unity-background-image-tint-color: rgb(255, 43, 214); }
-.oct__frame--purple  { -unity-background-image-tint-color: rgb(139, 92, 255); }
+.card-frame--purple { -unity-background-image-tint-color: rgb(104, 66, 176); }
 
 /* ============ Top panel ============
    OPAQUE on purpose, and it must match the camera's Solid Color background
@@ -70,7 +66,7 @@
    transition-property is not additive across rules — a class setting `opacity` would REPLACE
    .bottom-bar's own `bottom` transition instead of adding to it. */
 .top-panel {
-    background-color: rgb(5, 8, 22);
+    background-color: rgb(255, 248, 236);
     padding-top: 48px;
     padding-bottom: 22px;
     transition-property: opacity;
@@ -82,14 +78,15 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-    height: 150px;
+    height: 132px;
     padding-left: 36px;
     padding-right: 36px;
 }
 
-/* Overlays the whole row so the pill lands on the SCREEN centre. Absolute children are laid out
-   against the parent's padding box, and that box is symmetric, so "centre" here really is centre. */
-.lives-centre {
+/* Overlays the whole row so the title lands on the SCREEN centre. Absolute children are laid out
+   against the parent's padding box, and that box is symmetric, so "centre" here really is centre.
+   Ignores picking so it never covers the back button underneath its edge. */
+.title-centre {
     position: absolute;
     left: 0;
     top: 0;
@@ -99,139 +96,126 @@
     justify-content: center;
 }
 
-/* ============ LEVEL badge (top-right) ============
-   Carries the difficulty now, small and in the accent colour, over the level line. min-width is a
-   floor, not a size: five-digit level numbers are coming, and the badge has to grow for them. */
-.level-badge {
-    height: 150px;
-    min-width: 240px;
-    padding-left: 30px;
-    padding-right: 30px;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.level-badge__row {
+/* ============ LEVEL title (centre) ============
+   Plain text, no capsule: the number is the one big thing in the header. Caption and number run at
+   the SAME size so they share a baseline without any nudging — USS has no baseline alignment, and
+   mixing sizes on one row leaves the small word floating against the big one. The contrast comes
+   from colour instead. Sized so "LEVEL 1500" still fits between back and the lives pill. */
+.level-title {
     flex-direction: row;
     align-items: center;
-    margin-top: 4px;
+    /* "LEVEL 1500" is about 300 units wide, so this never bites on a normal level. It only caps an
+       absurdly long number so it can never run into the back button or the lives capsule. */
+    max-width: 46%;
 }
 
-/* Caption and number run at the SAME size so they share a baseline without any nudging — mixing
-   26px and 62px on one row leaves the small word floating against the big one, and USS has no
-   baseline alignment to fix it with. The contrast comes from colour instead. */
-.level-badge__caption {
-    font-size: 36px;
+.level-title__caption {
+    font-size: 44px;
     letter-spacing: 3px;
-    color: rgba(220, 228, 245, 0.55);
+    color: rgba(58, 36, 24, 0.6);
     margin: 0;
     margin-right: 12px;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
-.level-badge__number {
-    font-size: 36px;
-    color: rgb(255, 255, 255);
+.level-title__number {
+    font-size: 44px;
+    color: rgb(58, 36, 24);
     margin: 0;
+    flex-shrink: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* ============ Difficulty (inside the LEVEL badge) ============
-   Small and sitting over the level line. NIGHTMARE is the longest label it ever carries: at 22px
-   that is about 162px, which is inside the badge's 240px floor once padding is taken off. */
+/* ============ Difficulty chip (under the title) ============
+   A small capsule in dark gold. NIGHTMARE is the longest label it ever carries: at 20px that is
+   about 150px, comfortably inside the centre space. */
+.difficulty-chip {
+    margin-top: 6px;
+    padding-left: 18px;
+    padding-right: 18px;
+    height: 34px;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(255, 252, 244);
+    border-width: 3px;
+    border-color: rgb(232, 140, 0);
+    border-radius: 17px;
+}
+
 .hud-difficulty {
-    font-size: 22px;
-    letter-spacing: 3px;
-    color: rgb(0, 218, 243);
-    text-shadow: 0 0 12px rgba(0, 218, 243, 0.6);
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: rgb(176, 112, 0);
     margin: 0;
 }
 
-/* ============ Octagon icon buttons ============ */
-.oct-button {
-    width: 176px;
-    height: 176px;
+/* ============ Rounded-square icon buttons ============ */
+.action-button {
     margin: 0;
     padding: 0;
     align-items: center;
     justify-content: center;
 }
 
-/* Back sits in the top row against the 150px badge, so it runs smaller than the
-   bottom bar's action buttons. */
-.oct-button--small {
+/* Back sits in the top row, so it is a fixed 120px rounded square. */
+.action-button--small {
     width: 120px;
     height: 120px;
     flex-shrink: 0;
 }
 
-.oct-button:active {
+.action-button:active {
     scale: 0.93;
 }
 
-.oct-button__icon {
-    width: 68px;
-    height: 68px;
+.action-button__icon {
+    width: 56px;
+    height: 56px;
     background-repeat: no-repeat;
     background-position: center;
     background-size: contain;
-    -unity-background-image-tint-color: rgba(226, 232, 246, 0.92);
+    -unity-background-image-tint-color: rgba(58, 36, 24, 0.85);
 }
 
-.oct-button--small .oct-button__icon {
+.action-button--small .action-button__icon {
     width: 48px;
     height: 48px;
 }
 
-.oct-button__icon--back    { background-image: url("../Sprites/IconBack.png"); }
-.oct-button__icon--restart { background-image: url("../Sprites/IconRestart.png"); }
-.oct-button__icon--grid    { background-image: url("../Sprites/IconGrid.png"); }
+.action-button__icon--back    { background-image: url("../Sprites/IconBack.png"); }
+.action-button__icon--restart { background-image: url("../Sprites/IconRestart.png"); }
+.action-button__icon--grid    { background-image: url("../Sprites/IconGrid.png"); }
 /* The hint button wears one of two glyphs. Free hints are the bulb; once they run out the hint
-   costs a rewarded ad, and the video glyph plus the magenta AD badge is what says so before the
+   costs a rewarded ad, and the video glyph plus the red AD badge is what says so before the
    player taps. Swapping the icon and not just the badge matters — a bulb with "AD" on it still
    reads as a free hint at a glance. */
-.oct-button__icon--hint      { background-image: url("../Sprites/IconBulb.png"); }
-.oct-button__icon--hint-ad   { background-image: url("../Sprites/IconAd.png"); }
+.action-button__icon--hint      { background-image: url("../Sprites/IconBulb.png"); }
+.action-button__icon--hint-ad   { background-image: url("../Sprites/IconAd.png"); }
 
-/* Bottom-bar icons wear their button's neon colour; the small back icon stays
+/* Dock icons wear their button's accent colour; the small back icon stays
    neutral so the top row has exactly one accent in it. */
-.oct-button__icon--cyan    { -unity-background-image-tint-color: rgb(0, 229, 255); }
-.oct-button__icon--magenta { -unity-background-image-tint-color: rgb(255, 43, 214); }
-.oct-button__icon--purple  { -unity-background-image-tint-color: rgb(139, 92, 255); }
+.action-button__icon--teal   { -unity-background-image-tint-color: rgb(0, 122, 150); }
+.action-button__icon--red    { -unity-background-image-tint-color: rgb(196, 52, 72); }
+.action-button__icon--purple { -unity-background-image-tint-color: rgb(104, 66, 176); }
 
-/* ============ LIVES pill ============
-   Sliced left/right only. The sprite's middle section is a straight bar top and
-   bottom, so stretching it vertically as well as horizontally stays correct —
-   only the two pointed ends must keep their native width. */
+/* ============ LIVES pill (right) ============
+   A capsule: border-radius is half the height, so the ends stay semicircles whatever the width. Red
+   border to match the hearts it holds. Kept compact so the centred title has room on both sides. */
 .lives-pill {
     flex-direction: row;
     align-items: center;
     justify-content: center;
-    height: 92px;
-    padding-left: 30px;
-    padding-right: 30px;
-    margin-right: 22px;
+    height: 76px;
+    padding-left: 14px;
+    padding-right: 14px;
     flex-shrink: 0;
-
-    background-image: url("../Sprites/UIHexPillFill.png");
-    -unity-background-image-tint-color: rgba(12, 18, 42, 0.88);
-    -unity-slice-left: 56;
-    -unity-slice-right: 56;
-    -unity-slice-top: 0;
-    -unity-slice-bottom: 0;
-}
-
-.lives-pill__frame {
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    background-image: url("../Sprites/UIHexPillFrame.png");
-    -unity-background-image-tint-color: rgb(255, 43, 214);
-    -unity-slice-left: 56;
-    -unity-slice-right: 56;
-    -unity-slice-top: 0;
-    -unity-slice-bottom: 0;
+    background-color: rgb(255, 252, 244);
+    border-width: 5px;
+    border-color: rgb(196, 52, 72);
+    border-radius: 38px;
 }
 
 /* The "LIVES" caption is gone: in a single-row header the hearts read on their own, and the word
@@ -242,62 +226,81 @@
 }
 
 .heart {
-    width: 50px;
-    height: 50px;
-    margin-left: 7px;
-    margin-right: 7px;
+    width: 38px;
+    height: 38px;
+    margin-left: 3px;
+    margin-right: 3px;
     background-image: url("../Sprites/IconHeart.png");
     background-repeat: no-repeat;
     background-position: center;
     background-size: contain;
-    -unity-background-image-tint-color: rgb(255, 43, 214);
+    -unity-background-image-tint-color: rgb(214, 48, 49);
 }
 
+/* Empty hearts keep their shape and only drop to a faint ink tint, so the loss reads as a hollow,
+   not as a heart that was never there. */
 .heart--empty {
-    -unity-background-image-tint-color: rgba(255, 255, 255, 0.14);
+    -unity-background-image-tint-color: rgba(58, 36, 24, 0.14);
 }
 
 /* ============ Level progress bar ============
-   Sits directly under the difficulty label, small, and glowing to match the rest
-   of the chrome. Track and fill are both capsule sprites sliced left/right only,
-   so the fill animates to any width while its rounded ends keep their shape.
+   A capsule about 60% of the panel wide, centred directly under the title and the difficulty chip.
+   Track and fill are both flat capsule sprites (128x32) sliced left/right only, so the fill
+   animates to any width while its rounded ends keep their shape.
 
-   Deliberately NO overflow:hidden on the track. It would clip the fill's glow off
-   at both ends, which is the whole reason the fill is a sprite and not a plain
-   background-color — USS has no box-shadow to glow with. */
+   The bar is 20px tall against a 32px sprite, so -unity-slice-scale of 0.625 shrinks the 16px end
+   caps to 10px: still exact semicircles, not squashed ovals.
+
+   Deliberately NO overflow:hidden on the track. It would clip the fill's end caps where the fill
+   reaches the track's ends. */
 .progress-track {
-    height: 24px;
-    margin-top: 24px;
-    margin-left: 36px;
-    margin-right: 36px;
+    width: 60%;
+    height: 20px;
+    margin-top: 18px;
+    align-self: center;
     background-image: url("../Sprites/UIBarTrack.png");
-    -unity-background-image-tint-color: rgba(255, 255, 255, 0.10);
-    -unity-slice-left: 26;
-    -unity-slice-right: 26;
+    -unity-background-image-tint-color: rgba(58, 36, 24, 0.12);
+    -unity-slice-left: 16;
+    -unity-slice-right: 16;
     -unity-slice-top: 0;
     -unity-slice-bottom: 0;
+    -unity-slice-scale: 0.625px;
 }
 
 .progress-fill {
     width: 0;
     height: 100%;
     background-image: url("../Sprites/UIBarFill.png");
-    -unity-background-image-tint-color: rgb(0, 229, 255);
-    -unity-slice-left: 26;
-    -unity-slice-right: 26;
+    -unity-background-image-tint-color: rgb(232, 140, 0);
+    -unity-slice-left: 16;
+    -unity-slice-right: 16;
     -unity-slice-top: 0;
     -unity-slice-bottom: 0;
+    -unity-slice-scale: 0.625px;
 }
 
-/* ============ Bottom action bar ============ */
+/* ============ Bottom action dock ============
+   ONE floating cream-white card holding all three actions, instead of three separate squares.
+   This element IS `bottom-bar`: the controller lifts its `bottom` by the measured ad height, the
+   camera reads its top edge as the bottom board inset, and the HUD hit-test uses its bounds — so the
+   visible card and the measured box must be the same thing. 40px side margins keep it a floating
+   card, not an edge-to-edge bar. */
 .bottom-bar {
     position: absolute;
-    left: 0;
-    right: 0;
+    left: 40px;
+    right: 40px;
     bottom: 70px;
     flex-direction: row;
-    justify-content: center;
+    justify-content: space-around;
     align-items: flex-start;
+    padding-top: 20px;
+    padding-bottom: 18px;
+    padding-left: 12px;
+    padding-right: 12px;
+    background-color: rgb(255, 252, 244);
+    border-width: 4px;
+    border-color: rgba(58, 36, 24, 0.12);
+    border-radius: 64px;
     transition-property: bottom, opacity;
     transition-duration: 0.22s, 0.35s;
     transition-timing-function: ease-out, ease-out;
@@ -305,51 +308,80 @@
 
 .action {
     align-items: center;
-    margin-left: 34px;
-    margin-right: 34px;
+    width: 180px;
 }
 
 .action__label {
-    font-size: 28px;
+    font-size: 26px;
     letter-spacing: 3px;
-    color: rgba(226, 232, 246, 0.85);
+    color: rgba(58, 36, 24, 0.85);
     margin: 0;
-    margin-top: 16px;
+    margin-top: 10px;
 }
 
-/* Set by the controller when the guide lines are on. */
-.grid-button--on .oct-button__icon {
-    -unity-background-image-tint-color: rgb(255, 255, 255);
+/* Round dock buttons: a 112px circle with a coloured 5px ring and a faint accent wash inside, so
+   the three are told apart by icon and label as well as by colour. */
+.dock-button {
+    width: 112px;
+    height: 112px;
+    border-width: 5px;
+    border-radius: 56px;
+}
+
+.dock-button--teal {
+    border-color: rgb(0, 122, 150);
+    background-color: rgba(0, 122, 150, 0.08);
+}
+
+.dock-button--red {
+    border-color: rgb(196, 52, 72);
+    background-color: rgba(196, 52, 72, 0.08);
+}
+
+.dock-button--purple {
+    border-color: rgb(104, 66, 176);
+    background-color: rgba(104, 66, 176, 0.08);
+}
+
+/* Set by the controller when the guide lines are on. The ring and wash change as well as the icon,
+   so the "on" state does not rely on colour alone. */
+.grid-button--on {
+    border-color: rgb(214, 120, 0);
+    background-color: rgba(214, 120, 0, 0.2);
+}
+
+.grid-button--on .action-button__icon {
+    -unity-background-image-tint-color: rgb(214, 120, 0);
 }
 
 /* ============ Hint button badge & states ============ */
 .hint-badge {
     position: absolute;
-    right: 8px;
-    top: 8px;
+    right: -10px;
+    top: -10px;
     min-width: 44px;
     height: 44px;
     padding-left: 8px;
     padding-right: 8px;
     border-radius: 22px;
-    background-color: rgb(0, 229, 255);
+    background-color: rgb(0, 122, 150);
     align-items: center;
     justify-content: center;
 }
 
 .hint-badge--ad {
-    background-color: rgb(255, 43, 214);
+    background-color: rgb(196, 52, 72);
     min-width: 52px;
 }
 
 .hint-badge__label {
     font-size: 24px;
-    color: rgb(5, 8, 22);
+    color: rgb(255, 248, 236);
     margin: 0;
     -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-ExtraBold%20SDF.asset?fileID=11400000&guid=a1b658a48c21246d783d8c4f4c297d45&type=2#Oxanium-ExtraBold SDF");
 }
 
-.oct-button--disabled {
+.action-button--disabled {
     opacity: 0.35;
 }
 

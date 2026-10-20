@@ -6,17 +6,20 @@
          than hiding it, so the player still sees the level they just cleared. The confetti is not
          here — ResultScreenController adds it in code, on top of everything.
 
-         The card and the ad box are direct children of the ScrollView: its own content container is
-         the element that centres them (see .unity-scroll-view__content-container in ResultScreen.uss),
-         so no wrapper of ours sits in between to get its width wrong. -->
+         Layout v2: the card is a bottom sheet with a round badge half over its top edge. The card
+         and the ad box are direct children of the ScrollView: its own content container anchors them
+         to the bottom (see .unity-scroll-view__content-container in ResultScreen.uss), so no wrapper
+         of ours sits in between to get its width wrong. -->
 
     <ui:VisualElement name="screen-root" class="result-root">
         <ui:VisualElement class="result-scrim" picking-mode="Ignore" />
 
-        <ui:ScrollView mode="Vertical" name="result-scroll" class="result-scroll">
+        <ui:ScrollView mode="Vertical" name="result-scroll" class="result-scroll" vertical-scroller-visibility="Hidden">
 
             <ui:VisualElement name="result-card" class="result-card">
-                <ui:VisualElement class="result-card__frame result-card__frame--win" picking-mode="Ignore" />
+                <ui:VisualElement class="result-badge result-badge--win" picking-mode="Ignore">
+                    <ui:VisualElement class="result-badge__glyph result-badge__glyph--win" picking-mode="Ignore" />
+                </ui:VisualElement>
 
                 <ui:Label name="level-label" text="LEVEL 01" class="result-card__level" picking-mode="Ignore" />
                 <ui:Label text="LEVEL COMPLETE" class="result-card__title" picking-mode="Ignore" />

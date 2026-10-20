@@ -6,7 +6,7 @@ public class Dot : MonoBehaviour
     public Vector2Int GridPosition;
 
     [Header("Reveal")]
-    public Color revealColor = new Color(0f, 0.898f, 1f);   // Neon Cyan #00E5FF
+    public Color revealColor = new Color(0.72f, 0.45f, 0.14f);   // Amber brown #B87324, darker than the resting dot on cream
     public float popTime = 0.08f;                           // one half of the scale pop
     // Cyan back to the resting colour. Deliberately much longer than one movement step: at top
     // speed (~0.028s per cell) this keeps roughly 20 dots lit at once, so the trail reads as a

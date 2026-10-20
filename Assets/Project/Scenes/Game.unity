@@ -262,11 +262,13 @@ MonoBehaviour:
   sfxSource: {fileID: 313712118}
   jingleSource: {fileID: 313712120}
   sfxMixerGroup: {fileID: -8116236422334216219, guid: 054ec06159bde457d85ed47d6cdcfdee, type: 2}
-  arrowClickSuccessClip: {fileID: 8300000, guid: 4d98b823037fd4e34aa9eaae789dda30, type: 3}
-  arrowClickBlockedClip: {fileID: 8300000, guid: ab238a461cd364974901329f77a10bad, type: 3}
-  uiClickClip: {fileID: 8300000, guid: cfac7bbffe9fc42d38f0740b6bdad43d, type: 3}
-  levelCompleteClip: {fileID: 8300000, guid: 17e3bc12be01c45c2a3312cd1a404d00, type: 3}
-  levelFailedClip: {fileID: 8300000, guid: 57193a6a909b446c2b2d939e418a783a, type: 3}
+  arrowClickSuccessClip: {fileID: 8300000, guid: 35e8ac61a0a048958fcfd5f2a5e02a05, type: 3}
+  arrowClickBlockedClip: {fileID: 8300000, guid: d569d74df4ab4cde970cfcbe17111941, type: 3}
+  uiClickClip: {fileID: 8300000, guid: 9ac174bcae8540daa608967abb84bfa4, type: 3}
+  levelCompleteClip: {fileID: 8300000, guid: 4d46b89a11f241f8ac51c44a8bb52b9f, type: 3}
+  levelFailedClip: {fileID: 8300000, guid: fb4febdf29c44a6aa25f8410605f7bb2, type: 3}
+  lockShakeClip: {fileID: 8300000, guid: 55f3b9b713d84ab591e907376bb9a09d, type: 3}
+  unlockClip: {fileID: 8300000, guid: 6d4377795caf43689cddcb8c3642958f, type: 3}
 --- !u!82 &313712118
 AudioSource:
   m_ObjectHideFlags: 0
@@ -1332,7 +1334,7 @@ MonoBehaviour:
   panelRenderer: {fileID: 1699429037}
   gameFlowManager: {fileID: 1122562369}
   settingsManager: {fileID: 1808465325}
-  rateUsUrl: https://play.google.com/store/apps/details?id=com.arrow.puzzle.playneonarrows.escape.out
+  rateUsUrl: https://play.google.com/store/apps/details?id=in.dicodeinfotech.arrowqubepuzzle
   privacyUrl: https://neon-route-escape.blogspot.com/2026/08/neon-route-escape-game-privacy-policy.html
   termsUrl: https://neon-route-escape.blogspot.com/2026/08/neon-route-escape-terms-conditions.html
 --- !u!1931382934 &1699429037
@@ -1796,9 +1798,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::BackdropArrows
   arrowSprites:
-  - {fileID: -7094729046526216314, guid: 7907ba002493d444ca735fc36e5fdb7d, type: 3}
-  - {fileID: -1755301194929590120, guid: 3935fabecbb1b4660bc2d478f6e12b26, type: 3}
-  - {fileID: -2342783587558950598, guid: b8784406b27024c4c9b0c458ff97d788, type: 3}
+  - {fileID: 21300000, guid: 3389930508cc3e84393da3114eeda676, type: 3}
+  - {fileID: 21300000, guid: 3dc937aa86a8c9c43860b341ee863ab6, type: 3}
+  - {fileID: 21300000, guid: 8418f8ecf34241f438499cbd7b0fbb18, type: 3}
   count: 5
   minSize: 0.12
   maxSize: 0.22
@@ -1807,7 +1809,7 @@ MonoBehaviour:
   jitter: 0.32
   centreKeepOut: 0.18
   seed: 20260816
-  tint: {r: 0.03137255, g: 0.047058824, b: 0.10980392, a: 1}
+  tint: {r: 0.98, g: 0.933, b: 0.863, a: 1}
   sortingOrder: -100
   driftRadius: 0.03
   driftSpeed: 0.05
@@ -1850,7 +1852,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.019607844, g: 0.03137255, b: 0.08627451, a: 0}
+  m_BackGroundColor: {r: 1, g: 0.9725, b: 0.9255, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -1969,6 +1971,7 @@ MonoBehaviour:
   minZoomOutFactor: 1.15
   dragThresholdPixels: 12
   dragThresholdScreenFraction: 0.02
+  maxTapSeconds: 1
   mouseZoomSpeed: 4
   panFriction: 6
   velocitySmoothing: 0.35

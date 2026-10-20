@@ -1,0 +1,183 @@
+/* ============ Level map ============
+   Lives inside the Home document as a template instance, so it inherits Home's font from
+   .screen-root. The path itself (the winding line between nodes) is drawn in C# with Painter2D,
+   because USS cannot draw curves; only the nodes, header and list are styled here. */
+.level-map {
+    flex-grow: 1;
+}
+
+.map-header {
+    flex-direction: row;
+    align-items: center;
+    height: 250px;
+    padding-top: 70px;
+    padding-left: 48px;
+    padding-right: 48px;
+    flex-shrink: 0;
+}
+
+/* Rounded-square back button, the same language as the HUD's back button. Pure USS radius. */
+.map-back {
+    width: 120px;
+    height: 120px;
+    margin: 0;
+    margin-right: 40px;
+    padding: 0;
+    border-radius: 36px;
+    border-width: 6px;
+    border-color: rgb(104, 66, 176);
+    background-color: rgb(255, 252, 244);
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.map-back:active {
+    scale: 0.93;
+}
+
+.map-back__icon {
+    width: 52px;
+    height: 52px;
+    background-image: url("../Sprites/IconBack.png");
+    -unity-background-image-tint-color: rgba(58, 36, 24, 0.85);
+}
+
+/* Layout v2: the title is left-aligned beside the back button, with the count as a small capsule
+   chip under it. */
+.map-titles {
+    align-items: flex-start;
+}
+
+.map-title {
+    font-size: 64px;
+    letter-spacing: 8px;
+    color: rgb(58, 36, 24);
+    margin: 0;
+    -unity-text-align: middle-left;
+}
+
+.map-progress {
+    margin: 0;
+    margin-top: 6px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-left: 24px;
+    padding-right: 24px;
+    border-radius: 22px;
+    border-width: 3px;
+    border-color: rgb(232, 140, 0);
+    background-color: rgb(255, 252, 244);
+    font-size: 30px;
+    letter-spacing: 2px;
+    color: rgb(176, 112, 0);
+    -unity-text-align: middle-center;
+}
+
+/* The ListView brings its own item hover/selected backgrounds; the map has no row selection, so
+   they are flattened. The bottom margin keeps the last row clear of the floating nav dock. */
+.map-list {
+    flex-grow: 1;
+    margin-bottom: 20px;
+}
+
+.map-list .unity-collection-view__item {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.map-list .unity-collection-view__item:hover {
+    background-color: rgba(0, 0, 0, 0);
+}
+
+.map-row {
+    width: 100%;
+    height: 210px;
+}
+
+/* ============ Nodes ============
+   Placed at `top: 50%` and a `left` set from C# (the path x of that level); the translate pulls the
+   node's own centre onto that point. State is never colour alone: done carries a star, current is
+   larger, locked shows a padlock instead of its number. */
+.map-node {
+    position: absolute;
+    top: 50%;
+    width: 132px;
+    height: 132px;
+    margin: 0;
+    padding: 0;
+    border-radius: 66px;
+    border-width: 6px;
+    translate: -50% -50%;
+    align-items: center;
+    justify-content: center;
+}
+
+.map-node:active {
+    scale: 0.94;
+}
+
+.map-node__number {
+    font-size: 54px;
+    margin: 0;
+    padding: 0;
+    color: rgb(255, 248, 236);
+}
+
+.map-node__star {
+    display: none;
+    width: 34px;
+    height: 34px;
+    margin-top: -4px;
+    background-image: url("../Sprites/IconStar.png");
+    -unity-background-image-tint-color: rgb(255, 248, 236);
+}
+
+.map-node__lock {
+    display: none;
+    width: 56px;
+    height: 56px;
+    background-image: url("project://database/Assets/Project/Sprites/LockIcon.png?fileID=-958580646009965197&guid=d8b1dbdeeae6f406ba936465b9ed71b7&type=3#LockIcon_0");
+    -unity-background-image-tint-color: rgba(58, 36, 24, 0.45);
+}
+
+.map-node--done {
+    background-color: rgb(232, 140, 0);
+    border-color: rgb(176, 112, 0);
+}
+
+.map-node--done .map-node__number {
+    font-size: 46px;
+}
+
+.map-node--done .map-node__star {
+    display: flex;
+}
+
+.map-node--current {
+    width: 168px;
+    height: 168px;
+    border-radius: 84px;
+    border-width: 8px;
+    background-color: rgb(196, 52, 72);
+    border-color: rgb(150, 36, 54);
+}
+
+.map-node--current .map-node__number {
+    font-size: 66px;
+}
+
+.map-node--locked {
+    background-color: rgba(58, 36, 24, 0.08);
+    border-color: rgba(58, 36, 24, 0.18);
+}
+
+.map-node--locked .map-node__number {
+    display: none;
+}
+
+.map-node--locked .map-node__lock {
+    display: flex;
+}

@@ -644,12 +644,12 @@ public class NativeAdUnit : MonoBehaviour
 
         Debug.Log("[NativeAd] Style: template=" + template + ", theme colors applied.");
 
-        Color mainBg = new Color32(12, 18, 42, 255);                 // #0C122A dark sci-fi background
-        Color primaryTextColor = Color.white;                         // #FFFFFF crisp white headline
-        Color secondaryTextColor = new Color32(159, 176, 199, 255);    // #9FB0C7 cool gray secondary
-        Color bodyTextColor = new Color32(197, 209, 232, 255);         // #C5D1E8 readable bright gray-blue
-        Color ctaBgColor = new Color32(0, 229, 255, 255);              // #00E5FF neon cyan
-        Color ctaTextColor = new Color32(5, 11, 24, 255);              // #050B18 dark bold contrast
+        Color mainBg = new Color32(255, 252, 244, 255);              // #FFFCF4 cream-white card
+        Color primaryTextColor = new Color32(58, 36, 24, 255);        // #3A2418 ink headline
+        Color secondaryTextColor = new Color32(125, 107, 96, 255);    // #7D6B60 muted ink secondary
+        Color bodyTextColor = new Color32(90, 66, 52, 255);           // #5A4234 readable ink body
+        Color ctaBgColor = new Color32(196, 52, 72, 255);             // #C43448 lantern red
+        Color ctaTextColor = new Color32(255, 248, 236, 255);         // #FFF8EC cream on red
 
         NativeTemplateStyle style = new NativeTemplateStyle
         {

@@ -35,10 +35,16 @@ public class GameplayHUDController : MonoBehaviour
     private int remainingArrows, totalArrows;
     private bool hudVisible;
 
+    // Versioned overload of the reload callback (the plain one is obsolete). The lambda only drops the
+    // version: these handlers rebuild their bindings from scratch on every reload, so a repeat of the
+    // same version is harmless. Kept in a field so OnDisable removes the very same delegate.
+    private PanelRenderer.VersionedUIReloadCallback reloadCallback;
+
     private void OnEnable()
     {
         Instance = this;
-        panelRenderer.RegisterUIReloadCallback(OnUIReload);
+        reloadCallback = (reloaded, rootElement, version) => OnUIReload(reloaded, rootElement);
+        panelRenderer.RegisterUIReloadCallback(reloadCallback);
         livesManager.OnLivesChanged += OnLivesChanged;
         levelManager.OnArrowCountChanged += OnArrowCountChanged;
         levelLoader.OnEntranceStart += OnEntranceStart;
@@ -65,7 +71,7 @@ public class GameplayHUDController : MonoBehaviour
     private void OnDisable()
     {
         if (Instance == this) Instance = null;
-        panelRenderer.UnregisterUIReloadCallback(OnUIReload);
+        panelRenderer.UnregisterUIReloadCallback(reloadCallback);
         livesManager.OnLivesChanged -= OnLivesChanged;
         levelManager.OnArrowCountChanged -= OnArrowCountChanged;
         levelLoader.OnEntranceStart -= OnEntranceStart;
@@ -244,8 +250,8 @@ public class GameplayHUDController : MonoBehaviour
     {
         if (hintIcon != null)
         {
-            hintIcon.EnableInClassList("oct-button__icon--hint", !adCost);
-            hintIcon.EnableInClassList("oct-button__icon--hint-ad", adCost);
+            hintIcon.EnableInClassList("action-button__icon--hint", !adCost);
+            hintIcon.EnableInClassList("action-button__icon--hint-ad", adCost);
         }
 
         if (hintBadge != null)
@@ -260,7 +266,7 @@ public class GameplayHUDController : MonoBehaviour
         }
 
         hintButton.SetEnabled(enabled);
-        hintButton.EnableInClassList("oct-button--disabled", !enabled);
+        hintButton.EnableInClassList("action-button--disabled", !enabled);
     }
 
     private void Apply()

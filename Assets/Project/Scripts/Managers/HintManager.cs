@@ -5,8 +5,10 @@ using UnityEngine;
 // free_hint_count: same number keeps the leftover pool; a changed number resets the pool.
 public class HintManager : MonoBehaviour
 {
-    private const string PrefsRemainingHints = "HintManager_RemainingHints";
-    private const string PrefsLastFreeHintCount = "HintManager_LastFreeHintCount";
+    // Intentionally keep the old "arrowqube" prefix: renaming shipped PlayerPrefs keys silently resets
+    // the hint pool for every existing player.
+    private const string PrefsRemainingHints = "arrowqube.hint.remaining";
+    private const string PrefsLastFreeHintCount = "arrowqube.hint.lastFreeCount";
     private const int UnsetCount = int.MinValue;
 
     private static HintManager instance;

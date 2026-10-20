@@ -15,6 +15,7 @@ using UnityEngine.UIElements;
 // package, and no compute shaders — which matters, because VFX Graph needs them and low-end
 // Android devices do not all have them.
 public class ConfettiView : VisualElement
+
 {
     private struct Piece
     {

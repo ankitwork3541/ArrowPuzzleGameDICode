@@ -11,10 +11,24 @@ public class HomeScreenController : MonoBehaviour
     private Label levelLabel;
     private Label difficultyText;
     private Button playButton;
+    private Button levelsButton;
+    private Button settingsButton;
+    private Label cardProgressText;
+    private LevelMapController levelMap;
+
+    // Versioned overload of the reload callback (the plain one is obsolete). The lambda only drops the
+    // version: these handlers rebuild their bindings from scratch on every reload, so a repeat of the
+    // same version is harmless. Kept in a field so OnDisable removes the very same delegate.
+    private PanelRenderer.VersionedUIReloadCallback reloadCallback;
 
     private void OnEnable()
     {
-        panelRenderer.RegisterUIReloadCallback(OnUIReload);
+        reloadCallback = (reloaded, rootElement, version) => OnUIReload(reloaded, rootElement);
+        panelRenderer.RegisterUIReloadCallback(reloadCallback);
+
+        // Home always opens on its main column. Its document survives being deactivated, so a map
+        // left open when the player started a level would still be open on the way back.
+        levelMap?.Close();
         Refresh();
 
         if (AdsManager.Instance != null)
@@ -26,7 +40,7 @@ public class HomeScreenController : MonoBehaviour
 
     private void OnDisable()
     {
-        panelRenderer.UnregisterUIReloadCallback(OnUIReload);
+        panelRenderer.UnregisterUIReloadCallback(reloadCallback);
 
         if (AdsManager.Instance != null)
         {
@@ -67,6 +81,25 @@ public class HomeScreenController : MonoBehaviour
         playButton.clicked -= gameFlowManager.OnPlayButtonClicked;
         playButton.clicked += gameFlowManager.OnPlayButtonClicked;
 
+        // Rebuilt on every reload: the map is bound to elements of THIS document, which a reload
+        // replaces, so a kept instance would be driving a tree that no longer exists.
+        levelsButton = root.Q<Button>("levels-button");
+        levelMap = new LevelMapController(root.Q<VisualElement>("level-map-slot"),
+                                          root.Q<VisualElement>("content"),
+                                          levelLoader, gameFlowManager.OnLevelSelected);
+
+        UIClickSound.Attach(levelsButton);
+        levelsButton.clicked -= OpenLevelMap;
+        levelsButton.clicked += OpenLevelMap;
+
+        // The round gear at the top right does the same as the nav's Settings item.
+        settingsButton = root.Q<Button>("settings-button");
+        UIClickSound.Attach(settingsButton);
+        settingsButton.clicked -= gameFlowManager.OnSettingsNavClicked;
+        settingsButton.clicked += gameFlowManager.OnSettingsNavClicked;
+
+        cardProgressText = root.Q<Label>("card-progress-text");
+
         // Home is the current screen, so its own nav item only highlights.
         BottomNavBinder.Bind(root, "nav-home", null, OnSettingsNavClicked);
 
@@ -78,6 +111,21 @@ public class HomeScreenController : MonoBehaviour
         gameFlowManager.OnSettingsNavClicked();
     }
 
+    private void OpenLevelMap()
+    {
+        levelMap?.Open();
+    }
+
+    // Android back while the map is up closes the map instead of leaving the app. Returns true when
+    // it consumed the press.
+    public bool TryCloseMap()
+    {
+        if (levelMap == null || !levelMap.IsOpen) return false;
+
+        levelMap.Close();
+        return true;
+    }
+
     // Called every time Home becomes visible, so the level number and difficulty
     // stay correct after advancing a level.
     public void Refresh()
@@ -87,7 +135,12 @@ public class HomeScreenController : MonoBehaviour
         levelLabel.text = "LEVEL " + levelLoader.CurrentLevelNumber().ToString("00");
         difficultyText.text = GameFlowManager.GetDifficultyLabel(levelLoader.CurrentLevel());
 
+        // Levels beaten so far. The campaign size is deliberately never shown anywhere.
+        cardProgressText.text = Mathf.Max(0, SaveSystem.Data.highestLevelCompleted) + " CLEARED";
+
         BottomNavBinder.RefreshMilestones(root);
+
+        if (levelMap != null && levelMap.IsOpen) levelMap.Refresh();
 
         OnAdHeightChanged(AdsManager.Instance != null ? AdsManager.Instance.AdHeightPixels : 0f);
     }

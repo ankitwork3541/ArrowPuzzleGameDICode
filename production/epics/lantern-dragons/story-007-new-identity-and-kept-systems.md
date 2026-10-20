@@ -1,7 +1,7 @@
 # Story 007: New identity and kept-systems check
 
 > **Epic**: Lantern Dragons
-> **Status**: Ready
+> **Status**: In Progress (2026-10-20: static audit done, see `production/qa/evidence/story-007-audit.md`; splash UXML bug fixed. BLOCKED on the developer for the new package id, AdMob units and the host-app / backend contract; ads and the full loop need an Android device)
 > **Layer**: Feature
 > **Type**: Integration
 > **Estimate**: [fill before starting]
