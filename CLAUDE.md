@@ -223,6 +223,16 @@ Keep this updated as work progresses — add an entry after each meaningful step
     removed (dock = Home, Settings). EditMode 167 of 167; evidence in `production/qa/evidence/story-007/`
     and `story-008-v5/`; doc `Docs/NativeAds.md` rewritten. Dev player flags: `--evidence-config <file>
     --evidence-config-run --evidence-prefix <name>`.
+  - **Real audio (2026-10-20, Fork AU, spec `production/audio/lantern-dragons-sfx/sfx-spec.md`)**: the synthesised
+    `LD_*` placeholders are replaced by 20 `Lantern_*.wav` clips cut from CC0 packs (rubberduck's two OpenGameArt
+    SFX packs, Kenney Interface Sounds, Spring Spring's bell), credits in `Assets/Project/Audio/CREDITS.md`, build and
+    measurements in `production/qa/audio-research-2026-10-20.md`. 7 original events + 9 new ones (dragon exit,
+    heart lost, hint, level entrance, map node, sheet open/close, toggles), each hooked where it happens.
+    `SoundDirector` now has an 8-voice pool, pitch spread, round-robin alternates, per-event cooldown/voice limit
+    (`SfxGate`), a separate Jingle source + `Jingle` mixer group, code-side 6 dB ducking, Sound-off stops a playing
+    jingle; `HapticPulse` replaces the 400 ms `Handheld.Vibrate()` with 12-22 ms Android pulses and adds a light
+    pulse for the padlock shake. EditMode 212 of 212, `[EvidenceCheck]` 11 of 11. **Nobody has listened to it yet**
+    (gongs are phone recordings; the lock shake is wood ticks): listen first to bump, win jingle, 10 rapid taps.
   - Still open: pearl tail marker is hard to see; animation feel, backdrop drift and Android look
     unverified.
   - (superseded) Open: screenshots for Story 008 evidence. `capture_game_view` with a size drops UI Toolkit, and

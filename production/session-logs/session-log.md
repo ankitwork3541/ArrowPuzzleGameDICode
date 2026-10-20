@@ -5157,3 +5157,64 @@ production/session-logs/session-cost.md
 production/session-logs/session-log.md
 ---
 
+## Session End: 20261020_133525
+### Commits
+d6f2842 docs: game config schema and README, Story 007 evidence and frames, updated specs
+4f7e684 feat: new package id, standalone ad/config stack, fully dynamic game config, two-item dock
+8369eba docs: QA evidence, rename report, accessibility tier, sprint plan and Layout v2 spec
+f341ca0 refactor: rename the whole project to Lantern Dragons names, plus review fixes and accessibility
+0063ab5 chore: safety snapshot before the file rename (light paper theme, new UI, shapes, level map)
+---
+
+## Session End: 20261020_133710
+### Commits
+d6f2842 docs: game config schema and README, Story 007 evidence and frames, updated specs
+4f7e684 feat: new package id, standalone ad/config stack, fully dynamic game config, two-item dock
+8369eba docs: QA evidence, rename report, accessibility tier, sprint plan and Layout v2 spec
+f341ca0 refactor: rename the whole project to Lantern Dragons names, plus review fixes and accessibility
+0063ab5 chore: safety snapshot before the file rename (light paper theme, new UI, shapes, level map)
+### Uncommitted Changes
+production/session-logs/.session-end.hash
+production/session-logs/session-cost.md
+production/session-logs/session-log.md
+---
+
+## Session End: 20261020_135551
+### Commits
+d6f2842 docs: game config schema and README, Story 007 evidence and frames, updated specs
+4f7e684 feat: new package id, standalone ad/config stack, fully dynamic game config, two-item dock
+8369eba docs: QA evidence, rename report, accessibility tier, sprint plan and Layout v2 spec
+f341ca0 refactor: rename the whole project to Lantern Dragons names, plus review fixes and accessibility
+0063ab5 chore: safety snapshot before the file rename (light paper theme, new UI, shapes, level map)
+### Uncommitted Changes
+Assets/Project/Audio/LD_Bump.wav
+Assets/Project/Audio/LD_Bump.wav.meta
+Assets/Project/Audio/LD_DragonTap.wav
+Assets/Project/Audio/LD_DragonTap.wav.meta
+Assets/Project/Audio/LD_LockShake.wav
+Assets/Project/Audio/LD_LockShake.wav.meta
+Assets/Project/Audio/LD_Lose.wav
+Assets/Project/Audio/LD_Lose.wav.meta
+Assets/Project/Audio/LD_UIClick.wav
+Assets/Project/Audio/LD_UIClick.wav.meta
+Assets/Project/Audio/LD_Unlock.wav
+Assets/Project/Audio/LD_Unlock.wav.meta
+Assets/Project/Audio/LD_Win.wav
+Assets/Project/Audio/LD_Win.wav.meta
+Assets/Project/Audio/LanternMixer.mixer
+Assets/Project/Scenes/LanternDragons.unity
+Assets/Project/Scripts/Core/DragonController.cs
+Assets/Project/Scripts/Managers/EmberManager.cs
+Assets/Project/Scripts/Managers/FlowDirector.cs
+Assets/Project/Scripts/Managers/OptionsManager.cs
+Assets/Project/Scripts/Managers/SoundDirector.cs
+Assets/Project/Scripts/Managers/StageLoader.cs
+Assets/Project/Scripts/UI/HallScreenController.cs
+Assets/Project/Scripts/UI/OptionsScreenController.cs
+Assets/Project/Scripts/UI/SheetScreenController.cs
+Assets/Project/Scripts/UI/TrailMapController.cs
+production/session-logs/.session-end.hash
+production/session-logs/session-cost.md
+production/session-logs/session-log.md
+---
+
