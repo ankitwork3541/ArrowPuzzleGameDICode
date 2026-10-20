@@ -4949,3 +4949,211 @@ production/session-logs/session-cost.md
 production/session-logs/session-log.md
 ---
 
+## Session End: 20261020_130008
+### Commits
+8369eba docs: QA evidence, rename report, accessibility tier, sprint plan and Layout v2 spec
+f341ca0 refactor: rename the whole project to Lantern Dragons names, plus review fixes and accessibility
+0063ab5 chore: safety snapshot before the file rename (light paper theme, new UI, shapes, level map)
+---
+
+## Session End: 20261020_130451
+### Commits
+8369eba docs: QA evidence, rename report, accessibility tier, sprint plan and Layout v2 spec
+f341ca0 refactor: rename the whole project to Lantern Dragons names, plus review fixes and accessibility
+0063ab5 chore: safety snapshot before the file rename (light paper theme, new UI, shapes, level map)
+### Uncommitted Changes
+production/session-logs/.session-end.hash
+production/session-logs/session-cost.md
+production/session-logs/session-log.md
+---
+
+## Session End: 20261020_131016
+### Commits
+8369eba docs: QA evidence, rename report, accessibility tier, sprint plan and Layout v2 spec
+f341ca0 refactor: rename the whole project to Lantern Dragons names, plus review fixes and accessibility
+0063ab5 chore: safety snapshot before the file rename (light paper theme, new UI, shapes, level map)
+### Uncommitted Changes
+Assets/Project/Scenes/LanternDragons.unity
+Assets/Project/Scripts/Managers/StageTracker.cs
+ProjectSettings/AndroidResolverDependencies.xml
+ProjectSettings/ProjectSettings.asset
+production/session-logs/.session-end.hash
+production/session-logs/session-cost.md
+production/session-logs/session-log.md
+---
+
+## Session End: 20261020_131216
+### Commits
+8369eba docs: QA evidence, rename report, accessibility tier, sprint plan and Layout v2 spec
+f341ca0 refactor: rename the whole project to Lantern Dragons names, plus review fixes and accessibility
+0063ab5 chore: safety snapshot before the file rename (light paper theme, new UI, shapes, level map)
+### Uncommitted Changes
+Assets/Project/Scenes/LanternDragons.unity
+Assets/Project/Scripts/Managers/FlowDirector.cs
+Assets/Project/Scripts/Managers/HostBridge.cs
+Assets/Project/Scripts/Managers/HostBridge.cs.meta
+Assets/Project/Scripts/Managers/PromoBannerUnit.cs
+Assets/Project/Scripts/Managers/PromoConfigFetcher.cs
+Assets/Project/Scripts/Managers/PromoInterstitialUnit.cs
+Assets/Project/Scripts/Managers/PromoManager.cs
+Assets/Project/Scripts/Managers/PromoNativeUnit.cs
+Assets/Project/Scripts/Managers/PromoRewardedUnit.cs
+Assets/Project/Scripts/Managers/ShotCapture.cs
+Assets/Project/Scripts/Managers/StageTracker.cs
+Assets/Project/Scripts/Managers/StageTracker.cs.meta
+ProjectSettings/AndroidResolverDependencies.xml
+ProjectSettings/ProjectSettings.asset
+production/session-logs/.session-end.hash
+production/session-logs/session-cost.md
+production/session-logs/session-log.md
+---
+
+## Session End: 20261020_131531
+### Commits
+8369eba docs: QA evidence, rename report, accessibility tier, sprint plan and Layout v2 spec
+f341ca0 refactor: rename the whole project to Lantern Dragons names, plus review fixes and accessibility
+0063ab5 chore: safety snapshot before the file rename (light paper theme, new UI, shapes, level map)
+### Uncommitted Changes
+Assets/Project/Scenes/LanternDragons.unity
+Assets/Project/Scripts/Managers/FlowDirector.cs
+Assets/Project/Scripts/Managers/HostBridge.cs
+Assets/Project/Scripts/Managers/HostBridge.cs.meta
+Assets/Project/Scripts/Managers/PromoBannerUnit.cs
+Assets/Project/Scripts/Managers/PromoConfigFetcher.cs
+Assets/Project/Scripts/Managers/PromoInterstitialUnit.cs
+Assets/Project/Scripts/Managers/PromoManager.cs
+Assets/Project/Scripts/Managers/PromoNativeUnit.cs
+Assets/Project/Scripts/Managers/PromoRewardedUnit.cs
+Assets/Project/Scripts/Managers/ShotCapture.cs
+Assets/Project/Scripts/Managers/StageTracker.cs
+Assets/Project/Scripts/Managers/StageTracker.cs.meta
+CLAUDE.md
+ProjectSettings/AndroidResolverDependencies.xml
+ProjectSettings/ProjectSettings.asset
+production/epics/lantern-dragons/story-007-new-identity-and-kept-systems.md
+production/qa/story-007-identity-switch-plan.md
+production/session-logs/.session-end.hash
+production/session-logs/session-cost.md
+production/session-logs/session-log.md
+---
+
+## Session End: 20261020_131941
+### Commits
+8369eba docs: QA evidence, rename report, accessibility tier, sprint plan and Layout v2 spec
+f341ca0 refactor: rename the whole project to Lantern Dragons names, plus review fixes and accessibility
+0063ab5 chore: safety snapshot before the file rename (light paper theme, new UI, shapes, level map)
+### Uncommitted Changes
+Assets/Project/Scenes/LanternDragons.unity
+Assets/Project/Scripts/Data/PromoConfig.cs
+Assets/Project/Scripts/Managers/ClueManager.cs
+Assets/Project/Scripts/Managers/FlowDirector.cs
+Assets/Project/Scripts/Managers/HostBridge.cs
+Assets/Project/Scripts/Managers/HostBridge.cs.meta
+Assets/Project/Scripts/Managers/PromoBannerUnit.cs
+Assets/Project/Scripts/Managers/PromoConfigFetcher.cs
+Assets/Project/Scripts/Managers/PromoInterstitialManager.cs
+Assets/Project/Scripts/Managers/PromoInterstitialUnit.cs
+Assets/Project/Scripts/Managers/PromoManager.cs
+Assets/Project/Scripts/Managers/PromoNativeUnit.cs
+Assets/Project/Scripts/Managers/PromoRewardedUnit.cs
+Assets/Project/Scripts/Managers/PromoSettings.cs
+Assets/Project/Scripts/Managers/ShotCapture.cs
+Assets/Project/Scripts/Managers/StageTracker.cs
+Assets/Project/Scripts/Managers/StageTracker.cs.meta
+CLAUDE.md
+ProjectSettings/AndroidResolverDependencies.xml
+ProjectSettings/ProjectSettings.asset
+production/epics/lantern-dragons/story-007-new-identity-and-kept-systems.md
+production/qa/story-007-identity-switch-plan.md
+production/session-logs/.session-end.hash
+production/session-logs/session-cost.md
+production/session-logs/session-log.md
+---
+
+## Session End: 20261020_132021
+### Commits
+8369eba docs: QA evidence, rename report, accessibility tier, sprint plan and Layout v2 spec
+f341ca0 refactor: rename the whole project to Lantern Dragons names, plus review fixes and accessibility
+0063ab5 chore: safety snapshot before the file rename (light paper theme, new UI, shapes, level map)
+### Uncommitted Changes
+Assets/Project/Scenes/LanternDragons.unity
+Assets/Project/Scripts/Data/PromoConfig.cs
+Assets/Project/Scripts/Managers/ClueManager.cs
+Assets/Project/Scripts/Managers/EmberManager.cs
+Assets/Project/Scripts/Managers/FlowDirector.cs
+Assets/Project/Scripts/Managers/HostBridge.cs
+Assets/Project/Scripts/Managers/HostBridge.cs.meta
+Assets/Project/Scripts/Managers/OptionsManager.cs
+Assets/Project/Scripts/Managers/PromoBannerUnit.cs
+Assets/Project/Scripts/Managers/PromoConfigFetcher.cs
+Assets/Project/Scripts/Managers/PromoInterstitialManager.cs
+Assets/Project/Scripts/Managers/PromoInterstitialUnit.cs
+Assets/Project/Scripts/Managers/PromoManager.cs
+Assets/Project/Scripts/Managers/PromoNativeUnit.cs
+Assets/Project/Scripts/Managers/PromoRewardedUnit.cs
+Assets/Project/Scripts/Managers/PromoSettings.cs
+Assets/Project/Scripts/Managers/ShotCapture.cs
+Assets/Project/Scripts/Managers/StageTracker.cs
+Assets/Project/Scripts/Managers/StageTracker.cs.meta
+CLAUDE.md
+ProjectSettings/AndroidResolverDependencies.xml
+ProjectSettings/ProjectSettings.asset
+production/epics/lantern-dragons/story-007-new-identity-and-kept-systems.md
+production/qa/story-007-identity-switch-plan.md
+production/session-logs/.session-end.hash
+production/session-logs/session-cost.md
+production/session-logs/session-log.md
+---
+
+## Session End: 20261020_132636
+### Commits
+8369eba docs: QA evidence, rename report, accessibility tier, sprint plan and Layout v2 spec
+f341ca0 refactor: rename the whole project to Lantern Dragons names, plus review fixes and accessibility
+0063ab5 chore: safety snapshot before the file rename (light paper theme, new UI, shapes, level map)
+### Uncommitted Changes
+Assets/Project/Scenes/LanternDragons.unity
+Assets/Project/Scripts/Data/ProgressData.cs
+Assets/Project/Scripts/Data/ProgressStore.cs
+Assets/Project/Scripts/Data/PromoConfig.cs
+Assets/Project/Scripts/Managers/ClueManager.cs
+Assets/Project/Scripts/Managers/EmberManager.cs
+Assets/Project/Scripts/Managers/FlowDirector.cs
+Assets/Project/Scripts/Managers/HostBridge.cs
+Assets/Project/Scripts/Managers/HostBridge.cs.meta
+Assets/Project/Scripts/Managers/OptionsManager.cs
+Assets/Project/Scripts/Managers/PromoBannerUnit.cs
+Assets/Project/Scripts/Managers/PromoConfigFetcher.cs
+Assets/Project/Scripts/Managers/PromoInterstitialManager.cs
+Assets/Project/Scripts/Managers/PromoInterstitialUnit.cs
+Assets/Project/Scripts/Managers/PromoManager.cs
+Assets/Project/Scripts/Managers/PromoNativeUnit.cs
+Assets/Project/Scripts/Managers/PromoRewardedUnit.cs
+Assets/Project/Scripts/Managers/PromoSettings.cs
+Assets/Project/Scripts/Managers/ShotCapture.cs
+Assets/Project/Scripts/Managers/StageTracker.cs
+Assets/Project/Scripts/Managers/StageTracker.cs.meta
+Assets/Project/Scripts/UI/HallScreenController.cs
+Assets/Project/Scripts/UI/OptionsScreenController.cs
+Assets/Project/Scripts/UI/PlayScreenController.cs
+Assets/Project/Scripts/UI/PromoLabScreenController.cs
+Assets/Project/Scripts/UI/SheetScreenController.cs
+Assets/Project/Scripts/UI/TabDockBinder.cs
+Assets/Project/Themes/HallScreen.uss
+Assets/Project/Themes/OptionsScreen.uss
+Assets/Project/Themes/TabDock.uss
+Assets/Project/UXML/HallScreen.uxml
+Assets/Project/UXML/TabDock.uxml
+Assets/Tests/EditMode/Editor/ProgressMigrationTests.cs
+CLAUDE.md
+ProjectSettings/AndroidResolverDependencies.xml
+ProjectSettings/ProjectSettings.asset
+design/accessibility-requirements.md
+design/ux/interaction-patterns.md
+design/ux/ui-redesign.md
+production/epics/lantern-dragons/story-007-new-identity-and-kept-systems.md
+production/qa/story-007-identity-switch-plan.md
+production/session-logs/.session-end.hash
+production/session-logs/session-cost.md
+production/session-logs/session-log.md
+---
+

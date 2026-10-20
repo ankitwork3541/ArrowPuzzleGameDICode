@@ -78,7 +78,6 @@ Contrast gaps closed on 2026-10-20: muted ink text, dark gold small text, cream-
 | Hint costs an ad | red badge | the text "AD" and a different icon (`IconAd` instead of `IconBulb`) |
 | Hint disabled | 35% opacity | disabled behaviour; no badge |
 | Active nav tab | red | a soft red capsule behind the item, plus the label |
-| Locked nav tab | muted | a padlock glyph and the unlock level in the label ("Lvl 10") |
 | Map node done / current / locked | gold / red / muted | star glyph / larger size and number only / padlock glyph |
 | Grid guide on | red ring | fill and icon change (`.grid-button--on`) |
 | Empty heart | ink 14% | outline shape differs from a filled heart only by tint: **gap**, a weak cue |

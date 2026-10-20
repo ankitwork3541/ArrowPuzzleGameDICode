@@ -205,8 +205,26 @@ Keep this updated as work progresses — add an entry after each meaningful step
     rebuilt, 18 frames recaptured, `[EvidenceCheck]` 5 of 5 PASS. Not renamed on purpose: third-party code,
     package id / host bridge class (Story 007 answers pending), Inspector field names, JSON field names.
     Report: `production/qa/rename-report-2026-10-20.md`.
+  - **Story 007 identity (afternoon)**: package id and iOS bundle id are now
+    `in.dicodeinfotech.arrowdragonpuzzle` (set through `PlayerSettings`), version code 1 (new Play
+    listing). **No host/launcher app any more**: `HostBridge` (`UnityAdBridge` JNI, paid-event forwarding,
+    Intent config) was deleted. Ad config comes from an HTTP GET in `PromoConfigFetcher.Fetch`
+    (`const string ConfigUrl`, EMPTY until the developer supplies it: then no request, cached copy, else
+    the baked `PromoConfig`); `PromoManager.Start` is a coroutine that waits for the fetch. The level-complete
+    tracker (`StageTracker`) was removed entirely; `FrontierRule` stays. 101 of 101 EditMode tests, Windows
+    player build ok, `[EvidenceCheck]` 11 of 11. Blocked on the developer: config API URL, real AdMob app
+    ids, keystore, and an Android device pass. Evidence: `production/qa/evidence/story-007-evidence.md`.
+  - **Dynamic game config (2026-10-20, round 3)**: one nested JSON (`design/config/game-config.sample.json`,
+    README beside it) now drives ads (per-screen placements, interstitial/rewarded rules), links
+    (privacy/terms/rate), lives, hints, Options rows, confetti, LEVELS button, maintenance/force-update
+    sheets and a Home notice. Code: `GameConfig`/`GameConfigParser`, `AdRules`, `GameConfigService`
+    (cache `lanterndragons_config_cache.json`), `PromoSettings` reads it; `PromoRemoteConfig` deleted.
+    `PromoConfigFetcher.ConfigUrl` is still empty (developer to supply). The Lvl 10/20/30 dock items were
+    removed (dock = Home, Settings). EditMode 167 of 167; evidence in `production/qa/evidence/story-007/`
+    and `story-008-v5/`; doc `Docs/NativeAds.md` rewritten. Dev player flags: `--evidence-config <file>
+    --evidence-config-run --evidence-prefix <name>`.
   - Still open: pearl tail marker is hard to see; animation feel, backdrop drift and Android look
-    unverified; package id / AdMob units / `LevelTracker` endpoint need the user.
+    unverified.
   - (superseded) Open: screenshots for Story 008 evidence. `capture_game_view` with a size drops UI Toolkit, and
     `ScreenCapture` fails because the Game view reports 2560x36 — fix the Game view size first.
     The capture tool also writes under `Assets/` (stray `Assets/production/` folder to delete).

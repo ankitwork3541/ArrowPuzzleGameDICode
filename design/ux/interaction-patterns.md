@@ -30,8 +30,8 @@ Shared tokens: paper `rgb(255,248,236)`, card `rgb(255,252,244)`, ink `rgb(58,36
 **When to use**: a small group of persistent actions at the bottom of a screen (HUD actions, bottom navigation).
 **Look**: cream-white capsule card with a 4px ink-12% border, margin from the screen edges (40px sides), items evenly spaced, label under each icon inside the dock.
 **HUD dock**: `.bottom-bar` is the dock and is also the element the code measures for board insets and hit-testing, so it must stay the single container (`GameplayHUDController.BottomInsetPixels`, `IsPointerOverUI`). Ad height lifts it (`BottomBarBaseOffset` plus ad height).
-**Nav dock**: `.bottom-nav`, items `.nav-item` with states `--active` (soft red capsule behind the item), `--locked` (padlock glyph and the unlock level in the label), `--unlocked`, `--dim`.
-**USS**: `.bottom-bar`, `.action`, `.action__label`, `.dock-button`, `.dock-button--teal|red|purple`, `.hint-badge`, `.hint-badge--ad`, `.hint-badge__label`; `.bottom-nav`, `.nav-item*`, `.nav-icon`, `.nav-label`.
+**Nav dock**: a slim two-item capsule (Home, Settings), centred above the bottom edge. `.tab-dock`, items `.tab-item` (at least 240 x 100 reference pixels) with states `--active` (soft red capsule behind the item) and `--dim`. The three "Lvl 10 / 20 / 30" milestone items were removed from the game on 2026-10-20.
+**USS**: `.bottom-bar`, `.action`, `.action__label`, `.dock-button`, `.dock-button--teal|red|purple`, `.hint-badge`, `.hint-badge--ad`, `.hint-badge__label`; `.tab-dock`, `.tab-item*`, `.tab-icon`, `.tab-label`.
 **Hint badge**: a small round badge on the hint button, teal with the remaining count, red with the text "AD" when the next hint needs a rewarded ad.
 
 ## P4. Level title with difficulty chip (HUD header)

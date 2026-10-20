@@ -1,7 +1,7 @@
 # Story 007: New identity and kept-systems check
 
 > **Epic**: Lantern Dragons
-> **Status**: In Progress (2026-10-20: static audit done, see `production/qa/evidence/story-007-audit.md`; splash UXML bug fixed. BLOCKED on the developer for the new package id, AdMob units and the host-app / backend contract; ads and the full loop need an Android device)
+> **Status**: In Review (2026-10-20: package id `in.dicodeinfotech.arrowdragonpuzzle` applied, host bridge and level tracker removed, ad config now an API fetch with an empty `ConfigUrl`; see `production/qa/evidence/story-007-evidence.md`. Blocked on the developer for the config API URL, the real AdMob app id and the keystore; ads and the full loop need an Android device)
 > **Layer**: Feature
 > **Type**: Integration
 > **Estimate**: [fill before starting]

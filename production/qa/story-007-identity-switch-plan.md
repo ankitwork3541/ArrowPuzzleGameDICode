@@ -1,78 +1,39 @@
 # Story 007: identity switch plan
 
 > **Story**: `production/epics/lantern-dragons/story-007-new-identity-and-kept-systems.md`
-> **Date**: 2026-10-20 (prepared; nothing in section "Apply" has been run)
-> **Source**: `production/qa/evidence/story-007-audit.md` plus a repo-wide grep (excluding `Library/`, `Temp/`, `.git`, `production/`, `.claude/`).
+> **Updated**: 2026-10-20 after the developer's answers. Evidence: `production/qa/evidence/story-007-evidence.md`.
 
-## Already done (safe, independent of the new ids)
+## Decisions
 
-| Change | File | Result |
+- Package id and iOS bundle id: `in.dicodeinfotech.arrowdragonpuzzle`.
+- No host/launcher app: the game is standalone.
+- Ad unit ids and game config come from an HTTP API (URL not supplied yet).
+- Level-complete analytics: removed.
+- New Play listing: version code restarts at 1.
+
+## Rows (names are the current, renamed ones)
+
+| # | Item | State |
 |---|---|---|
-| Bridge class name moved into ONE constant `BridgeClass`; `SendDataToAndroid` and `GetConfigFromAndroid` wrapped in try/catch with `Debug.LogWarning` | `Assets/Project/Scripts/Managers/AndroidDataBridge.cs:9`, `:19-34`, `:47-67` | A missing or renamed host class no longer throws from any of the four `OnPaidEvent` handlers (`BannerAdUnit.cs:240`, `InterstitialAdUnit.cs:246`, `RewardedAdUnit.cs:180`, `NativeAdUnit.cs:441`), because they all call this one method. |
-| Comment that the endpoint is the previous game's and needs the backend owner's confirmation. No form field added (the repo cannot show how the old backend treats unknown fields). | `Assets/Project/Scripts/Managers/LevelTracker.cs:10-13` | Behaviour unchanged. |
-| Comments that the `arrowqube` prefix is intentionally kept (keys not renamed, so no player loses data) | `SaveSystem.cs:14-16`, `HintManager.cs:8-10`, `AdConfigFetcher.cs:10-11`, `SettingsManager.cs:12-13` | Comments only. |
+| 1 | `applicationIdentifier` Android / Standalone / iPhone | APPLIED: `in.dicodeinfotech.arrowdragonpuzzle`, set through `PlayerSettings` and read back |
+| 2 | `companyName: dicodeinfotech` | Kept |
+| 3 | `productName: Lantern Dragons` | Done (Story 006) |
+| 4 | `bundleVersion 1.0`, `AndroidBundleVersionCode 1`, iOS build number `1` | APPLIED (new listing) |
+| 5 | `ProjectSettings/AndroidResolverDependencies.xml` `bundleId` | APPLIED. Re-run Android Resolver (Force Resolve) before the first Android build |
+| 6 | `HostBridge` (`UnityAdBridge` JNI call, `game_config_json` Intent read) | REMOVED, file deleted, plus the four `OnAdPaid` forwards in the banner, interstitial, native and rewarded units |
+| 7 | `rateUsUrl` in `LanternDragons.unity` (on `OptionsScreenController`) | APPLIED: Play Store URL with the new id |
+| 8 | AdMob app ids in `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset` | OPEN, needs the developer's real AdMob app ids (still Google test ids) |
+| 9 | `Assets/Plugins/Android/GoogleMobileAdsPlugin.androidlib/AndroidManifest.xml` `APPLICATION_ID` | OPEN, must equal the Android id from row 8 |
+| 10 | `AdTestIds.cs` | Left as is (test fallbacks) |
+| 11 | Ad unit ids and flags | Now from the API through `PromoConfigFetcher.Fetch` (`const string ConfigUrl`, EMPTY, TODO). Empty URL: no request, cached copy, else baked `PromoConfig` |
+| 12 | Level-complete endpoint | REMOVED: `StageTracker` deleted, call in `FlowDirector.ShowWin` removed, `ShotCapture` ping checks removed |
+| 13 | Save and prefs legacy keys | Kept as one-time copy sources (`KeyMigration`); a new package id gives a fresh data folder so a clean install never has them |
+| 14 | Keystore, Play Console listing, store icon and feature graphic | OPEN, developer |
+| 15 | `Docs/NativeAds.md` mentions the previous game's backend (`newvids.xyz/.../strtdata`) | OPEN, rewrite once the new API is known |
 
-Not verified: these C# edits have not been compiled (no Editor was used). The Android branch is behind `#if UNITY_ANDROID && !UNITY_EDITOR`, so the Editor compile will not even see it; check it with an Android build.
+## What is left for the developer
 
-## Where each identity string lives
-
-| # | Location | What | Kind | Breaks if skipped |
-|---|---|---|---|---|
-| 1 | `ProjectSettings/ProjectSettings.asset:173-175` | `applicationIdentifier` Android / Standalone / iPhone = `in.dicodeinfotech.arrowqubepuzzle` | **Value from the developer** (new package id / bundle id) | The build installs over, shares a save, a Play listing and an AdMob app with the previous game (AC1, AC6). |
-| 2 | `ProjectSettings/ProjectSettings.asset:15` | `companyName: dicodeinfotech` | Value from the developer (keep or change) | Cosmetic (shows in `persistentDataPath` on desktop). |
-| 3 | `ProjectSettings/ProjectSettings.asset:16` | `productName: Lantern Dragons` | Already done (Story 006) | Nothing. |
-| 4 | `ProjectSettings/ProjectSettings.asset:151, 182` | `bundleVersion: 1.0`, `AndroidBundleVersionCode: 1` | Value from the developer (a new listing may start at 1) | Play Console rejects a lower or equal version code on an existing listing. |
-| 5 | `ProjectSettings/AndroidResolverDependencies.xml:12` | `<setting name="bundleId" value="in.dicodeinfotech.arrowqubepuzzle" />` | Mechanical: same value as #1 (the file is regenerated by the External Dependency Manager, so re-run Android Resolver after the change) | Resolver keeps resolving for the old id; harmless but stale. |
-| 6 | `Assets/Project/Scripts/Managers/AndroidDataBridge.cs:9` | `BridgeClass = "in.dicodeinfotech.arrowqubepuzzle.UnityAdBridge"` | Mechanical **only if** the native host app renames its `UnityAdBridge` class to the new package. The host project is not in this repo. | Paid events log a warning and never reach the host (revenue reporting lost), but the game no longer crashes. |
-| 7 | `Assets/Project/Scenes/Game.unity:1337` | `rateUsUrl: https://play.google.com/store/apps/details?id=in.dicodeinfotech.arrowqubepuzzle` | Mechanical: `id=` = new package id | "Rate us" opens the previous game's Play page. |
-| 8 | `Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset:15-16` | `adMobAndroidAppId`, `adMobIOSAppId` = Google test ids `ca-app-pub-3940256099942544~...` | **Value from the developer** (real AdMob app ids) | Release build serves test ads / earns nothing. |
-| 9 | `Assets/Plugins/Android/GoogleMobileAdsPlugin.androidlib/AndroidManifest.xml:7` | `APPLICATION_ID` meta-data = the same Android test app id | Mechanical: same as #8 Android id (the GMA settings window rewrites this file when the id is changed there) | Mismatch with #8 crashes the Ads SDK at start on a real app id. |
-| 10 | `Assets/Project/Scripts/Data/AdTestIds.cs:5-8` | Google test unit ids | Leave as is: test fallbacks only | None. |
-| 11 | `Assets/Project/Resources/AdConfig.asset:15-21` | `useTestIds: 0`, `banner/interstitial/rewarded/nativeAd/preloadNativeAd` all empty | Unit ids come from the backend payload (`game_config_json`, via the host app) first, then these baked fields. Fill the baked fields only if the host will not supply them. | With `useTestIds: 0` and no payload, `AdSettings.AdsEnabled` is false and every ad format stays off (by design). Editor and debug runs show no ads unless `useTestIds` is turned on temporarily. |
-| 12 | `Assets/Project/Scripts/Managers/LevelTracker.cs:14` | `https://newvids.xyz/arrwgmln/gapp/completelevel` | **Value from the backend owner** | Every win counts toward the previous game's statistics. |
-| 13 | Native host app / launcher (not in this repo) | package, `UnityAdBridge`, `game_config_json` intent extra (`AndroidDataBridge.cs:57`), and the backend URL + key that fills `game_config_json` | Value from the host/backend owner | No remote ad config means no ads; wrong game's config means the previous game's units. |
-| 14 | Save and prefs: `SaveSystem.cs:16` (`arrowqube_progress.json`), `AdConfigFetcher.cs:11`, `SettingsManager.cs:14-16`, `HintManager.cs:10-11` | Old-name keys | **Do not rename.** A new package id already gives a fresh `persistentDataPath` and fresh PlayerPrefs, which is what AC6 needs. | Renaming only orphans existing players' data. |
-| 15 | Signing keystore, Play Console listing, store icon / feature graphic | Outside the repo | Developer | Cannot publish. |
-
-The strings `Arrow Qube`, `Neon Route` and `NEON ROUTE` no longer occur in any code, scene, UXML or settings file (grep clean), so there is no remaining visible-name work.
-
-## Apply: ready-to-run replacements (DO NOT run until the answers below are known)
-
-Replace `NEW_PKG`, `NEW_ANDROID_APP_ID`, `NEW_IOS_APP_ID` with the real values. Use exact-line edits, then let Unity reimport; do not run `sed -i` across `Library/`.
-
-```bash
-# 1 + 5: package / bundle id (ProjectSettings and the resolver file)
-sed -i 's/in\.dicodeinfotech\.arrowqubepuzzle/NEW_PKG/g' \
-  ProjectSettings/ProjectSettings.asset \
-  ProjectSettings/AndroidResolverDependencies.xml
-
-# 7: rate-us URL in the scene (only the id= part)
-sed -i 's#details?id=in\.dicodeinfotech\.arrowqubepuzzle#details?id=NEW_PKG#' \
-  Assets/Project/Scenes/Game.unity
-
-# 6: host bridge class, ONLY after the host app owner confirms the new class name
-sed -i 's#in\.dicodeinfotech\.arrowqubepuzzle\.UnityAdBridge#NEW_PKG.UnityAdBridge#' \
-  Assets/Project/Scripts/Managers/AndroidDataBridge.cs
-
-# 8 + 9: AdMob app ids
-sed -i 's#ca-app-pub-3940256099942544~3347511713#NEW_ANDROID_APP_ID#' \
-  Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset \
-  Assets/Plugins/Android/GoogleMobileAdsPlugin.androidlib/AndroidManifest.xml
-sed -i 's#ca-app-pub-3940256099942544~1458002511#NEW_IOS_APP_ID#' \
-  Assets/GoogleMobileAds/Resources/GoogleMobileAdsSettings.asset
-
-# 12: analytics endpoint, only with the backend owner's new URL
-sed -i 's#https://newvids\.xyz/arrwgmln/gapp/completelevel#NEW_ENDPOINT#' \
-  Assets/Project/Scripts/Managers/LevelTracker.cs
-```
-
-Then: re-run Android Resolver (`Assets > External Dependency Manager > Android Resolver > Force Resolve`), run `rg -n "arrowqubepuzzle|3940256099942544~|newvids" --glob '!Library/**'` (expect zero hits apart from `AdTestIds.cs` and the editor localisation sample in `gma_settings_editor_localization_data.json`), then do an Android development build and check one ad plus one paid event on a device.
-
-## Questions the developer must answer
-
-1. **New Android package id** (for example `com.<studio>.lanterndragons`), and is the **iOS bundle id** the same?
-2. **Has the host/launcher app been re-packaged under the new id**, and what is the new `UnityAdBridge` class name (it must exist as `<new id>.UnityAdBridge` with `onAdData(long, String, String)`, or tell me the real name)?
-3. **AdMob app ids** (Android and iOS) for the new game.
-4. **Ad unit ids**: will the host/backend supply them in `game_config_json` (then nothing to bake), or should they be baked into `AdConfig.asset`?
-5. **Backend endpoints**: the new `completelevel` URL (or confirmation that the old one may keep receiving this game's wins), and the new `game_config_json` source for ads.
-6. **Store listing / versioning**: new Play listing (version code can restart at 1) or update of the old one, keystore to use, store icon and feature graphic?
+1. The config API URL (and confirmation that it returns the existing `PromoRemoteConfig` JSON: `code == 1` plus the ad unit ids and flags). Put it in `PromoConfigFetcher.ConfigUrl`.
+2. Real AdMob app ids (Android, iOS) for rows 8 and 9.
+3. Keystore and Play Console listing.
+4. An Android device pass: all four ad formats, the full loop, a 10-minute session.

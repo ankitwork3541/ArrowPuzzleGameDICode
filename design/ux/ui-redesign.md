@@ -54,7 +54,7 @@ Rounded thick-stroke style, 10px stroke, round caps and joins, 12px safe margin:
 ## Screens
 
 - **HUD**: top row = back (rounded square, 120px, purple border), level badge (capsule, gold-orange border, "LEVEL n" ink with difficulty above in dark gold), lives pill centre (capsule, red border, 3 hearts). Progress capsule under the row. Bottom bar = 3 rounded squares (hint teal, grid red, restart purple, 176px) with ink labels.
-- **Home**: level label and difficulty capsule, PLAY primary capsule, bottom nav as a cream card with a rounded top.
+- **Home**: level label and difficulty capsule, PLAY primary capsule, bottom nav as a slim two-item capsule.
 - **Settings**: cream cards with capsule switches.
 - **Win / Lose**: rounded card on a cream scrim, title ink, primary capsule.
 - **Splash / ad popups**: same card and capsule language.
@@ -67,7 +67,7 @@ The old game centred everything in a stack and put back / lives / level-badge in
 |---|---|
 | **Splash** | Top: game name (two lines, "LANTERN" over "DRAGONS", large, lantern red) at about 12% from the top, the icon below it (about 300px, rounded square). Middle is empty so the drifting backdrop shows. Bottom: "Loading..." caption above a wide capsule progress bar (about 80% width) about 10% above the bottom edge. |
 | **HUD** | Top: back button at the left; level title centred as plain text ("LEVEL 6", large ink) with the difficulty as a small coloured chip under it; lives as a vertical-free compact pill at the right. The progress capsule sits directly under the title, narrower (about 60% width), not full width. Bottom: ONE floating rounded dock (cream-white capsule card) holding the three action buttons (hint, grid, restart) as round buttons with the label under each inside the dock. |
-| **Home** | Top-left: small logo plus the name; top-right: settings round button. Centre: one big rounded "level card" (cream-white, gold border) with "LEVEL 08" huge, the difficulty chip and "7 / 1500" progress capsule. Bottom (above the nav): a wide red PLAY capsule with a round LEVELS (map) icon button at its left. The nav becomes a slim floating capsule dock. |
+| **Home** | Top-left: small logo plus the name; top-right: settings round button. Centre: one big rounded "level card" (cream-white, gold border) with "LEVEL 08" huge, the difficulty chip and an "N CLEARED" line (the campaign total is never shown). Bottom (above the nav): a wide red PLAY capsule with a round LEVELS (map) icon button at its left. The nav is a slim floating two-item capsule dock (Home, Settings); the Lvl 10 / 20 / 30 milestone items were removed. |
 | **Level map** | Header left-aligned (back round button, "LEVELS" title, count chip below the title). Path and nodes stay; list gets bottom padding so the dock never covers nodes. |
 | **Settings** | Full page: large left-aligned title under a round back button, rows as one grouped card with dividers (not separate bordered cards). |
 | **Win / Lose** | Bottom sheet: the card slides up from the bottom edge, rounded top corners only, a big round icon/badge half-overlapping the top edge of the sheet, title, then the red primary capsule and the text button. The scrim stays cream. |

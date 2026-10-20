@@ -1,0 +1,99 @@
+{
+  "code": 1,
+  "msg": "ok",
+  "config_version": 2,
+
+  "app": {
+    "name": "Lantern Dragons",
+    "min_app_version": "1.0.0",
+    "force_update": false,
+    "update_url": "https://play.google.com/store/apps/details?id=in.dicodeinfotech.arrowdragonpuzzle",
+    "maintenance_mode": false,
+    "maintenance_text": ""
+  },
+
+  "links": {
+    "rate_us": "https://play.google.com/store/apps/details?id=in.dicodeinfotech.arrowdragonpuzzle",
+    "privacy": "https://example.com/arrowdragon/privacy",
+    "terms": "https://example.com/arrowdragon/terms",
+    "support_email": "support@example.com",
+    "more_games": "",
+    "share_text": "Slide the dragons off the board! Play Lantern Dragons:",
+    "share_url": "https://play.google.com/store/apps/details?id=in.dicodeinfotech.arrowdragonpuzzle"
+  },
+
+  "ads": {
+    "enabled": true,
+    "test_mode": false,
+
+    "units": {
+      "banner": "ca-app-pub-3940256099942544/6300978111",
+      "banner_large": "ca-app-pub-3940256099942544/6300978111",
+      "native": "ca-app-pub-3940256099942544/2247696110",
+      "native_preload": "ca-app-pub-3940256099942544/2247696110",
+      "interstitial": "ca-app-pub-3940256099942544/1033173712",
+      "rewarded": "ca-app-pub-3940256099942544/5224354917"
+    },
+
+    "formats": {
+      "banner": { "enabled": true },
+      "native": { "enabled": true, "refresh_sec": 30, "max_age_min": 55 },
+      "interstitial": { "enabled": true },
+      "rewarded": { "enabled": true }
+    },
+
+    "placements": {
+      "splash": { "type": "none" },
+      "home": { "type": "native_small", "show_after_level": 0 },
+      "level_map": { "type": "none" },
+      "play": { "type": "banner", "position": "bottom", "show_after_level": 3 },
+      "win_sheet": { "type": "native_big", "show_after_level": 0 },
+      "lose_sheet": { "type": "native_small", "show_after_level": 0 },
+      "options": { "type": "native_small", "show_after_level": 0 }
+    },
+
+    "interstitial_rules": {
+      "min_click_count": 3,
+      "min_seconds_between": 45,
+      "every_n_levels_on_next": 2,
+      "on_back_to_home": true,
+      "skip_first_levels": 3,
+      "max_per_session": 12
+    },
+
+    "rewarded_rules": {
+      "hint": { "enabled": true },
+      "extra_life": { "enabled": false },
+      "skip_level": { "enabled": false }
+    },
+
+    "test_device_ids": []
+  },
+
+  "game": {
+    "lives": { "max": 3 },
+    "hints": { "free_count": 3, "reset_on_change": true },
+    "locks": { "intro_level": 6 },
+    "difficulty_offset": 0
+  },
+
+  "ui": {
+    "options_rows": {
+      "vibration": true,
+      "sound": true,
+      "native_refresh_rate": true,
+      "reduce_motion": true,
+      "rate_us": true,
+      "privacy": true,
+      "terms": true
+    },
+    "reduce_motion_default": false,
+    "confetti": true,
+    "level_map": true
+  },
+
+  "message": {
+    "banner_text": "",
+    "banner_url": ""
+  }
+}
