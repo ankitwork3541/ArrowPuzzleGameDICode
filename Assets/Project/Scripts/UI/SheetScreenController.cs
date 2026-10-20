@@ -353,6 +353,8 @@ public class SheetScreenController : MonoBehaviour
         VisualElement card = root.Q<VisualElement>("sheet-card");
         if (card == null) return;
 
+        if (SoundDirector.Instance != null) SoundDirector.Instance.PlaySheetOpen();
+
         // Reduce Motion: the sheet is simply there, no slide.
         if (OptionsManager.ReduceMotionOn)
         {

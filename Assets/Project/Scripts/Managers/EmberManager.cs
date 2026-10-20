@@ -36,6 +36,9 @@ public class EmberManager : MonoBehaviour
         lives--;
         OnLivesChanged?.Invoke(lives, maxLives);
 
+        // Follows the bump by a beat (SoundDirector schedules it), so the two never blur together.
+        if (SoundDirector.Instance != null) SoundDirector.Instance.PlayHeartLost();
+
         // Game over is deliberately NOT fired here. ShowLose() drops the Lose card over the board
         // and freezes input, so firing it mid-bump would cut off the bump and the rewind that
         // explain why the player lost — the card would land on a red flash instead of on a

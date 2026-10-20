@@ -103,8 +103,8 @@ public class OptionsScreenController : MonoBehaviour
     // so it still fires exactly once.
     private static void BindSwitch(VisualElement element, EventCallback<ClickEvent> handler)
     {
+        // No TapSound here: each handler plays its own on/off tick, so a switch never double-clicks.
         VisualElement hitArea = element.parent ?? element;
-        TapSound.Attach(hitArea);
         hitArea.UnregisterCallback(handler);
         hitArea.RegisterCallback(handler);
     }
@@ -193,27 +193,42 @@ public class OptionsScreenController : MonoBehaviour
         row.EnableInClassList("entry--hidden", !visible);
     }
 
+    // Switching Sound OFF is silent on purpose: PlayToggle checks the new value, so only turning it ON
+    // is heard.
+    private static void PlayToggleSound(bool on)
+    {
+        if (SoundDirector.Instance != null) SoundDirector.Instance.PlayToggle(on);
+    }
+
     private void OnSoundClicked(ClickEvent evt)
     {
-        settingsManager.SetSound(!settingsManager.SoundEnabled);
+        bool on = !settingsManager.SoundEnabled;
+        settingsManager.SetSound(on);
+        PlayToggleSound(on);
         Apply();
     }
 
     private void OnVibrationClicked(ClickEvent evt)
     {
-        settingsManager.SetVibration(!settingsManager.VibrationEnabled);
+        bool on = !settingsManager.VibrationEnabled;
+        settingsManager.SetVibration(on);
+        PlayToggleSound(on);
         Apply();
     }
 
     private void OnRefreshClicked(ClickEvent evt)
     {
-        settingsManager.SetNativeRefreshRate(!settingsManager.NativeRefreshRateEnabled);
+        bool on = !settingsManager.NativeRefreshRateEnabled;
+        settingsManager.SetNativeRefreshRate(on);
+        PlayToggleSound(on);
         Apply();
     }
 
     private void OnMotionClicked(ClickEvent evt)
     {
-        settingsManager.SetReduceMotion(!settingsManager.ReduceMotion);
+        bool on = !settingsManager.ReduceMotion;
+        settingsManager.SetReduceMotion(on);
+        PlayToggleSound(on);
         Apply();
     }
 

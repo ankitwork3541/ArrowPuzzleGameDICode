@@ -57,10 +57,16 @@ public class OptionsManager : MonoBehaviour
         ApplyFrameRate();
     }
 
+    // Fired after Sound changes, so a jingle that is already playing can be cut at once.
+    public event System.Action<bool> SoundChanged;
+
     public void SetSound(bool on)
     {
+        bool before = SoundEnabled;
         SoundEnabled = on;
         Store(SoundKey, on);
+
+        if (before != on) SoundChanged?.Invoke(on);
     }
 
     public void SetVibration(bool on)

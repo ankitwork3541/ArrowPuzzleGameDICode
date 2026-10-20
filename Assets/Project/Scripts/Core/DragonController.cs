@@ -402,6 +402,7 @@ public class DragonController : MonoBehaviour
         {
             ShakeLock();
             SoundDirector.Instance.PlayLockShake();
+            HapticPulse.Light();
             return;
         }
 
@@ -658,9 +659,7 @@ public class DragonController : MonoBehaviour
     void BlockedBounce()
     {
         SoundDirector.Instance.PlayDragonClickBlocked();
-#if UNITY_ANDROID || UNITY_IOS
-        if (OptionsManager.Instance.VibrationEnabled) Handheld.Vibrate();
-#endif
+        HapticPulse.Bump();
         EmberManager.Instance.LoseLife();
 
         int n = path.Count;
@@ -811,6 +810,7 @@ public class DragonController : MonoBehaviour
 
             if (IsFullyOffScreen())
             {
+                SoundDirector.Instance.PlayDragonExit();
                 StageManager.Instance.DragonExited();
                 Destroy(gameObject);
             }

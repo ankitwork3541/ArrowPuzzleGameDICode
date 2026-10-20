@@ -227,6 +227,7 @@ public class FlowDirector : MonoBehaviour
     public void OnNextLevelClicked()
     {
         SoundDirector.Instance.StopJingle();
+        SoundDirector.Instance.PlaySheetClose();
         int completedLevel = LastCompletedLevelNumber;
         PromoInterstitialManager.ShowLevelAd(completedLevel, () =>
         {
@@ -239,6 +240,7 @@ public class FlowDirector : MonoBehaviour
     public void OnWinHomeClicked()
     {
         SoundDirector.Instance.StopJingle();
+        SoundDirector.Instance.PlaySheetClose();
         PromoInterstitialManager.ShowClickAd(() =>
         {
             winRoot.SetActive(false);
@@ -249,6 +251,7 @@ public class FlowDirector : MonoBehaviour
     public void OnRetryLevelClicked()
     {
         SoundDirector.Instance.StopJingle();
+        SoundDirector.Instance.PlaySheetClose();
         PromoInterstitialManager.ShowClickAd(() =>
         {
             loseRoot.SetActive(false);
@@ -260,6 +263,7 @@ public class FlowDirector : MonoBehaviour
     public void OnLoseHomeClicked()
     {
         SoundDirector.Instance.StopJingle();
+        SoundDirector.Instance.PlaySheetClose();
         PromoInterstitialManager.ShowClickAd(() =>
         {
             loseRoot.SetActive(false);

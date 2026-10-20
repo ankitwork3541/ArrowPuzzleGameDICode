@@ -189,7 +189,11 @@ public class HallScreenController : MonoBehaviour
         }
 
         bool show = title != null;
+        bool wasHidden = noticeOverlay.ClassListContains("notice-overlay--hidden");
         noticeOverlay.EnableInClassList("notice-overlay--hidden", !show);
+
+        // Same soft paper slide as the result sheet, once, when the blocking notice appears.
+        if (show && wasHidden && SoundDirector.Instance != null) SoundDirector.Instance.PlaySheetOpen();
 
         if (!show) return;
 

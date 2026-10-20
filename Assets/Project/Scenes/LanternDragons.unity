@@ -262,13 +262,30 @@ MonoBehaviour:
   sfxSource: {fileID: 313712118}
   jingleSource: {fileID: 313712120}
   sfxMixerGroup: {fileID: -8116236422334216219, guid: 054ec06159bde457d85ed47d6cdcfdee, type: 2}
-  dragonTapClip: {fileID: 8300000, guid: 35e8ac61a0a048958fcfd5f2a5e02a05, type: 3}
-  dragonBumpClip: {fileID: 8300000, guid: d569d74df4ab4cde970cfcbe17111941, type: 3}
-  uiClickClip: {fileID: 8300000, guid: 9ac174bcae8540daa608967abb84bfa4, type: 3}
-  levelCompleteClip: {fileID: 8300000, guid: 4d46b89a11f241f8ac51c44a8bb52b9f, type: 3}
-  levelFailedClip: {fileID: 8300000, guid: fb4febdf29c44a6aa25f8410605f7bb2, type: 3}
-  lockShakeClip: {fileID: 8300000, guid: 55f3b9b713d84ab591e907376bb9a09d, type: 3}
-  unlockClip: {fileID: 8300000, guid: 6d4377795caf43689cddcb8c3642958f, type: 3}
+  jingleMixerGroup: {fileID: 8411262468092663214, guid: 054ec06159bde457d85ed47d6cdcfdee, type: 2}
+  dragonTapClip: {fileID: 8300000, guid: 1d0a29f0105ae284da29ddf12ad728ae, type: 3}
+  dragonBumpClip: {fileID: 8300000, guid: 4a8692c61d7e6124085654c2a9b60346, type: 3}
+  uiClickClip: {fileID: 8300000, guid: ff6ecc6f09362f54b85a8b9016f6d702, type: 3}
+  levelCompleteClip: {fileID: 8300000, guid: 811c522906ac5354985e810b2d31e4fe, type: 3}
+  levelFailedClip: {fileID: 8300000, guid: a27ee85134282df48a9865dff9b6af54, type: 3}
+  lockShakeClip: {fileID: 8300000, guid: 115c6535ec6c38f42a41a44f07d884c9, type: 3}
+  unlockClip: {fileID: 8300000, guid: 799072604fa07924ca89b86d9eb68e29, type: 3}
+  dragonTapAlt:
+  - {fileID: 8300000, guid: 6f11068aad9aa2b4db3ee2dde6b70775, type: 3}
+  - {fileID: 8300000, guid: ffe778d5533f21247bca567e828cca5c, type: 3}
+  dragonBumpAlt:
+  - {fileID: 8300000, guid: 72096d03fefbdf244a283455593daea5, type: 3}
+  lockShakeAlt:
+  - {fileID: 8300000, guid: 563dac897781ed745970cd7e79270dac, type: 3}
+  dragonExitClip: {fileID: 8300000, guid: 1150962c4639a574b9eef21b39ab6e79, type: 3}
+  heartLostClip: {fileID: 8300000, guid: b52995cfdd1558d4bbe1701d96f02dfb, type: 3}
+  hintPulseClip: {fileID: 8300000, guid: 63fc0a95880084b41b8b8b46f3d0b61d, type: 3}
+  levelEntranceClip: {fileID: 8300000, guid: ee0f03871510dfa41ad2598205438a7d, type: 3}
+  mapNodeTapClip: {fileID: 8300000, guid: 2b5217265161c8b4c9d0e94d559a1583, type: 3}
+  sheetOpenClip: {fileID: 8300000, guid: 5cd2c4d361ef85f47a79675a2ee8d65b, type: 3}
+  sheetCloseClip: {fileID: 8300000, guid: 339b3a637cca80f4a9c011c080c0faad, type: 3}
+  toggleOnClip: {fileID: 8300000, guid: 6be4acafa9fabb94ebf5a7bda8ce4f46, type: 3}
+  toggleOffClip: {fileID: 8300000, guid: f46b8d20626b87846944e66c641a35b2, type: 3}
 --- !u!82 &313712118
 AudioSource:
   m_ObjectHideFlags: 0
@@ -1334,9 +1351,6 @@ MonoBehaviour:
   panelRenderer: {fileID: 1699429037}
   gameFlowManager: {fileID: 1122562369}
   settingsManager: {fileID: 1808465325}
-  rateUsUrl: https://play.google.com/store/apps/details?id=in.dicodeinfotech.arrowdragonpuzzle
-  privacyUrl: https://neon-route-escape.blogspot.com/2026/08/neon-route-escape-game-privacy-policy.html
-  termsUrl: https://neon-route-escape.blogspot.com/2026/08/neon-route-escape-terms-conditions.html
 --- !u!1931382934 &1699429037
 PanelRenderer:
   m_ObjectHideFlags: 0

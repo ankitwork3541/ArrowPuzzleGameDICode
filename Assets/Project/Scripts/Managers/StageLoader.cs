@@ -211,6 +211,7 @@ public class StageLoader : MonoBehaviour
     {
         gridBuilder.ClearDots();   // the dot grid joins the HUD after the wave
         OnEntranceStart?.Invoke();
+        if (SoundDirector.Instance != null) SoundDirector.Instance.PlayLevelEntrance();
 
         if (spawnedDragons.Count == 0)
         {
@@ -407,5 +408,6 @@ public class StageLoader : MonoBehaviour
 
         cameraController.FocusOn(dragon.GetBounds(), gridBuilder.spacing);
         dragon.PlayHintPulse();
+        if (SoundDirector.Instance != null) SoundDirector.Instance.PlayHintPulse();
     }
 }

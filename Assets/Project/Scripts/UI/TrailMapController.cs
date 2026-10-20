@@ -175,9 +175,15 @@ public class TrailMapController
 
     private void OnNodeClicked(int level)
     {
-        // Beaten levels and the frontier open; anything beyond it is locked.
-        if (level < 1 || level > highest + 1 || level > total) return;
+        // Beaten levels and the frontier open; anything beyond it is locked. A locked node gets the plain
+        // UI click so the tap is still acknowledged.
+        if (level < 1 || level > highest + 1 || level > total)
+        {
+            if (SoundDirector.Instance != null) SoundDirector.Instance.PlayUIClick();
+            return;
+        }
 
+        if (SoundDirector.Instance != null) SoundDirector.Instance.PlayMapNodeTap();
         Close();
         onLevelChosen(level);
     }
@@ -205,8 +211,8 @@ public class TrailMapController
 
             node = new Button();
             node.AddToClassList("trail-node");
+            // No TapSound here: OnNodeClicked plays the map-node tick (or the plain click for a locked node).
             node.clicked += () => onClick(level);
-            TapSound.Attach(node);
 
             number = new Label();
             number.AddToClassList("trail-node__number");
