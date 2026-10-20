@@ -11,8 +11,13 @@ public class StageLoader : MonoBehaviour
     public BoardCamera cameraController;
 
     [Header("Level entrance animation")]
+    // Only the "classic" style (kept for comparing during review) reads these two; the ink and fly styles
+    // take their timing from EntranceMath so a big board never takes more than about 1.2 s.
     public float entranceDuration = 0.4f;   // how long ONE arrow takes to draw itself
     public float entranceStagger = 0.5f;    // total window the whole wave is spread over
+
+    // How far past its spot a flying dragon overshoots before it settles, in cells (the brief says <= 0.12).
+    public float flyOvershootCells = 0.1f;
 
     // The HUD hides itself between these two — the board draws in on a clean screen.
     public event System.Action OnEntranceStart;
@@ -20,6 +25,22 @@ public class StageLoader : MonoBehaviour
 
     private Tween entranceTween;
     private List<DragonController> entranceOrder = new List<DragonController>();
+
+    // The entrance in flight: pure state (EntranceMath) so "a tap skips it and the end is announced once"
+    // holds however the entrance ends — finishing, skipping, or being torn down by a restart.
+    private EntranceMath.State entranceState;
+    private EntranceStyle activeStyle;
+    private float entranceWindow;
+    private float entrancePer;
+    private float[] entranceLastTime = new float[0];
+    private Vector2Int boardMin;
+    private Vector2Int boardMax;
+
+    public bool EntranceRunning => entranceState.Running;
+    public EntranceStyle ActiveEntranceStyle => activeStyle;
+
+    // How long the entrance in flight (or the last one) takes in all, for the dev screenshot driver.
+    public float EntranceTotalSeconds => entranceWindow + entrancePer;
 
     private int currentLevelIndex = 0;
     private List<DragonController> spawnedDragons = new List<DragonController>();
@@ -188,7 +209,11 @@ public class StageLoader : MonoBehaviour
 
         Vector2Int min, max;
         if (TryGetDragonBounds(levelData, out min, out max))
+        {
             gridBuilder.CenterOnContent(min, max);
+            boardMin = min;      // the level's own cell bounds: where the "fly" entrance starts outside
+            boardMax = max;
+        }
 
         // Seeded on the level index, so a level always dresses its arrows the same way — a restart
         // never reshuffles the board — while each level still gets its own mix of the palette.
@@ -231,6 +256,15 @@ public class StageLoader : MonoBehaviour
     {
         if (BoardCamera.Instance == null) return;
 
+        // A tap on the board while the level is still building in skips straight to the finished board. It
+        // is not also passed on to a dragon: the board is not playable yet, and the tap was "get on with it".
+        if (EntranceMath.ShouldSkipOnTap(entranceState))
+        {
+            Vector2 skipPos;
+            if (BoardCamera.Instance.TryGetTapThisFrame(out skipPos)) SkipEntrance();
+            return;
+        }
+
         // Out of lives: the losing arrow is still rewinding, so taps must not start fresh runs
         // that would still be animating when ShowLose() freezes the board under the Lose card.
         if (EmberManager.Instance != null && EmberManager.Instance.lives <= 0) return;
@@ -250,56 +284,117 @@ public class StageLoader : MonoBehaviour
         if (dragon != null) dragon.HandleTap();
     }
 
-    // Draw every arrow in, rippling outwards from the centre of the board.
+    // Build the level in. Which look is the config's `ui.entrance_style` (ink / fly, plus classic for
+    // comparing); Reduce Motion (or an empty board) skips the animation and shows the finished board.
     void PlayEntrance()
     {
         gridBuilder.ClearDots();   // the dot grid joins the HUD after the wave
         OnEntranceStart?.Invoke();
         if (SoundDirector.Instance != null) SoundDirector.Instance.PlayLevelEntrance();
 
-        if (spawnedDragons.Count == 0)
+        EntranceMath.Begin(ref entranceState);
+
+        if (spawnedDragons.Count == 0 || OptionsManager.ReduceMotionOn)
         {
-            OnEntranceComplete?.Invoke();
+            // Init() already drew every dragon in its final place, so there is nothing to animate.
+            FinishEntrance();
             return;
         }
 
-        // Nearest-to-centre first. Centre is world (0,0) — CenterOnContent() already put
-        // the level's bounding box there.
-        entranceOrder = new List<DragonController>(spawnedDragons);
-        entranceOrder.Sort((a, b) => a.GetBounds().center.sqrMagnitude.CompareTo(b.GetBounds().center.sqrMagnitude));
+        activeStyle = GameConfigService.EntranceStyle;
+        int count = spawnedDragons.Count;
 
-        foreach (DragonController dragon in entranceOrder)
-            dragon.BeginEntrance();
+        // Who starts when. Ink and classic ripple out from the centre of the board (world (0,0):
+        // CenterOnContent() already put the level's bounding box there); fly goes nearest entry edge first.
+        float[] flyStart = new float[count];
+        int[] order;
+        if (activeStyle == EntranceStyle.Fly)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                DragonController dragon = spawnedDragons[i];
+                Vector2Int dragonMin, dragonMax;
+                dragon.GetCellBounds(out dragonMin, out dragonMax);
+                flyStart[i] = EntranceMath.FlyStartCells(dragon.HeadDirection, dragonMin, dragonMax, boardMin, boardMax);
+            }
+            order = EntranceMath.NearestEdgeFirstOrder(flyStart);
+        }
+        else
+        {
+            Vector2[] centres = new Vector2[count];
+            for (int i = 0; i < count; i++)
+                centres[i] = spawnedDragons[i].GetBounds().center;
+            order = EntranceMath.CenterOutOrder(centres);
+        }
 
-        float total = entranceStagger + entranceDuration;
+        entranceOrder.Clear();
+        foreach (int index in order)
+            entranceOrder.Add(spawnedDragons[index]);
+
+        for (int rank = 0; rank < count; rank++)
+            entranceOrder[rank].BeginEntrance(activeStyle, flyStart[order[rank]], flyOvershootCells);
+
+        bool classic = activeStyle == EntranceStyle.Classic;
+        entrancePer = classic ? entranceDuration : EntranceMath.PerDragonSeconds;
+        entranceWindow = classic ? entranceStagger : EntranceMath.StaggerWindow(count);
+        float total = entranceWindow + entrancePer;
+
+        if (entranceLastTime.Length < count) entranceLastTime = new float[count];
+        for (int i = 0; i < count; i++) entranceLastTime[i] = -1f;
+
+        if (activeStyle == EntranceStyle.Ink) gridBuilder.BeginPaperUnfold();
 
         // ONE tween drives the whole wave. Giving each arrow its own tween is what blew past
         // PrimeTween's 200-tween pool on a 150+ arrow level. Ease.Linear because the tween
-        // carries elapsed TIME here — the easing is applied per arrow, below.
+        // carries elapsed TIME here — the easing is applied per dragon, in DragonController.
         entranceTween = Tween.Custom(this, 0f, total, duration: total, ease: Ease.Linear,
-            onValueChange: (loader, elapsed) =>
-            {
-                int count = entranceOrder.Count;   // read live — ClearArrows() can empty this
-                for (int i = 0; i < count; i++)
-                {
-                    DragonController dragon = entranceOrder[i];
-                    if (dragon == null) continue;
+                onValueChange: (loader, elapsed) => loader.StepEntrance(elapsed))
+            .OnComplete(this, warnIfTargetDestroyed: false, onComplete: loader => loader.FinishEntrance());
+    }
 
-                    // Spread over a FIXED window, not a fixed per-arrow gap — a 0.03s gap would
-                    // make the Huge level's 338 arrows take ten seconds instead of half a second.
-                    float delay = count > 1 ? (i / (float)(count - 1)) * entranceStagger : 0f;
-                    float t = Mathf.Clamp01((elapsed - delay) / entranceDuration);
-                    dragon.SetEntranceProgress(1f - (1f - t) * (1f - t));   // OutQuad
-                }
-            })
-            .OnComplete(this, warnIfTargetDestroyed: false, onComplete: loader =>
-            {
-                foreach (DragonController dragon in entranceOrder)
-                    if (dragon != null) dragon.EndEntrance();
+    void StepEntrance(float elapsed)
+    {
+        int count = entranceOrder.Count;   // read live — ClearDragons() can empty this
+        for (int i = 0; i < count && i < entranceLastTime.Length; i++)
+        {
+            DragonController dragon = entranceOrder[i];
+            if (dragon == null) continue;
 
-                gridBuilder.SpawnDots();
-                OnEntranceComplete?.Invoke();
-            });
+            // Spread over a FIXED window, not a fixed per-dragon gap — a 0.03s gap would make the Huge
+            // level's 338 dragons take ten seconds instead of about a second.
+            float delay = EntranceMath.DelayFor(i, count, entranceWindow);
+            float t = EntranceMath.LocalProgress(elapsed, delay, entrancePer);
+
+            // A dragon that has not started yet, or has already finished, has nothing new to draw.
+            if (t == entranceLastTime[i]) continue;
+            entranceLastTime[i] = t;
+            dragon.SetEntranceTime(t);
+        }
+
+        if (activeStyle == EntranceStyle.Ink) gridBuilder.SetPaperUnfold(elapsed, entranceWindow);
+    }
+
+    // The one way an entrance ends, whether it ran out, was skipped by a tap, or was never needed.
+    // TryFinish lets it through once, so the HUD and the lock coach hear about it exactly once.
+    void FinishEntrance()
+    {
+        if (!EntranceMath.TryFinish(ref entranceState)) return;
+
+        foreach (DragonController dragon in entranceOrder)
+            if (dragon != null) dragon.EndEntrance();
+
+        gridBuilder.EndPaperUnfold();
+        gridBuilder.SpawnDots();
+        OnEntranceComplete?.Invoke();
+    }
+
+    // Jump to the finished board now (a board tap during the entrance, or a test).
+    public void SkipEntrance()
+    {
+        if (!EntranceMath.ShouldSkipOnTap(entranceState)) return;
+
+        entranceTween.Stop();
+        FinishEntrance();
     }
 
     void FitCameraToSpawnedDragons()
@@ -345,6 +440,8 @@ public class StageLoader : MonoBehaviour
         // Restart calls LoadLevel() directly, so without this the previous wave's tween would
         // still be running and its OnComplete would spawn dots / show the HUD over the new one.
         entranceTween.Stop();
+        EntranceMath.Abort(ref entranceState);   // torn down mid-entrance: nothing is announced
+        gridBuilder.EndPaperUnfold();
         entranceOrder.Clear();
 
         foreach (DragonController dragon in spawnedDragons)

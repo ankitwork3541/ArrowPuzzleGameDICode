@@ -5336,3 +5336,66 @@ production/session-logs/session-cost.md
 production/session-logs/session-log.md
 ---
 
+## Session End: 20261020_145525
+### Commits
+8821ee5 docs: lock UX evidence and frames, audio design doc touch-ups, product name in specs
+3186950 feat: first-lock tutorial, legible padlock number, Arrow Dragon Puzzle name, silent dragon exit
+0a79927 docs: audio design document, SFX spec and audio research report
+bd97844 feat: real CC0 audio, eight new sound events, SoundDirector rewrite and light haptics
+d6f2842 docs: game config schema and README, Story 007 evidence and frames, updated specs
+4f7e684 feat: new package id, standalone ad/config stack, fully dynamic game config, two-item dock
+8369eba docs: QA evidence, rename report, accessibility tier, sprint plan and Layout v2 spec
+f341ca0 refactor: rename the whole project to Lantern Dragons names, plus review fixes and accessibility
+0063ab5 chore: safety snapshot before the file rename (light paper theme, new UI, shapes, level map)
+---
+
+## Session End: 20261020_150315
+### Commits
+8821ee5 docs: lock UX evidence and frames, audio design doc touch-ups, product name in specs
+3186950 feat: first-lock tutorial, legible padlock number, Arrow Dragon Puzzle name, silent dragon exit
+0a79927 docs: audio design document, SFX spec and audio research report
+bd97844 feat: real CC0 audio, eight new sound events, SoundDirector rewrite and light haptics
+d6f2842 docs: game config schema and README, Story 007 evidence and frames, updated specs
+4f7e684 feat: new package id, standalone ad/config stack, fully dynamic game config, two-item dock
+8369eba docs: QA evidence, rename report, accessibility tier, sprint plan and Layout v2 spec
+f341ca0 refactor: rename the whole project to Lantern Dragons names, plus review fixes and accessibility
+0063ab5 chore: safety snapshot before the file rename (light paper theme, new UI, shapes, level map)
+### Uncommitted Changes
+Assets/Project/Scripts/Core/BoardBuilder.cs
+Assets/Project/Scripts/Core/DragonController.cs
+Assets/Project/Scripts/Core/Spark.cs
+Assets/Project/Scripts/Data/GameConfig.cs
+Assets/Project/Scripts/Managers/GameConfigService.cs
+Assets/Project/Scripts/Managers/ShotCapture.cs
+Assets/Project/Scripts/Managers/StageLoader.cs
+production/session-logs/.session-end.hash
+production/session-logs/session-cost.md
+production/session-logs/session-log.md
+---
+
+## Session End: 20261020_150634
+### Commits
+8821ee5 docs: lock UX evidence and frames, audio design doc touch-ups, product name in specs
+3186950 feat: first-lock tutorial, legible padlock number, Arrow Dragon Puzzle name, silent dragon exit
+0a79927 docs: audio design document, SFX spec and audio research report
+bd97844 feat: real CC0 audio, eight new sound events, SoundDirector rewrite and light haptics
+d6f2842 docs: game config schema and README, Story 007 evidence and frames, updated specs
+4f7e684 feat: new package id, standalone ad/config stack, fully dynamic game config, two-item dock
+8369eba docs: QA evidence, rename report, accessibility tier, sprint plan and Layout v2 spec
+f341ca0 refactor: rename the whole project to Lantern Dragons names, plus review fixes and accessibility
+0063ab5 chore: safety snapshot before the file rename (light paper theme, new UI, shapes, level map)
+### Uncommitted Changes
+Assets/Project/Scripts/Core/BoardBuilder.cs
+Assets/Project/Scripts/Core/DragonController.cs
+Assets/Project/Scripts/Core/Spark.cs
+Assets/Project/Scripts/Data/GameConfig.cs
+Assets/Project/Scripts/Managers/GameConfigService.cs
+Assets/Project/Scripts/Managers/ShotCapture.cs
+Assets/Project/Scripts/Managers/StageLoader.cs
+design/config/README.md
+design/config/game-config.sample.json
+production/session-logs/.session-end.hash
+production/session-logs/session-cost.md
+production/session-logs/session-log.md
+---
+

@@ -90,7 +90,8 @@
     "reduce_motion_default": false,
     "confetti": true,
     "level_map": true,
-    "lock_tutorial": true
+    "lock_tutorial": true,
+    "entrance_style": "ink"
   },
 
   "message": {

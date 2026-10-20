@@ -63,6 +63,25 @@ public class Spark : MonoBehaviour
         spriteRenderer.enabled = false;
     }
 
+    // The level-entrance "paper unfold": a lattice dot that flashes at a fraction of its resting opacity.
+    // 0 hides it, 1 is the resting look. Touches nothing else, so it needs no tween.
+    public void SetAlpha(float alpha)
+    {
+        StopAnimations();
+        transform.localScale = originalScale;
+
+        if (alpha <= 0.001f)
+        {
+            spriteRenderer.enabled = false;
+            return;
+        }
+
+        Color c = normalColor;
+        c.a = normalColor.a * Mathf.Clamp01(alpha);
+        spriteRenderer.color = c;
+        spriteRenderer.enabled = true;
+    }
+
     // A pooled dot can be released mid-reveal and handed straight back out, so a leftover
     // tween would fight whatever the next owner sets.
     void StopAnimations()

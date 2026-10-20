@@ -206,6 +206,9 @@ public class UiSection
     public bool level_map = true;
     // The one-time coach overlay shown on the first padlock level.
     public bool lock_tutorial = true;
+    // How a level builds itself in: "ink" (ink-brush draw), "fly" (slide in from outside the board) or
+    // "classic" (the first look, kept for comparison). Anything else falls back to the default.
+    public string entrance_style = "ink";
 }
 
 [Serializable]
@@ -370,6 +373,7 @@ public static class GameConfigParser
 
         UiSection ui = c.ui;
         ui.options_rows = ui.options_rows ?? new OptionsRows();
+        ui.entrance_style = EntranceMath.StyleKey(EntranceMath.ParseStyle(ui.entrance_style));
 
         c.app.name = c.app.name ?? "";
         c.app.min_app_version = c.app.min_app_version ?? "";

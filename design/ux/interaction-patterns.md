@@ -95,6 +95,10 @@ Shared tokens: paper `rgb(255,248,236)`, card `rgb(255,252,244)`, ink `rgb(58,36
 **Reminder** after the tutorial: tapping a locked dragon shows "Free N more" above its padlock for about a second (static, no sound change).
 **USS**: `LockCoach.uss`: `.coach`, `.coach--hidden`, `.coach__ring`, `.coach__ring--big`, `.coach__ghost`, `.coach__ghost-count`, `.coach__card`, `.coach__card--top|bottom`, `.coach__title`, `.coach__body`, `.coach__steps`, `.coach__step`, `.coach__step--dim`, `.coach__mini`, `.coach__mini-count`, `.coach__dots`, `.coach__arrow`, `.coach__open`, `.coach__open-label`, `.coach__button`.
 
+## P12. Level entrance (how a level builds itself in)
+
+**When to use**: the one moment a board appears. The style is `ui.entrance_style` in the config: `ink` (ink-brush stroke tail to head, wet dark tip that dries to the dragon colour, head pop, faint lattice dots flashing centre-out first), `fly` (each dragon slides in from outside the board along its own heading, nearest entry edge first, 0.1-cell overshoot) or `classic` (the first look, for comparing only). Total about 0.9 s, never more than about 1.2 s on the biggest boards (the starts overlap inside a fixed window). **Rules**: a board tap during it skips to the finished board once; Reduce Motion shows the finished board at once; no sound of its own beyond the existing entrance hook; outline and shadow follow the body every frame; the padlock appears only once its dragon is there. Logic: `EntranceMath` (pure, tested); evidence: `production/qa/evidence/entrance-evidence.md`.
+
 ---
 
 ## Not yet a pattern (open)

@@ -59,11 +59,68 @@ public class BoardBuilder : MonoBehaviour
     // level's dot grid doesn't stay visible behind the Home screen.
     public void ClearDots()
     {
+        EndPaperUnfold();
+
         foreach (var kvp in dots)
         {
             dotPool.Release(kvp.Value);
         }
         dots.Clear();
+    }
+
+    // The ink entrance's faint paper unfold: a lattice dot per cell of the level flashes as the ripple
+    // passes it, centre-out and a little ahead of the strokes. These are borrowed from the same pool as the
+    // real dots and handed back by EndPaperUnfold(), before SpawnDots() makes the real ones.
+    private readonly List<Spark> paperDots = new List<Spark>();
+    private readonly List<float> paperRadius = new List<float>();
+
+    public void BeginPaperUnfold()
+    {
+        EndPaperUnfold();
+        if (footprint == null || dotPool == null) return;
+
+        float maxRadius = 0f;
+        foreach (Vector2Int pos in footprint)
+        {
+            if (GetCell(pos) == null) continue;
+
+            Spark dot = dotPool.Get();
+            Vector3 world = GridToWorld(pos);
+            dot.transform.position = world;
+            dot.GridPosition = pos;
+            dot.SetAlpha(0f);
+
+            float radius = new Vector2(world.x, world.y).magnitude;
+            if (radius > maxRadius) maxRadius = radius;
+            paperDots.Add(dot);
+            paperRadius.Add(radius);
+        }
+
+        // Store the radii as 0..1 so the per-frame call is just a lookup.
+        for (int i = 0; i < paperRadius.Count; i++)
+            paperRadius[i] = maxRadius > 0f ? paperRadius[i] / maxRadius : 0f;
+    }
+
+    public void SetPaperUnfold(float elapsed, float window)
+    {
+        for (int i = 0; i < paperDots.Count; i++)
+        {
+            Spark dot = paperDots[i];
+            if (dot != null) dot.SetAlpha(EntranceMath.PaperWaveAlpha(elapsed, paperRadius[i], window));
+        }
+    }
+
+    public void EndPaperUnfold()
+    {
+        if (paperDots.Count == 0) return;
+
+        for (int i = 0; i < paperDots.Count; i++)
+        {
+            Spark dot = paperDots[i];
+            if (dot != null) dotPool.Release(dot);
+        }
+        paperDots.Clear();
+        paperRadius.Clear();
     }
 
     // Which cells actually belong to the level being played. The grid is only a BOUNDING BOX —

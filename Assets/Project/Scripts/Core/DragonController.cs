@@ -545,11 +545,217 @@ public class DragonController : MonoBehaviour
         DrawPartial(entrancePoints, entranceLength, fraction);
     }
 
+    // ---- the two newer entrance styles (see EntranceMath) ----
+    //
+    // Ink: an ink-brush stroke. The tip of the stroke is dark and wet, the body behind it has already
+    // dried to the dragon's colour, the head pops when the stroke ends. Fly: the whole dragon slides in
+    // from outside the board along its own heading and settles with a tiny overshoot. In both the
+    // dragon stays hidden until its own turn, and the padlock badge only appears once the dragon has
+    // got there. All of it is driven by StageLoader's ONE tween through SetEntranceTime().
+    private EntranceStyle entranceStyle = EntranceStyle.Classic;
+    private float flyStartCells;
+    private float flyOvershootCells;
+    private Vector3 entranceDirWorld;
+    private Vector3[] entranceBuffer;
+    private Vector3 headBaseScale = Vector3.one;
+    private Vector3 badgeBaseScale = Vector3.one;
+    private float badgeFraction;
+    private bool entranceShown = true;
+    private Gradient inkGradient;
+    private GradientColorKey[] inkColorKeys;
+    private GradientAlphaKey[] inkAlphaKeys;
+
+    // How wet the ink at the brush tip looks: how far the tip colour sits towards ink.
+    const float InkWetTint = 0.7f;
+
+    // The way the head faces, as a unit grid step: the same way the dragon exits.
+    public Vector2Int HeadDirection =>
+        path.Count < 2 ? Vector2Int.right : path[path.Count - 1] - path[path.Count - 2];
+
+    public void GetCellBounds(out Vector2Int min, out Vector2Int max)
+    {
+        min = new Vector2Int(int.MaxValue, int.MaxValue);
+        max = new Vector2Int(int.MinValue, int.MinValue);
+
+        foreach (Vector2Int cell in path)
+        {
+            if (cell.x < min.x) min.x = cell.x;
+            if (cell.y < min.y) min.y = cell.y;
+            if (cell.x > max.x) max.x = cell.x;
+            if (cell.y > max.y) max.y = cell.y;
+        }
+    }
+
+    // Starts an Ink or Fly entrance. `startCells` and `overshootCells` only matter for Fly.
+    public void BeginEntrance(EntranceStyle style, float startCells, float overshootCells)
+    {
+        if (path.Count < 2) return;
+
+        BeginEntrance();                      // claims isMoving, caches the points, collapses to the tail
+        entranceStyle = style;
+        if (style == EntranceStyle.Classic) return;
+
+        flyStartCells = startCells;
+        flyOvershootCells = overshootCells;
+
+        Vector2Int heading = HeadDirection;
+        entranceDirWorld = new Vector3(heading.x, heading.y, 0f).normalized;
+        headBaseScale = headVisual != null ? headVisual.localScale : Vector3.one;
+
+        if (lockBadge != null)
+        {
+            badgeBaseScale = lockBadge.localScale;
+            badgeFraction = LengthFractionToCell(path.Count / 2);
+            lockBadge.gameObject.SetActive(false);
+        }
+
+        if (style == EntranceStyle.Fly)
+        {
+            entranceBuffer = new Vector3[entrancePoints.Length];
+            UpdateHeadRotation();             // the final heading, so the head never swings while sliding
+        }
+        else if (inkGradient == null)
+        {
+            inkGradient = new Gradient();
+            inkColorKeys = new GradientColorKey[3];
+            inkAlphaKeys = new[] { new GradientAlphaKey(1f, 0f), new GradientAlphaKey(1f, 1f) };
+        }
+
+        SetEntranceShown(false);
+        SetEntranceTime(0f);
+    }
+
+    // One dragon's own 0..1 clock; StageLoader works out which dragon is at which moment.
+    public void SetEntranceTime(float t)
+    {
+        if (entrancePoints == null) return;
+
+        switch (entranceStyle)
+        {
+            case EntranceStyle.Ink: ApplyInk(t); break;
+            case EntranceStyle.Fly: ApplyFly(t); break;
+            default: DrawPartial(entrancePoints, entranceLength, EntranceMath.OutQuad(t)); break;
+        }
+    }
+
+    void ApplyInk(float t)
+    {
+        SetEntranceShown(t > 0f);
+
+        float stroke = EntranceMath.InkStroke(t);
+        DrawPartial(entrancePoints, entranceLength, stroke);
+
+        // Wet ink leads the stroke and dries to the dragon's own colour once the brush has stopped.
+        Color wetColor = Color.Lerp(baseColor, Ink, InkWetTint * EntranceMath.InkWet(t));
+        inkColorKeys[0] = new GradientColorKey(baseColor, 0f);
+        inkColorKeys[1] = new GradientColorKey(baseColor, 0.55f);
+        inkColorKeys[2] = new GradientColorKey(wetColor, 1f);
+        inkGradient.SetKeys(inkColorKeys, inkAlphaKeys);
+        line.colorGradient = inkGradient;
+        if (headSprite != null) headSprite.color = wetColor;
+
+        // The head pops when the stroke ends. The outline sprite is its child, so it follows.
+        if (headVisual != null) headVisual.localScale = headBaseScale * EntranceMath.InkPop(t);
+
+        if (lockBadge != null) ApplyEntranceBadge(EntranceMath.InkBadgeScale(stroke, badgeFraction));
+    }
+
+    void ApplyFly(float t)
+    {
+        SetEntranceShown(t > 0f);
+
+        float offsetCells = EntranceMath.FlyOffset(t, flyStartCells, flyOvershootCells);
+        Vector3 shift = entranceDirWorld * (offsetCells * gridBuilder.spacing);
+
+        int n = entrancePoints.Length;
+        for (int i = 0; i < n; i++)
+            entranceBuffer[i] = entrancePoints[i] + shift;
+
+        line.positionCount = n;
+        line.SetPositions(entranceBuffer);
+        outlineDirty = true;                  // LateUpdate re-mirrors the outline and the shadow
+
+        if (tailVisual != null) tailVisual.position = entranceBuffer[0];
+        if (headVisual != null) headVisual.position = entranceBuffer[n - 1];
+
+        if (lockBadge != null) ApplyEntranceBadge(EntranceMath.FlyBadgeScale(t));
+    }
+
+    void ApplyEntranceBadge(float factor)
+    {
+        bool show = factor > 0.001f;
+        if (lockBadge.gameObject.activeSelf != show) lockBadge.gameObject.SetActive(show);
+        if (show) lockBadge.localScale = badgeBaseScale * factor;
+    }
+
+    // Everything the dragon draws, switched together so a waiting dragon leaves no dot, shadow or pearl
+    // behind on the board.
+    void SetEntranceShown(bool shown)
+    {
+        if (shown == entranceShown) return;
+        entranceShown = shown;
+
+        line.enabled = shown;
+        if (outlineLine != null) outlineLine.enabled = shown;
+        if (shadowLine != null) shadowLine.enabled = shown;
+        if (headSprite != null) headSprite.enabled = shown;
+        if (tailSprite != null) tailSprite.enabled = shown;
+        if (headOutline != null) headOutline.enabled = shown;
+        if (tailOutline != null) tailOutline.enabled = shown;
+    }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+    // Dev check for the screenshot driver: the outline and the shadow sit exactly on the body (the shadow
+    // by its offset), at both ends of the line. A mismatch mid-entrance would mean a shadow left behind.
+    public bool OutlineMatchesBody()
+    {
+        if (outlineLine == null || shadowLine == null) return false;
+
+        int n = line.positionCount;
+        if (n == 0 || outlineLine.positionCount != n || shadowLine.positionCount != n) return false;
+
+        Vector3 offset = new Vector3(shadowOffset.x, shadowOffset.y, 0f);
+        foreach (int i in new[] { 0, n - 1 })
+        {
+            Vector3 body = line.GetPosition(i);
+            if ((outlineLine.GetPosition(i) - body).sqrMagnitude > 1e-6f) return false;
+            if ((shadowLine.GetPosition(i) - body - offset).sqrMagnitude > 1e-6f) return false;
+        }
+        return true;
+    }
+#endif
+
+    // How far along the body (by length, tail 0 to head 1) the given path index sits.
+    float LengthFractionToCell(int index)
+    {
+        if (entranceLength <= 0f) return 0f;
+
+        float walked = 0f;
+        for (int i = 1; i <= index && i < entrancePoints.Length; i++)
+            walked += Vector3.Distance(entrancePoints[i - 1], entrancePoints[i]);
+        return walked / entranceLength;
+    }
+
     public void EndEntrance()
     {
         if (entrancePoints == null) return;
 
         entrancePoints = null;
+        entranceBuffer = null;
+
+        if (entranceStyle != EntranceStyle.Classic)
+        {
+            SetEntranceShown(true);
+            if (headVisual != null) headVisual.localScale = headBaseScale;
+            if (lockBadge != null)
+            {
+                lockBadge.gameObject.SetActive(true);
+                lockBadge.localScale = badgeBaseScale;
+            }
+            SetLineColor(baseColor);          // also clears the ink gradient back to the plain colour
+        }
+        entranceStyle = EntranceStyle.Classic;
+
         DrawPath();          // snap to the exact final state, collider included
         isMoving = false;
     }

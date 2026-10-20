@@ -246,6 +246,9 @@ Keep this updated as work progresses — add an entry after each meaningful step
     flaky full run (a dragon left before frame 05) did not reproduce. Evidence: `production/qa/evidence/lock-ux-evidence.md`.
     Editor hang rule: one Editor operation at a time, everything long detached (two hangs came from overlapping a
     recompile with a test job).
+  - **Level entrance styles** (`ui.entrance_style`: `ink` default / `fly` / `classic` for comparing; `EntranceMath`,
+    tap skips, Reduce Motion = finished board, no new sound): 0.9 s small, about 1.17 s on 198 dragons; developer to
+    pick one, see `production/qa/evidence/entrance-evidence.md` (270 of 270 EditMode tests, player checks all PASS).
   - Still open: pearl tail marker is hard to see; animation feel, backdrop drift and Android look
     unverified.
   - (superseded) Open: screenshots for Story 008 evidence. `capture_game_view` with a size drops UI Toolkit, and

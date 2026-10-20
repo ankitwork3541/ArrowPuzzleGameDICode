@@ -48,7 +48,10 @@ without it only if the generator is data-driven, otherwise informational), `diff
 ## `ui`
 
 `options_rows.*` (show or hide each Options row), `reduce_motion_default`, `confetti`, `level_map`, `lock_tutorial`
-(the one-time coach overlay on the first padlock level; `false` = it never shows).
+(the one-time coach overlay on the first padlock level; `false` = it never shows), `entrance_style` (how a level
+builds itself in: `"ink"` = ink-brush draw, `"fly"` = dragons slide in from outside the board, `"classic"` = the
+first look, kept for comparing; anything else = `"ink"`. A board tap skips it; Reduce Motion shows the finished
+board at once).
 (`nav_unlock_levels` was removed on 2026-10-20: the bottom dock is not configurable from the API.)
 
 ## `message`

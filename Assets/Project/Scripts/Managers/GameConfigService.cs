@@ -18,6 +18,10 @@ public static class GameConfigService
 
     public static GameConfig Current => current;
 
+    // How a level builds itself in (ui.entrance_style). Always a usable style: unknown or missing = ink.
+    public static EntranceStyle EntranceStyle =>
+        EntranceMath.ParseStyle(current != null && current.ui != null ? current.ui.entrance_style : null);
+
     // True once a real payload (cached or fresh) has been applied this session.
     public static bool HasPayload { get; private set; }
 

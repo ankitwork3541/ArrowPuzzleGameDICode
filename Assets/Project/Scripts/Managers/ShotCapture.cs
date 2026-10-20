@@ -1,5 +1,6 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using UnityEngine;
@@ -140,6 +141,14 @@ public class ShotCapture : MonoBehaviour
         if (HasFlag("--evidence-lock"))
         {
             yield return LockRun(GetArg("--evidence-prefix") ?? "lock");
+            Debug.Log("[ShotCapture] done");
+            Application.Quit();
+            yield break;
+        }
+
+        if (HasFlag("--evidence-entrance"))
+        {
+            yield return EntranceRun(GetArg("--evidence-entrance"));
             Debug.Log("[ShotCapture] done");
             Application.Quit();
             yield break;
@@ -613,6 +622,290 @@ public class ShotCapture : MonoBehaviour
         int n = 0;
         foreach (DragonController dragon in loader.SpawnedDragons)
             if (dragon != null && dragon.IsLocked) n++;
+        return n;
+    }
+
+    // ---------- the level-entrance run (--evidence-entrance <ink|fly|classic>) ----------
+    //
+    // For one style: the entrance on level 6 and on the biggest baked level, each measured at full speed (the
+    // time it takes and the frame times while it plays), then time-sliced (Time.timeScale 0.05) into frames at
+    // 5/20/40/60/80/100 percent of the entrance and tiled into one contact sheet, plus three behaviour checks
+    // (a tap skips it once, Reduce Motion shows the finished board at once, every dragon is playable after).
+    private static readonly int[] SliceMarks = { 10, 35, 65, 100 };
+
+    // `all` runs ink, fly and the classic reference in one player launch.
+    private IEnumerator EntranceRun(string styleArg)
+    {
+        // `checks` runs only the behaviour checks (ink and fly), no measuring and no frames.
+        bool checksOnly = styleArg == "checks";
+        string[] keys = styleArg == "all"
+            ? new[] { "ink", "fly", "classic" }
+            : checksOnly
+                ? new[] { "ink", "fly" }
+                : new[] { EntranceMath.StyleKey(EntranceMath.ParseStyle(styleArg)) };
+
+        yield return new WaitForSecondsRealtime(1.2f);
+        yield return new WaitUntil(() => flow.homeRoot.activeSelf);
+        yield return new WaitForSecondsRealtime(1.0f);
+
+        int bigDragons;
+        int bigNumber = BiggestLevelNumber(out bigDragons);
+        Debug.Log($"[EntranceRun] biggest baked level is {bigNumber} with {bigDragons} dragons");
+
+        // The first level goes through the real Play button, so the whole flow is exercised.
+        flow.OnPlayButtonClicked();
+        yield return new WaitUntil(() => flow.gameplayRoot.activeSelf);
+        yield return WaitEntranceOver(8f);
+
+        foreach (string key in keys)
+        {
+            if (checksOnly) break;
+            SetEntranceStyle(key);
+            yield return MeasureEntrance(key + "-level6", DemoLevelNumber);
+            yield return SliceEntrance(key + "-level6", DemoLevelNumber);
+            yield return MeasureEntrance(key + "-big", bigNumber);
+            yield return SliceEntrance(key + "-big", bigNumber);
+        }
+
+        foreach (string key in keys)
+        {
+            if (key == "classic") continue;   // the reference is not shipped behaviour: no checks
+            SetEntranceStyle(key);
+            yield return EntranceChecks(key);
+        }
+    }
+
+    private static void SetEntranceStyle(string key)
+    {
+        GameConfig config = GameConfigService.Current;
+        config.ui.entrance_style = key;
+        GameConfigService.Set(config);
+        Report("entrance: style applied from the config",
+            GameConfigService.EntranceStyle == EntranceMath.ParseStyle(key), key);
+    }
+
+    private IEnumerator WaitEntranceOver(float maxSeconds)
+    {
+        float started = Time.realtimeSinceStartup;
+        while (loader.EntranceRunning && Time.realtimeSinceStartup - started < maxSeconds)
+            yield return null;
+        yield return new WaitForSecondsRealtime(0.5f);
+    }
+
+    // Puts the loader on a level without starting it. SelectLevel refuses a level past the frontier, so the
+    // demo save is lifted just far enough (the save file is put back when the run quits).
+    private void PrepareLevel(int levelNumber)
+    {
+        ProgressStore.Data.highestLevelCompleted = Mathf.Max(ProgressStore.Data.highestLevelCompleted, levelNumber - 1);
+        loader.ClearLevel();
+        loader.SelectLevel(levelNumber);
+    }
+
+    // The level with the most dragons in the shipped campaign, read straight from the baked chunks.
+    private static int BiggestLevelNumber(out int dragons)
+    {
+        int bestNumber = 1;
+        dragons = 0;
+
+        StageData scratch = ScriptableObject.CreateInstance<StageData>();
+        for (int chunk = 0; ; chunk++)
+        {
+            TextAsset asset = Resources.Load<TextAsset>(StagePack.ChunkResourcePath(chunk));
+            if (asset == null) break;
+
+            byte[] bytes = asset.bytes;
+            Resources.UnloadAsset(asset);
+
+            int levels = StagePack.LevelCountIn(bytes);
+            int first = StagePack.FirstLevelIndexIn(bytes);
+            for (int i = 0; i < levels; i++)
+            {
+                StagePack.ReadLevelInto(bytes, i, scratch);
+                int count = scratch.dragons != null ? scratch.dragons.Count : 0;
+                if (count > dragons)
+                {
+                    dragons = count;
+                    bestNumber = first + i + 1;
+                }
+            }
+        }
+
+        Destroy(scratch);
+        return bestNumber;
+    }
+
+    // One entrance at full speed: how long it takes and how smooth the frames are while it plays.
+    private IEnumerator MeasureEntrance(string name, int levelNumber)
+    {
+        PrepareLevel(levelNumber);
+        Time.timeScale = 1f;
+        yield return new WaitForSecondsRealtime(0.4f);
+
+        System.Diagnostics.Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
+        loader.LoadLevel();
+        double loadMs = watch.Elapsed.TotalMilliseconds;
+
+        int dragons = loader.SpawnedDragons.Count;
+        float started = Time.realtimeSinceStartup;
+        float worst = 0f;
+        float sum = 0f;
+        int frames = 0;
+        while (loader.EntranceRunning && Time.realtimeSinceStartup - started < 8f)
+        {
+            yield return null;
+            float dt = Time.unscaledDeltaTime;
+            if (dt > worst) worst = dt;
+            sum += dt;
+            frames++;
+        }
+
+        float seconds = Time.realtimeSinceStartup - started;
+        Debug.Log($"[EntranceMeasure] {name} style={loader.ActiveEntranceStyle} dragons={dragons} "
+                  + $"loadLevel={loadMs:F1}ms entrance={seconds:F2}s frames={frames} "
+                  + $"avg={(frames > 0 ? sum / frames * 1000f : 0f):F1}ms worst={worst * 1000f:F1}ms");
+        Report("entrance ends by itself: " + name, !loader.EntranceRunning, $"{seconds:F2}s for {dragons} dragons");
+        yield return new WaitForSecondsRealtime(0.5f);
+    }
+
+    // The entrance in slow motion, one frame at each mark, tiled into one contact sheet.
+    private IEnumerator SliceEntrance(string name, int levelNumber)
+    {
+        PrepareLevel(levelNumber);
+        yield return new WaitForSecondsRealtime(0.4f);
+
+        Time.timeScale = 0.08f;
+        float started = Time.time;
+        loader.LoadLevel();
+        float total = Mathf.Max(0.1f, loader.EntranceTotalSeconds);
+
+        List<Texture2D> frames = new List<Texture2D>();
+        foreach (int percent in SliceMarks)
+        {
+            float target = total * percent / 100f;
+            while (loader.EntranceRunning && (percent >= 100 || Time.time - started < target))
+                yield return null;
+
+            Debug.developerConsoleVisible = false;
+            yield return new WaitForEndOfFrame();
+            Texture2D frame = ScreenCapture.CaptureScreenshotAsTexture();
+            File.WriteAllBytes(Path.Combine(dir, $"{name}-{percent:D3}.png"), frame.EncodeToPNG());
+            frames.Add(frame);
+        }
+
+        Time.timeScale = 1f;
+        WriteContactSheet(name, frames);
+        foreach (Texture2D frame in frames) Destroy(frame);
+        yield return new WaitForSecondsRealtime(0.5f);
+    }
+
+    // Frames side by side in one PNG, each scaled to 240 px wide, so a whole entrance reads at a glance.
+    private void WriteContactSheet(string name, List<Texture2D> frames)
+    {
+        if (frames.Count == 0) return;
+
+        const int cellW = 240;
+        const int gap = 6;
+        int cellH = Mathf.RoundToInt(cellW * (float)frames[0].height / frames[0].width);
+        int width = frames.Count * cellW + (frames.Count + 1) * gap;
+        int height = cellH + 2 * gap;
+
+        Color32[] pixels = new Color32[width * height];
+        Color32 backdrop = new Color32(140, 140, 140, 255);
+        for (int i = 0; i < pixels.Length; i++) pixels[i] = backdrop;
+
+        for (int f = 0; f < frames.Count; f++)
+        {
+            int left = gap + f * (cellW + gap);
+            for (int y = 0; y < cellH; y++)
+            {
+                for (int x = 0; x < cellW; x++)
+                    pixels[(gap + y) * width + left + x] =
+                        frames[f].GetPixelBilinear((x + 0.5f) / cellW, (y + 0.5f) / cellH);
+            }
+        }
+
+        Texture2D sheet = new Texture2D(width, height, TextureFormat.RGBA32, false);
+        sheet.SetPixels32(pixels);
+        sheet.Apply();
+        File.WriteAllBytes(Path.Combine(dir, name + ".png"), sheet.EncodeToPNG());
+        Destroy(sheet);
+    }
+
+    private IEnumerator EntranceChecks(string key)
+    {
+        Time.timeScale = 1f;
+        int completes = 0;
+        System.Action count = () => completes++;
+        loader.OnEntranceComplete += count;
+
+        // 0. Mid-entrance, every dragon's outline and shadow are still exactly on its body.
+        PrepareLevel(DemoLevelNumber);
+        loader.LoadLevel();
+        yield return new WaitForSecondsRealtime(0.4f);
+        // The tween moves the bodies in Update and the outlines follow in LateUpdate, so the comparison has to
+        // wait until the end of the frame; reading it between the two always shows the active dragons "off".
+        yield return new WaitForEndOfFrame();
+        int detached = 0;
+        int dragonCount = 0;
+        foreach (DragonController dragon in loader.SpawnedDragons)
+        {
+            if (dragon == null) continue;
+            dragonCount++;
+            if (!dragon.OutlineMatchesBody()) detached++;
+        }
+        Report($"entrance ({key}): outline and shadow stay on the body mid-entrance", detached == 0 && dragonCount > 0,
+            $"{detached} of {dragonCount} dragons off");
+        yield return WaitEntranceOver(4f);
+
+        // 1. A tap during the entrance skips to the finished board, and the end is announced once.
+        PrepareLevel(DemoLevelNumber);
+        completes = 0;
+        loader.LoadLevel();
+        yield return null;
+        yield return null;
+        bool wasRunning = loader.EntranceRunning;
+        loader.SkipEntrance();
+        bool stopped = !loader.EntranceRunning;
+        int busy = CountBusy();
+        yield return new WaitForSecondsRealtime(1.6f);   // the cancelled tween must not announce a second time
+        Report($"entrance ({key}): a skip finishes the board at once and is announced once",
+            wasRunning && stopped && busy == 0 && completes == 1,
+            $"was running {wasRunning}, stopped {stopped}, busy dragons {busy}, completes {completes}");
+
+        // 2. Reduce Motion: no animation, the finished board straight away.
+        OptionsManager options = OptionsManager.Instance;
+        if (options != null)
+        {
+            options.SetReduceMotion(true);
+            PrepareLevel(DemoLevelNumber);
+            completes = 0;
+            loader.LoadLevel();
+            bool running = loader.EntranceRunning;
+            int busyReduced = CountBusy();
+            yield return new WaitForSecondsRealtime(0.5f);
+            options.SetReduceMotion(false);
+            Report($"entrance ({key}): Reduce Motion shows the finished board at once",
+                !running && busyReduced == 0 && completes == 1,
+                $"running {running}, busy dragons {busyReduced}, completes {completes}");
+        }
+
+        // 3. Played to the end, every dragon is back to a normal, tappable dragon.
+        PrepareLevel(DemoLevelNumber);
+        completes = 0;
+        loader.LoadLevel();
+        yield return WaitEntranceOver(6f);
+        Report($"entrance ({key}): after a full run every dragon is playable and the end is announced once",
+            CountBusy() == 0 && completes == 1 && loader.SpawnedDragons.Count > 0,
+            $"busy dragons {CountBusy()}, completes {completes}");
+
+        loader.OnEntranceComplete -= count;
+    }
+
+    private int CountBusy()
+    {
+        int n = 0;
+        foreach (DragonController dragon in loader.SpawnedDragons)
+            if (dragon != null && dragon.IsBusy) n++;
         return n;
     }
 
