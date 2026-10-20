@@ -1,0 +1,130 @@
+/* ============ Bottom navigation ============
+   Shared by every screen that shows the nav (Home, Settings, ...). The markup
+   lives in UXML/BottomNav.uxml and is instanced per screen, so these rules are
+   the single place the nav's look is defined.
+
+   Which item reads as "selected" is NOT baked in here — BottomNavBinder.cs
+   toggles nav-item--active / nav-item--dim per screen. */
+
+/* Note: `.nav-slot` (the <ui:Instance> wrapper) is styled in each host screen's
+   own stylesheet, not here — the wrapper element belongs to the host's UXML, so
+   that is the stylesheet guaranteed to reach it. */
+
+/* Layout v2: a slim capsule dock that floats a little way in from the screen edges and above the
+   bottom, instead of a full-width bar glued to the bottom edge. */
+.tab-dock {
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    background-color: rgb(255, 252, 244);
+    border-radius: 60px;
+    border-width: 3px;
+    border-color: rgba(58, 36, 24, 0.12);
+    margin-left: 40px;
+    margin-right: 40px;
+    margin-bottom: 28px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+/* Each item is at least 100 x 96 reference pixels, the Standard-tier touch target. The dock's own
+   vertical padding was cut by the same amount, so the dock keeps its height. */
+.tab-item {
+    align-items: center;
+    justify-content: center;
+    min-width: 96px;
+    min-height: 100px;
+    padding-left: 14px;
+    padding-right: 14px;
+}
+
+.tab-icon {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 4px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+}
+
+.tab-label {
+    font-size: 22px;
+    letter-spacing: 1px;
+    color: rgba(58, 36, 24, 0.72);
+}
+
+.tab-icon--home {
+    background-image: url("project://database/Assets/Project/Sprites/GlyphHall.png?fileID=7480962188226714435&guid=4400cc3fec59f4399970e2541da7fd71&type=3#HomeIcon_0");
+}
+
+.tab-icon--lock {
+    background-image: url("project://database/Assets/Project/Sprites/GlyphLatch.png?fileID=-958580646009965197&guid=d8b1dbdeeae6f406ba936465b9ed71b7&type=3#LockIcon_0");
+}
+
+.tab-icon--settings {
+    background-image: url("project://database/Assets/Project/Sprites/GlyphCog.png?fileID=5904627132653970092&guid=6212eb57667724539859a170f6e04832&type=3#SettingsIcon_0");
+}
+
+.tab-icon--star {
+    background-image: url("../Sprites/GlyphSeal.png");
+}
+
+/* ---- states ---- */
+
+/* A soft red capsule behind the selected item, so "you are here" is a shape as well as a colour. */
+.tab-item--active {
+    background-color: rgba(196, 52, 72, 0.10);
+    border-radius: 40px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.tab-item--active .tab-icon {
+    -unity-background-image-tint-color: rgb(196, 52, 72);
+}
+
+.tab-item--active .tab-label {
+    color: rgb(196, 52, 72);
+}
+
+/* No opacity on locked or dim items: it multiplied the label's alpha and pushed the text under 4.5:1.
+   The padlock glyph and the "Lvl N" label already say "locked"; the muted ink says "not here". */
+.tab-item--locked {
+    opacity: 1;
+}
+
+.tab-item--locked .tab-icon {
+    -unity-background-image-tint-color: rgba(58, 36, 24, 0.6);
+}
+
+.tab-item--locked .tab-label {
+    color: rgba(58, 36, 24, 0.72);
+}
+
+/* Gold, not the nav's red: red already means "this is the screen you are on",
+   and an earned milestone is a different thing than the current tab. */
+.tab-item--unlocked {
+    opacity: 1;
+}
+
+.tab-item--unlocked .tab-icon {
+    -unity-background-image-tint-color: rgb(232, 140, 0);
+}
+
+.tab-item--unlocked .tab-label {
+    color: rgb(150, 92, 0);
+}
+
+.tab-item--dim {
+    opacity: 1;
+}
+
+.tab-item--dim .tab-icon {
+    -unity-background-image-tint-color: rgba(58, 36, 24, 0.6);
+}
+
+.tab-item--dim .tab-label {
+    color: rgba(58, 36, 24, 0.72);
+}

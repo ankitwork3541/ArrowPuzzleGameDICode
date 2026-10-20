@@ -1,0 +1,25 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Project/Themes/TabDock.uss?fileID=7433441132597879392&amp;guid=d8ac3aa4b7b7430da348be6ecdf383cd&amp;type=3#BottomNav" />
+    <ui:VisualElement name="bottom-nav" class="tab-dock">
+        <ui:VisualElement name="tab-hall" class="tab-item tab-item--dim">
+            <ui:VisualElement class="tab-icon tab-icon--home" picking-mode="Ignore" />
+            <ui:Label text="Home" class="tab-label" picking-mode="Ignore" />
+        </ui:VisualElement>
+        <ui:VisualElement name="nav-lvl10" class="tab-item tab-item--locked">
+            <ui:VisualElement class="tab-icon tab-icon--lock" picking-mode="Ignore" />
+            <ui:Label text="Lvl 10" class="tab-label" picking-mode="Ignore" />
+        </ui:VisualElement>
+        <ui:VisualElement name="nav-lvl20" class="tab-item tab-item--locked">
+            <ui:VisualElement class="tab-icon tab-icon--lock" picking-mode="Ignore" />
+            <ui:Label text="Lvl 20" class="tab-label" picking-mode="Ignore" />
+        </ui:VisualElement>
+        <ui:VisualElement name="nav-lvl30" class="tab-item tab-item--locked">
+            <ui:VisualElement class="tab-icon tab-icon--lock" picking-mode="Ignore" />
+            <ui:Label text="Lvl 30" class="tab-label" picking-mode="Ignore" />
+        </ui:VisualElement>
+        <ui:VisualElement name="tab-options" class="tab-item tab-item--dim">
+            <ui:VisualElement class="tab-icon tab-icon--settings" picking-mode="Ignore" />
+            <ui:Label text="Settings" class="tab-label" picking-mode="Ignore" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

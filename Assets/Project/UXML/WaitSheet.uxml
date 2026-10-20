@@ -1,0 +1,15 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/Project/Themes/WaitSheet.uss" />
+
+    <!-- Full-screen "loading ad" modal shared by every screen. Lives on its own always-active
+         PanelRenderer, so it can cover home, gameplay and the result cards alike. -->
+    <ui:VisualElement name="wait-sheet" class="wait-sheet wait-sheet--hidden">
+        <ui:VisualElement class="wait-sheet__backdrop" picking-mode="Position" />
+        <ui:VisualElement class="wait-sheet__card ring">
+            <ui:VisualElement class="ring__frame ring__frame--red" picking-mode="Ignore" />
+            <ui:VisualElement name="wait-spinner" class="wait-spinner" picking-mode="Ignore" />
+            <ui:Label text="LOADING AD..." class="wait-sheet__title" picking-mode="Ignore" />
+            <ui:Label text="Please wait a moment" class="wait-sheet__subtitle" picking-mode="Ignore" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

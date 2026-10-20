@@ -1,0 +1,38 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Project/Themes/SheetScreen.uss" />
+    <ui:Template name="PromoPlaceholder" src="project://database/Assets/Project/UXML/PromoPlaceholder.uxml" />
+
+    <!-- Same structure as WinScreen, so one controller drives both. What differs is the wording,
+         the frame's colour, and that no confetti is added. The board behind is left visible on
+         purpose here: the arrows are still sitting where they jammed, which is the information
+         the player needs before deciding to retry. -->
+
+    <ui:VisualElement name="page-root" class="sheet-root">
+        <ui:VisualElement class="sheet-scrim" picking-mode="Ignore" />
+
+        <ui:ScrollView mode="Vertical" name="sheet-scroll" class="sheet-scroll" vertical-scroller-visibility="Hidden">
+
+            <ui:VisualElement name="sheet-card" class="sheet-card">
+                <ui:VisualElement class="sheet-badge sheet-badge--lose" picking-mode="Ignore">
+                    <ui:VisualElement class="sheet-badge__glyph sheet-badge__glyph--lose" picking-mode="Ignore" />
+                </ui:VisualElement>
+
+                <ui:Label name="stage-label" text="LEVEL 01" class="sheet-card__level sheet-card__level--lose" picking-mode="Ignore" />
+                <ui:Label text="OUT OF LIVES" class="sheet-card__title" picking-mode="Ignore" />
+
+                <ui:Button name="go-button" class="sheet-primary">
+                    <ui:VisualElement picking-mode="Ignore" class="sheet-primary__inner">
+                        <ui:Label text="RETRY" picking-mode="Ignore" class="sheet-primary__label" />
+                    </ui:VisualElement>
+                </ui:Button>
+
+                <ui:Button name="hall-button" text="HOME" class="sheet-home" />
+            </ui:VisualElement>
+
+            <ui:VisualElement name="sheet-sponsor-space" class="sheet-sponsor-space">
+                <ui:Instance template="PromoPlaceholder" name="ad-placeholder-slot" class="sponsor-slot" />
+            </ui:VisualElement>
+
+        </ui:ScrollView>
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,24 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Project/Themes/PromoPlaceholder.uss" />
+
+    <!-- Skeleton that fills a reserved ad box while the ad itself is still loading, so the screen
+         opens the room once instead of jolting when the ad paints. The blocks mirror what the real
+         creative puts there: icon, headline, call-to-action, and a media area on tall slots. The
+         caption sits where the creative's own body text would, so it needs no room of its own and
+         overlaps nothing — and it is what tells the player this strip is an ad on its way.
+
+         Note: `.ad-placeholder-slot` (the <ui:Instance> wrapper) is styled in each host screen's
+         stylesheet, the same way `.nav-slot` is. -->
+    <ui:VisualElement name="sponsor-card" class="sponsor-ph" picking-mode="Ignore">
+        <ui:VisualElement class="sponsor-ph__head" picking-mode="Ignore">
+            <ui:VisualElement class="sponsor-ph__thumb" picking-mode="Ignore" />
+            <ui:VisualElement class="sponsor-ph__lines" picking-mode="Ignore">
+                <ui:VisualElement class="sponsor-ph__line sponsor-ph__line--title" picking-mode="Ignore" />
+                <ui:Label text="LOADING AD..." class="sponsor-ph__caption" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:VisualElement class="sponsor-ph__cta" picking-mode="Ignore" />
+        </ui:VisualElement>
+        <ui:VisualElement class="sponsor-ph__media" picking-mode="Ignore" />
+        <ui:VisualElement name="sponsor-sheen" class="sponsor-ph__sheen" picking-mode="Ignore" />
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 425641415616743619d472ec44376299, type: 3}
+  m_Name: PromoConfig
+  m_EditorClassIdentifier: Assembly-CSharp::AdConfig
+  useTestIds: 0
+  testDeviceIds: []
+  banner: 
+  interstitial: 
+  rewarded: 
+  nativeAd: 
+  preloadNativeAd: 
+  rewardedEnabled: 1
+  backAdEnabled: 0
+  defaultFreeHintCount: 3
+  levelsPerInterstitial: 2
+  interstitialCooldownSeconds: 30
+  adClickCount: 3
+  nativeRefreshSeconds: 30
+  nativeStyles: []
+  adMaxAgeMinutes: 30

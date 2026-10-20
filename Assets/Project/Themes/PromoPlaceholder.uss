@@ -1,0 +1,100 @@
+/* Styles for the ad-loading skeleton. Shared by every screen that reserves room for an ad, so it
+   lives with the template rather than in any one screen's stylesheet. */
+
+.sponsor-ph {
+    display: none;
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    justify-content: center;
+    padding: 14px 20px;
+    border-radius: 28px;
+    background-color: rgb(255, 252, 244);
+    border-width: 4px;
+    border-color: rgba(58, 36, 24, 0.12);
+}
+
+/* Only slots tall enough for a media area get one; AdPlaceholder adds this class. */
+.sponsor-ph--tall {
+    justify-content: flex-start;
+}
+
+.sponsor-ph__head {
+    flex-direction: row;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.sponsor-ph__thumb {
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0;
+    border-radius: 14px;
+    background-color: rgba(58, 36, 24, 0.12);
+}
+
+.sponsor-ph__lines {
+    flex-grow: 1;
+    margin-left: 18px;
+    margin-right: 18px;
+}
+
+.sponsor-ph__line {
+    height: 14px;
+    border-radius: 7px;
+    background-color: rgba(58, 36, 24, 0.12);
+}
+
+.sponsor-ph__line--title {
+    width: 62%;
+}
+
+/* Set here rather than inherited: this stylesheet travels with the template, and the result cards
+   do not put it under the same font root the bottom slots sit in. */
+.sponsor-ph__caption {
+    margin: 0;
+    margin-top: 10px;
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: rgba(58, 36, 24, 0.72);
+    -unity-text-align: middle-left;
+    -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-Bold%20SDF.asset?fileID=11400000&guid=2d8208c2123c041daaecd4a4cf0d1ae2&type=2#Oxanium-Bold SDF");
+}
+
+.sponsor-ph__cta {
+    width: 110px;
+    height: 38px;
+    flex-shrink: 0;
+    border-radius: 19px;
+    background-color: rgba(196, 52, 72, 0.18);
+}
+
+.sponsor-ph__media {
+    display: none;
+}
+
+.sponsor-ph--tall .sponsor-ph__media {
+    display: flex;
+    flex-grow: 1;
+    margin-top: 14px;
+    border-radius: 14px;
+    background-color: rgba(58, 36, 24, 0.07);
+}
+
+/* The sweep. A soft radial glow stretched to the full height of the slot reads as a band that fades
+   out at both ends, which is what a shimmer needs — a hard-edged rectangle sliding past does not.
+   AdPlaceholder moves it; USS has no keyframes. On cream it is a warm white band, since a dark one
+   would read as a smudge. */
+.sponsor-ph__sheen {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 45%;
+    background-image: url("../Sprites/DiscSoft.png");
+    background-size: 100% 100%;
+    -unity-background-image-tint-color: rgba(255, 255, 255, 0.55);
+}

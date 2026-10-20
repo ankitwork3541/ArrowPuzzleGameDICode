@@ -1,0 +1,43 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Project/Themes/PromoLabScreen.uss"/>
+    <ui:VisualElement name="page-root" class="page-root">
+
+        <ui:VisualElement class="head">
+            <ui:Label text="BANNER AD PLACEMENT TEST" class="heading"/>
+            <ui:Label name="probe-info" text="..." class="probe-info"/>
+        </ui:VisualElement>
+
+        <ui:ScrollView name="scroll" class="pane">
+
+            <!-- Each slot is full screen width. Only the text is padded: the ad box itself must run
+                 edge to edge, because that is how wide the banner actually is. -->
+            <ui:VisualElement name="slot-1" class="bay">
+                <ui:VisualElement class="bay__text">
+                    <ui:Label text="DIGIT 1  -  STANDARD ADAPTIVE" class="bay__title"/>
+                    <ui:Label text="Screen width, height chosen by Google for this device. Usually around 50-60 dp." class="bay__note"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="ad-space-1" class="bay__space"/>
+                <ui:VisualElement class="bay__text">
+                    <ui:Label name="result-1" text="loading..." class="bay__result"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="slot-2" class="bay">
+                <ui:VisualElement class="bay__text">
+                    <ui:Label text="DIGIT 2  -  LARGE ADAPTIVE" class="bay__title"/>
+                    <ui:Label text="Screen width, taller height chosen by Google - up to 20% of screen height, between 50 and 150 dp. Built for non-scrolling layouts like this game." class="bay__note"/>
+                </ui:VisualElement>
+                <ui:VisualElement name="ad-space-2" class="bay__space"/>
+                <ui:VisualElement class="bay__text">
+                    <ui:Label name="result-2" text="loading..." class="bay__result"/>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:Label name="foot" text="" class="foot"/>
+
+        </ui:ScrollView>
+
+        <ui:Button name="shut-button" text="CLOSE" class="shut-button"/>
+
+    </ui:VisualElement>
+</ui:UXML>

@@ -1,0 +1,624 @@
+using System.Collections.Generic;
+using System.Text;
+using UnityEngine;
+using UnityEditor;
+
+// System.Diagnostics is deliberately NOT imported — its `Debug` collides with UnityEngine.Debug.
+
+// Bakes the shipping campaign straight into packed binary chunks. Editor-only, so the generator
+// never ships — only the data does.
+//
+// Two ideas shape the ramp:
+//  1. Arrow COUNT leads and board area follows, because the count is what the player feels.
+//  2. A SAWTOOTH, not a straight line — runs where the count climbs, then resets. Measured in the
+//     reference game: 868 same-grid runs across its 1,806 levels.
+public static class StageCampaignGenerator
+{
+    // ---------- identity of THIS campaign ----------
+
+    // Mixed into every hash and seed below. It is what makes this game's levels different from
+    // the game this project was copied from: change it and every layout, run length and board
+    // type in the campaign changes with it, while the shape of the ramp stays the same.
+    const uint CampaignSalt = 0x4C414E54u;   // "LANT"
+    const int SeedStride = 130363;           // per-level step of the carve seed
+
+    // ---------- campaign shape ----------
+
+    // Tutorial, outside the sawtooth. The first lock appears at StageLocks.FirstLockLevelIndex.
+    static readonly int[] OnboardingDragons = { 3, 5, 7, 9, 12, 16, 20, 24, 28, 32 };
+
+    // The campaign the RAMP is shaped for, regardless of how many levels are baked right now.
+    //
+    // This is deliberately not the bake count. Shaping the ramp by the count would make a 50-level
+    // bake reach 160 arrows by level 50, while the first 50 of the real campaign should still be
+    // around 37 — so every test bake would be thrown away the moment the full campaign was built.
+    // Baking fewer levels now simply produces a PREFIX of the final campaign.
+    const int CampaignLength = 1500;
+
+    // Where the peaks travel. 160 arrows on ~40x50 matches the reference's hardest bucket.
+    const int PeakDragonsStart = 30;
+    const int PeakDragonsEnd = 150;
+
+    // Peaks reach the ceiling late — only ~4% of the reference's levels are in its hardest bucket.
+    const float PeakCurvePower = 1.5f;
+
+    // Tooth height: each run drops to this fraction of the peak, then climbs back. 1.0 = monotone.
+    const float RunFloorFraction = 0.50f;
+
+    // Runs must not all peak at the same height, or every tooth is identical and the campaign reads
+    // as one 7-level loop repeated forever — hard, back to easy, the same hard, again. Measured on
+    // the reference campaign: 1,806 levels spanning 16 to 229 arrows around a mean of 88, a spread a
+    // uniform tooth could not produce. So each run's peak is nudged up or down by this fraction:
+    // some runs top out harder than the one before, some easier.
+    const float PeakJitter = 0.25f;
+
+    // How the count climbs WITHIN a run. At 1 it is a straight line, which meant only the first
+    // level of each run was actually easy and every one after it was harder than the last — one
+    // breather, then a grind. Above 1 the bottom of the run stays flat for two to four levels before
+    // it ramps, so a hard peak is followed by a CLUSTER of easy levels, not a single one. Longer runs
+    // get longer clusters for free, since the flat part is a fraction of the run.
+    const float RunClimbPower = 2.2f;
+    const int RunLengthMin = 6;
+    const int RunLengthMax = 10;
+
+    // ---------- generation effort ----------
+
+    // Onboarding wants exact counts; the bulk only needs to be close. A carve on a 2,000-cell board
+    // is not cheap, and attempts multiply into hours across a thousand levels.
+    const int SeedAttemptsOnboarding = 60;
+    const int SeedAttemptsBulk = 3;
+    const int SeedAttemptsFallback = 24;   // extra seeds, used only when the normal budget found nothing
+    const int CarveAttemptsBulk = 3;
+    const float DragonTolerance = 0.12f;
+
+    const float BoardAspect = 1.25f;    // portrait, height / width
+
+    // ---------- shaped levels ----------
+
+    // Cycles through whatever silhouettes are in LevelShapeSources/ — see the board-type bag
+    // further down for how often a shaped level actually comes up. An empty source folder just
+    // means the bag never draws one, so the bake still works before any art exists.
+
+    // Shapes cover only part of their bounding box, so the box has to be bigger than a rectangle
+    // holding the same arrows. The first build measures the real coverage and the second corrects
+    // for it — one refinement lands close enough that the seed search absorbs the rest.
+    const float ShapeFirstGuessFill = 0.55f;
+
+    // A shaped level is a SHOWCASE: its board is sized to make the silhouette readable, not to hit
+    // the ramp's arrow count. How big that has to be is measured from the shape itself — see
+    // StageShapeMask, which sizes the grid from the shape's thinnest limb — so nothing here needs a
+    // hand-picked minimum.
+    //
+    // The reference game does the same thing. Its onboarding runs 12x14/16 arrows, then 30x30/36 for
+    // the shaped one, then straight back down to 10x13/12: a deliberate size spike, not a level that
+    // obeys the surrounding ramp.
+
+    static string[] shapeFiles = new string[0];
+
+    [MenuItem("LanternDragons/Campaign/Bake 15 Levels")]
+    static void Bake15() { Bake(15); }
+
+    [MenuItem("LanternDragons/Campaign/Bake 50 Levels")]
+    static void Bake50() { Bake(50); }
+
+    [MenuItem("LanternDragons/Campaign/Bake 250 Levels")]
+    static void Bake250() { Bake(250); }
+
+    [MenuItem("LanternDragons/Campaign/Bake 1000 Levels")]
+    static void Bake1000() { Bake(1000); }
+
+    [MenuItem("LanternDragons/Campaign/Bake 1500 Levels")]
+    static void Bake1500() { Bake(1500); }
+
+    static void Bake(int totalLevels)
+    {
+        System.Diagnostics.Stopwatch clock = System.Diagnostics.Stopwatch.StartNew();
+
+        List<StagePackWriter.StageRecord> records = new List<StagePackWriter.StageRecord>(totalLevels);
+        StringBuilder ramp = new StringBuilder();
+        ramp.AppendLine("level |   grid  | cells | arrows want/got | avgLen | bends/seg | score | band");
+
+        int dragonMisses = 0;
+        int shapedLevels = 0;
+        int notchedLevels = 0;
+        int lockedLevels = 0, lockedDragons = 0, firstLockedLevel = -1;
+        bool cancelled = false;
+
+        shapeFiles = StageShapeMask.ListShapes();
+        Debug.Log(shapeFiles.Length > 0
+            ? $"[Campaign] {shapeFiles.Length} silhouette(s) found — roughly 2 shaped and 4 notched board(s) "
+              + $"in every {BagSize} levels, order shuffled so it can't be predicted."
+            : $"[Campaign] no silhouettes in {StageShapeMask.FolderPath} — boards will be rectangle or notched only.");
+
+        try
+        {
+            for (int i = 0; i < totalLevels; i++)
+            {
+                if (EditorUtility.DisplayCancelableProgressBar(
+                        "Baking campaign",
+                        $"level {i + 1} / {totalLevels}   ({clock.Elapsed.TotalSeconds:F0}s elapsed)",
+                        i / (float)totalLevels))
+                {
+                    cancelled = true;
+                    break;
+                }
+
+                int wantDragons = TargetDragons(i, CampaignLength);
+
+                // Initialised because the compiler cannot see that a null mask always falls through
+                // to the rectangle branch below, which assigns both.
+                int width = 0, height = 0;
+                HashSet<Vector2Int> mask = null;
+                string shapeName = null;
+                bool notched = false;
+
+                BoardType boardType = BoardTypeFor(i);
+
+                if (boardType == BoardType.Shaped)
+                {
+                    mask = BuildShapeMask(shapedLevels, wantDragons, out width, out height, out shapeName);
+                    if (mask != null) shapedLevels++;
+                }
+
+                if (mask == null)
+                {
+                    BoardFor(wantDragons, out width, out height);
+                    notched = boardType == BoardType.Notched
+                              && width >= NotchMinBoardSize && height >= NotchMinBoardSize;
+                    mask = notched ? StageCarver.NotchedRectangle(width, height) : StageCarver.Rectangle(width, height);
+                    if (notched) notchedLevels++;
+                }
+
+                StageCarver.Params prm = ParamsFor(i, wantDragons);
+
+                List<List<Vector2Int>> dragons;
+                StageRating.Result result;
+                int[] locks;
+                CarveBest(i, wantDragons, mask, width, height, prm, out dragons, out result, out locks);
+
+                if (dragons == null)
+                {
+                    Debug.LogError($"[Campaign] level {i + 1}: no seed produced a fully-filled solvable "
+                                   + $"{width}x{height} board. Skipped — the campaign will be short.");
+                    continue;
+                }
+
+                records.Add(new StagePackWriter.StageRecord
+                {
+                    width = width,
+                    height = height,
+                    difficulty = result.band,
+                    dragons = dragons,
+                    locks = locks
+                });
+
+                int lockedHere = 0;
+                foreach (int t in locks) if (t > 0) lockedHere++;
+                if (lockedHere > 0)
+                {
+                    lockedLevels++;
+                    lockedDragons += lockedHere;
+                    if (firstLockedLevel < 0) firstLockedLevel = i + 1;
+                }
+
+                if (Mathf.Abs(dragons.Count - wantDragons) > Mathf.Max(1, wantDragons * DragonTolerance))
+                    dragonMisses++;
+
+                string boardNote = shapeName ?? (notched ? "notched" : null);
+
+                // Only the head is logged — Unity truncates a thousand rows anyway.
+                if (i < 20 || (i + 1) % 100 == 0 || boardNote != null)
+                    ramp.AppendLine(RampRow(i, width, height, wantDragons, dragons, result, boardNote));
+            }
+        }
+        finally
+        {
+            EditorUtility.ClearProgressBar();
+        }
+
+        if (cancelled)
+        {
+            Debug.LogWarning($"[Campaign] cancelled after {records.Count} levels — nothing written.");
+            return;
+        }
+
+        string error;
+        if (!StagePackWriter.Validate(records, out error))
+        {
+            Debug.LogError("[Campaign] refusing to write, data cannot be encoded: " + error);
+            return;
+        }
+
+        int bytes = StagePackWriter.WriteAll(records);
+
+        if (!StagePackWriter.VerifyRoundTrip(records, out error))
+        {
+            Debug.LogError("[Campaign] WROTE, BUT READ BACK WRONG: " + error
+                           + "\nThe writer and reader have drifted — do not ship this.");
+            return;
+        }
+
+        int chunks = (records.Count + StagePack.LevelsPerChunk - 1) / StagePack.LevelsPerChunk;
+
+        StringBuilder summary = new StringBuilder();
+        summary.AppendLine($"CAMPAIGN BAKED — {records.Count} levels, {chunks} chunk(s), "
+                           + $"{bytes / 1024f:F0} KB total ({bytes / (float)records.Count:F0} bytes/level)");
+        summary.AppendLine($"round-trip verified cell-for-cell   |   baked in {clock.Elapsed.TotalSeconds:F1}s");
+        if (shapedLevels > 0)
+            summary.AppendLine($"{shapedLevels} shaped level(s) from {shapeFiles.Length} silhouette(s)");
+        if (notchedLevels > 0)
+            summary.AppendLine($"{notchedLevels} notched-rectangle level(s)");
+        summary.AppendLine($"{lockedDragons} padlock(s) across {lockedLevels} level(s), "
+                           + (firstLockedLevel > 0 ? $"first lock on level {firstLockedLevel}" : "no locks yet")
+                           + "   |   every baked level was re-solved with its locks");
+        if (dragonMisses > 0)
+            summary.AppendLine($"{dragonMisses} level(s) outside the {DragonTolerance:P0} arrow-count tolerance "
+                               + "(harmless for the ramp, worth a look if it is most of them)");
+        summary.AppendLine();
+        summary.Append(ramp);
+        Debug.Log(summary.ToString());
+
+        // The first few boards as text, so the shape can be judged without entering Play mode.
+        for (int i = 0; i < Mathf.Min(3, records.Count); i++)
+        {
+            StagePackWriter.StageRecord r = records[i];
+            Debug.Log($"Level {i + 1}  {r.width}x{r.height}  {r.dragons.Count} arrows\n"
+                      + RenderAscii(r.dragons, r.width, r.height));
+        }
+    }
+
+    // ---------- the ramp ----------
+
+    static int TargetDragons(int levelIndex, int campaignLength)
+    {
+        if (levelIndex < OnboardingDragons.Length) return OnboardingDragons[levelIndex];
+
+        int postOnboarding = levelIndex - OnboardingDragons.Length;
+        int span = Mathf.Max(1, campaignLength - OnboardingDragons.Length - 1);
+        float u = Mathf.Clamp01(postOnboarding / (float)span);
+
+        float peak = Mathf.Lerp(PeakDragonsStart, PeakDragonsEnd, Mathf.Pow(u, PeakCurvePower));
+
+        // Where in the current tooth this level sits. Lengths vary so it is not a mechanical pulse.
+        int runStart, runLength, runIndex;
+        RunAt(postOnboarding, out runStart, out runLength, out runIndex);
+        float withinRun = runLength <= 1 ? 1f : (postOnboarding - runStart) / (float)(runLength - 1);
+
+        // Per-run peak nudge, deterministic so a re-bake reproduces the same campaign.
+        peak *= 1f + PeakJitter * (Hash01(runIndex + 1) * 2f - 1f);
+
+        float dragons = Mathf.Lerp(peak * RunFloorFraction, peak, Mathf.Pow(withinRun, RunClimbPower));
+        return Mathf.Max(3, Mathf.RoundToInt(dragons));
+    }
+
+    // Deterministic 0..1 from an integer, so run lengths and peaks vary without any stored state.
+    internal static float Hash01(int n)
+    {
+        uint h = ((uint)n + CampaignSalt) * 2654435761u;
+        h ^= h >> 15;
+        h *= 2246822519u;
+        h ^= h >> 13;
+        return (h % 100000u) / 100000f;
+    }
+
+    // Walked from the start rather than stored — deterministic, and cheap at these counts.
+    static void RunAt(int postOnboardingIndex, out int runStart, out int runLength, out int runIndex)
+    {
+        int at = 0;
+        int run = 0;
+        while (true)
+        {
+            // Deterministic hash, so lengths vary without depending on call order.
+            uint h = ((uint)run + CampaignSalt) * 2654435761u;
+            int length = RunLengthMin + (int)(h % (uint)(RunLengthMax - RunLengthMin + 1));
+
+            if (postOnboardingIndex < at + length)
+            {
+                runStart = at;
+                runLength = length;
+                runIndex = run;
+                return;
+            }
+
+            at += length;
+            run++;
+        }
+    }
+
+    // Board area from wanted arrow count.
+    //
+    // The obvious arithmetic — area = arrows x average length — overshoots badly on small boards,
+    // because an arrow there cannot reach its target length: the remaining region fragments around
+    // it. Measured on this carver, cells-per-arrow climbs from ~5.3 on a tiny board to ~12 on a big
+    // one, which is where the reference game's own average sits. These pairs are measurements.
+    static readonly int[] FitDragons = { 3, 10, 20, 30, 40, 160 };
+    static readonly float[] FitCellsPerDragon = { 5.3f, 6.4f, 8.0f, 10.0f, 11.5f, 12.5f };
+
+    static float CellsPerDragon(int dragons)
+    {
+        if (dragons <= FitDragons[0]) return FitCellsPerDragon[0];
+
+        for (int i = 1; i < FitDragons.Length; i++)
+        {
+            if (dragons <= FitDragons[i])
+            {
+                float t = (dragons - FitDragons[i - 1]) / (float)(FitDragons[i] - FitDragons[i - 1]);
+                return Mathf.Lerp(FitCellsPerDragon[i - 1], FitCellsPerDragon[i], t);
+            }
+        }
+
+        return FitCellsPerDragon[FitCellsPerDragon.Length - 1];
+    }
+
+    // ---------- board-type bag ----------
+
+    // Which "kind" of board a level gets: a plain rectangle, one with corners nibbled off and
+    // maybe a center hole (see StageCarver.NotchedRectangle), or a silhouette from
+    // LevelShapeSources/.
+    enum BoardType { Rectangle, Notched, Shaped }
+
+    // A shuffled BAG, not a fixed "every Nth level" — a player who has reached level 30 can read a
+    // clockwork `% 7 == 0` pattern within a few levels, and predictability kills the exact surprise
+    // mixing board types was meant to add. A bag keeps the same overall ratio (1 shaped + 2 notched
+    // in every 10) while making the ORDER inside each bag unpredictable — the trick Tetris uses
+    // (7-bag) so a piece never vanishes for 20 draws or repeats 5 times running under pure chance.
+    const int BagSize = 10;
+    static readonly BoardType[] BagTemplate =
+    {
+        BoardType.Shaped, BoardType.Shaped,
+        BoardType.Notched, BoardType.Notched, BoardType.Notched, BoardType.Notched,
+        BoardType.Rectangle, BoardType.Rectangle, BoardType.Rectangle, BoardType.Rectangle
+    };
+
+    // Used when no silhouette art exists at all, so the bag never wastes a draw on a Shaped slot
+    // that would only fall back to a rectangle anyway — the notch:rectangle ratio still holds.
+    static readonly BoardType[] BagTemplateNoShapes =
+    {
+        BoardType.Notched, BoardType.Notched, BoardType.Notched, BoardType.Notched, BoardType.Notched,
+        BoardType.Rectangle, BoardType.Rectangle, BoardType.Rectangle, BoardType.Rectangle, BoardType.Rectangle
+    };
+
+    // A tiny onboarding board has no room to lose a corner and still teach the mechanic clearly —
+    // see the call site, which falls back to a plain rectangle below this size. A shaped level
+    // guards itself the same way, via BuildShapeMask's own size-driven failure path.
+    const int NotchMinBoardSize = 6;
+
+    static BoardType BoardTypeFor(int levelIndex)
+    {
+        // The tutorial stays on plain rectangles. A silhouette is sized from its own shape, not from
+        // the ramp, so one landing on level 3 would be a 120-arrow board for a player still
+        // learning to tap.
+        if (levelIndex < OnboardingDragons.Length) return BoardType.Rectangle;
+
+        BoardType[] template = shapeFiles.Length > 0 ? BagTemplate : BagTemplateNoShapes;
+
+        int bagIndex = levelIndex / template.Length;
+        int slot = levelIndex % template.Length;
+
+        BoardType[] bag = (BoardType[])template.Clone();
+
+        // Deterministic Fisher-Yates, seeded by which bag this is — re-baking reproduces the same
+        // campaign byte for byte, same as everywhere else in this file.
+        for (int i = bag.Length - 1; i > 0; i--)
+        {
+            int j = Mathf.FloorToInt(Hash01(bagIndex * 7919 + i) * (i + 1));
+            BoardType temp = bag[i];
+            bag[i] = bag[j];
+            bag[j] = temp;
+        }
+
+        return bag[slot];
+    }
+
+    // Which silhouette the nth shaped level gets.
+    //
+    // Every shape is used exactly once per pass through the set, so none is over-used — but the
+    // ORDER is re-permuted each pass. Plain cycling would replay the same sequence every time:
+    // with 20 shapes across 1,000 levels a player would see the identical horse-cat-dog order eight
+    // times over. Stepping by a stride coprime with the count visits every index exactly once, and
+    // picking a fresh stride and offset per pass gives a different order each time.
+    static int ShapeIndexFor(int shapedOrdinal)
+    {
+        int n = shapeFiles.Length;
+        if (n <= 1) return 0;
+
+        int pass = shapedOrdinal / n;
+        int slot = shapedOrdinal % n;
+
+        int stride = 1 + (int)(Hash01(pass * 31 + 7) * (n - 1));
+        while (Gcd(stride, n) != 1) stride++;
+
+        int offset = (int)(Hash01(pass * 131 + 17) * n);
+        return (offset + slot * stride) % n;
+    }
+
+    static int Gcd(int a, int b)
+    {
+        while (b != 0) { int t = a % b; a = b; b = t; }
+        return a;
+    }
+
+    // Sized so the silhouette holds roughly the arrows this slot wants. Built twice: the first
+    // build reveals the shape's real coverage, the second scales the grid to match.
+    static HashSet<Vector2Int> BuildShapeMask(int shapedOrdinal, int wantDragons,
+                                              out int width, out int height, out string shapeName)
+    {
+        string file = shapeFiles[ShapeIndexFor(shapedOrdinal)];
+        shapeName = System.IO.Path.GetFileNameWithoutExtension(file);
+
+        float wantCells = wantDragons * CellsPerDragon(wantDragons);
+
+        // Ask for the size the ramp would like. Build() gives us that or more — it upgrades the grid
+        // whenever the silhouette needs more cells to survive, so an over-detailed shape on an early
+        // level comes out bigger rather than coming out a blob.
+        int fromRamp = Mathf.RoundToInt(Mathf.Sqrt(wantCells / ShapeFirstGuessFill / BoardAspect));
+
+        string report;
+        HashSet<Vector2Int> mask = StageShapeMask.Build(file, fromRamp, out width, out height, out report);
+        if (mask == null)
+        {
+            Debug.LogWarning($"[Campaign] shape '{shapeName}' unusable ({report}) — falling back to a rectangle.");
+            return null;
+        }
+
+        Debug.Log($"[Campaign] shaped level: {shapeName} — {report}");
+        return mask;
+    }
+
+    static void BoardFor(int wantDragons, out int width, out int height)
+    {
+        float area = wantDragons * CellsPerDragon(wantDragons);
+
+        height = Mathf.Max(3, Mathf.RoundToInt(Mathf.Sqrt(area * BoardAspect)));
+        width = Mathf.Max(3, Mathf.RoundToInt(area / height));
+
+        // The format stores a grid side in one byte and a cell index in a ushort.
+        width = Mathf.Min(width, 255);
+        height = Mathf.Min(height, 255);
+    }
+
+    static StageCarver.Params ParamsFor(int levelIndex, int wantDragons)
+    {
+        // Level 1 teaches "tap an arrow, it slides out" and nothing else, so its bodies run almost
+        // perfectly straight — the reference's own first board measures 0.00 bends per segment.
+        if (levelIndex == 0)
+            return new StageCarver.Params { lengthDecay = 0.80f, turnChance = 0.08f, attempts = 8 };
+
+        // turnChance is deliberately CONSTANT across the whole campaign. The reference scales
+        // difficulty by board size, not by tangle: its bend rate is flat (~0.30 bends per segment)
+        // across all four of its difficulty buckets. Only arrow length grows.
+        float decay = Mathf.Lerp(0.86f, 0.92f, Mathf.Clamp01(wantDragons / 60f));
+
+        return new StageCarver.Params
+        {
+            lengthDecay = decay,
+            turnChance = 0.33f,
+            attempts = (BoardTypeFor(levelIndex) != BoardType.Shaped && levelIndex < OnboardingDragons.Length) ? 12 : CarveAttemptsBulk
+        };
+    }
+
+    static void CarveBest(int levelIndex, int wantDragons, HashSet<Vector2Int> mask,
+                          int width, int height, StageCarver.Params prm,
+                          out List<List<Vector2Int>> bestDragons, out StageRating.Result bestResult,
+                          out int[] bestLocks)
+    {
+        bestDragons = null;
+        bestResult = default;
+        bestLocks = null;
+        int bestMiss = int.MaxValue;
+
+        // A shaped level's arrow count follows its silhouette, so searching seeds for the ramp's
+        // count is chasing a number it can never reach — and on a big mask that search costs
+        // minutes. Shapes always use the cheap budget, wherever they land in the campaign.
+        bool shaped = BoardTypeFor(levelIndex) == BoardType.Shaped;
+        int attempts = (!shaped && levelIndex < OnboardingDragons.Length)
+            ? SeedAttemptsOnboarding : SeedAttemptsBulk;
+        int tolerance = Mathf.Max(1, Mathf.RoundToInt(wantDragons * DragonTolerance));
+
+        // Deterministic per level, so re-baking reproduces the same campaign byte for byte unless
+        // the ramp or the carver changes.
+        int baseSeed = (int)(CampaignSalt % 100003u) + levelIndex * SeedStride;
+
+        // The bulk budget is small on purpose, but a level that fails every one of those attempts
+        // would leave a hole in the campaign. Only then are extra seeds tried.
+        for (int attempt = 0; attempt < attempts + SeedAttemptsFallback; attempt++)
+        {
+            if (attempt >= attempts && bestDragons != null) break;
+
+            Random.InitState(baseSeed + attempt);
+
+            int stranded;
+            List<List<Vector2Int>> dragons = StageCarver.CarveFull(mask, width, height, prm, out stranded);
+
+            if (dragons == null || stranded > 0) continue;   // never ship unreachable cells
+
+            StageRating.Result result = StageRating.Measure(dragons, width, height);
+            if (!result.solvable) continue;
+
+            // Locks go on AFTER the carve (see StageLocks for why that is safe), and the level is
+            // measured again with them, so the difficulty band reflects the locks and a lock that
+            // could never open would be caught right here.
+            int[] locks = StageLocks.Assign(levelIndex, dragons, width, height);
+            result = StageRating.Measure(dragons, width, height, locks);
+            if (!result.solvable) continue;
+
+            int miss = Mathf.Abs(dragons.Count - wantDragons);
+            if (miss < bestMiss)
+            {
+                bestMiss = miss;
+                bestDragons = dragons;
+                bestResult = result;
+                bestLocks = locks;
+            }
+
+            if (miss <= tolerance) break;   // close enough; stop paying for carves
+        }
+    }
+
+    // ---------- logging ----------
+
+    // Lets the tangle be judged without opening the game: '-' and '|' are straight body cells,
+    // '+' is a bend, 'o' a tail, and < > ^ v the heads.
+    public static string RenderAscii(List<List<Vector2Int>> dragons, int width, int height)
+    {
+        char[,] grid = new char[width, height];
+        for (int y = 0; y < height; y++)
+            for (int x = 0; x < width; x++)
+                grid[x, y] = '.';
+
+        foreach (List<Vector2Int> p in dragons)
+        {
+            for (int i = 0; i < p.Count; i++)
+            {
+                Vector2Int c = p[i];
+                if (c.x < 0 || c.x >= width || c.y < 0 || c.y >= height) continue;
+
+                char ch;
+                if (i == p.Count - 1)
+                {
+                    Vector2Int d = p[i] - p[i - 1];
+                    ch = d.x > 0 ? '>' : d.x < 0 ? '<' : d.y > 0 ? '^' : 'v';
+                }
+                else if (i == 0)
+                {
+                    ch = 'o';
+                }
+                else
+                {
+                    Vector2Int inDir = p[i] - p[i - 1];
+                    Vector2Int outDir = p[i + 1] - p[i];
+                    ch = inDir != outDir ? '+' : (inDir.x != 0 ? '-' : '|');
+                }
+
+                grid[c.x, c.y] = ch;
+            }
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (int y = height - 1; y >= 0; y--)   // top row first, so it reads like the screen
+        {
+            for (int x = 0; x < width; x++) sb.Append(grid[x, y]);
+            sb.Append('\n');
+        }
+        return sb.ToString();
+    }
+
+    static string RampRow(int levelIndex, int width, int height, int wantDragons,
+                          List<List<Vector2Int>> dragons, StageRating.Result result,
+                          string shapeName)
+    {
+        int cells = 0, segments = 0, bends = 0;
+        foreach (List<Vector2Int> p in dragons)
+        {
+            cells += p.Count;
+            segments += Mathf.Max(1, p.Count - 1);
+            for (int i = 2; i < p.Count; i++)
+                if (p[i] - p[i - 1] != p[i - 1] - p[i - 2]) bends++;
+        }
+
+        return string.Format("{0,5} | {1,3}x{2,-3} | {3,5} | {4,7}/{5,-7} | {6,6:F1} | {7,9:F2} | {8,5} | {9}",
+            levelIndex + 1, width, height, cells, wantDragons, dragons.Count,
+            cells / (float)dragons.Count, bends / (float)segments,
+            result.score, result.band.ToString().ToUpper()) + (shapeName != null ? "  [" + shapeName + "]" : "");
+    }
+}

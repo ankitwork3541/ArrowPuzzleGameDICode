@@ -1,0 +1,272 @@
+.page-root {
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-Bold%20SDF.asset?fileID=11400000&guid=2d8208c2123c041daaecd4a4cf0d1ae2&type=2#Oxanium-Bold SDF");
+}
+
+/* ============ Layout v2 ============
+   Three bands instead of one centred stack: brand + settings along the top, one big level card in
+   the middle, the play row anchored above the nav. HomeScreenController toggles `content--hidden`
+   on .content while the level map is open, so everything below that is a child of .content. */
+.stage-body {
+    flex-grow: 1;
+    padding-left: 48px;
+    padding-right: 48px;
+}
+
+.hall-top {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 72px;
+    flex-shrink: 0;
+}
+
+.crest {
+    flex-direction: row;
+    align-items: center;
+}
+
+.crest__logo {
+    width: 96px;
+    height: 96px;
+    border-radius: 28px;
+    background-image: url("../Sprites/LogoRound.png");
+    background-size: contain;
+    margin-right: 22px;
+}
+
+.crest__name {
+    font-size: 32px;
+    letter-spacing: 3px;
+    color: rgb(196, 52, 72);
+    -unity-text-align: middle-left;
+    white-space: normal;
+    -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-ExtraBold%20SDF.asset?fileID=11400000&guid=a1b658a48c21246d783d8c4f4c297d45&type=2#Oxanium-ExtraBold SDF");
+}
+
+/* ============ Round icon buttons (settings, levels) ============
+   Round, cream-white, coloured rim, like the HUD's square buttons but circular. Pure USS radius. */
+.disc-button {
+    width: 120px;
+    height: 120px;
+    margin: 0;
+    padding: 0;
+    border-radius: 60px;
+    border-width: 5px;
+    border-color: rgb(232, 140, 0);
+    background-color: rgb(255, 252, 244);
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.disc-button:active {
+    scale: 0.93;
+}
+
+.disc-button__icon {
+    width: 56px;
+    height: 56px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    -unity-background-image-tint-color: rgb(176, 112, 0);
+}
+
+.disc-button__icon--settings {
+    background-image: url("project://database/Assets/Project/Sprites/GlyphCog.png?fileID=5904627132653970092&guid=6212eb57667724539859a170f6e04832&type=3#SettingsIcon_0");
+}
+
+.disc-button__icon--levels {
+    background-image: url("../Sprites/GlyphLattice.png");
+}
+
+/* ============ Level card ============ */
+.hall-center {
+    flex-grow: 1;
+    justify-content: center;
+}
+
+.stage-card {
+    align-items: center;
+    padding-top: 80px;
+    padding-bottom: 72px;
+    padding-left: 48px;
+    padding-right: 48px;
+    border-radius: 64px;
+    border-width: 6px;
+    border-color: rgb(232, 140, 0);
+    background-color: rgb(255, 252, 244);
+}
+
+.stage-label {
+    font-size: 112px;
+    letter-spacing: 6px;
+    color: rgb(196, 52, 72);
+    margin-bottom: 36px;
+    -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-ExtraBold%20SDF.asset?fileID=11400000&guid=a1b658a48c21246d783d8c4f4c297d45&type=2#Oxanium-ExtraBold SDF");
+}
+
+.rank-pill {
+    height: 64px;
+    border-radius: 32px;
+    background-color: rgb(255, 248, 236);
+    border-width: 3px;
+    border-color: rgb(232, 140, 0);
+    padding-left: 40px;
+    padding-right: 40px;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 64px;
+}
+
+.rank-text {
+    font-size: 30px;
+    letter-spacing: 4px;
+    color: rgb(150, 92, 0);
+}
+
+/* Capsule progress: the fill's width is a percentage set from HomeScreenController. */
+.ledger {
+    align-self: stretch;
+    align-items: center;
+}
+
+.ledger__track {
+    align-self: stretch;
+    height: 28px;
+    border-radius: 14px;
+    background-color: rgba(58, 36, 24, 0.12);
+}
+
+.ledger__fill {
+    width: 0;
+    height: 100%;
+    border-radius: 14px;
+    background-color: rgb(232, 140, 0);
+}
+
+.ledger__text {
+    font-size: 34px;
+    letter-spacing: 3px;
+    color: rgba(58, 36, 24, 0.72);
+    margin-top: 22px;
+}
+
+/* ============ Play row ============ */
+.hall-actions {
+    flex-direction: row;
+    align-items: center;
+    padding-bottom: 40px;
+    flex-shrink: 0;
+}
+
+/* The LEVELS (map) button is the round button on the left; its size is set by .round-button. */
+.trail-button {
+    width: 160px;
+    height: 160px;
+    border-radius: 80px;
+    margin-right: 28px;
+}
+
+.trail-button .disc-button__icon {
+    width: 72px;
+    height: 72px;
+}
+
+/* ============ PLAY button (solid lantern-red capsule) ============
+   A flat capsule with a darker bottom lip, like a pressed paper tab. The lip is a bottom border
+   only; pressing shrinks it and drops the button by the same amount so it reads as pushed in.
+   Pure USS radius, so it does not depend on any sprite being imported. */
+.start-button {
+    flex-grow: 1;
+    height: 160px;
+    border-radius: 80px;                 /* height / 2 */
+    margin: 0;
+    padding: 0;
+
+    background-color: rgb(196, 52, 72);
+    border-width: 0;
+    border-bottom-width: 5px;
+    border-bottom-color: rgb(150, 36, 54);
+}
+
+.start-button__inner {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.start-button__label {
+    font-size: 52px;
+    letter-spacing: 6px;
+    color: rgb(255, 248, 236);
+}
+
+.start-button__chevron {
+    font-size: 44px;
+    color: rgb(255, 248, 236);
+    margin-left: 24px;
+}
+
+.start-button:hover {
+    background-color: rgb(210, 64, 84);
+}
+
+.start-button:active {
+    border-bottom-width: 1px;
+    translate: 0 4px;
+}
+
+/* The level map is an instance of LevelMapScreen.uxml, which carries its own stylesheet. Only the
+   wrapper element the <ui:Instance> creates is styled here, same as .nav-slot. While the map is
+   open it takes the place of .content (which hides), so the nav and ad box below never move. */
+.trail-slot {
+    display: none;
+    flex-grow: 1;
+}
+
+.trail-slot--open {
+    display: flex;
+}
+
+.stage-body--hidden {
+    display: none;
+}
+
+/* The bottom nav's markup and styling now live in UXML/BottomNav.uxml +
+   Themes/BottomNav.uss, shared with the Settings screen. Only the wrapper the
+   <ui:Instance> creates is styled here — it is an element of THIS document, so
+   this is the stylesheet guaranteed to reach it. It must never give up space:
+   .content above owns all the flex growth. */
+.tab-slot {
+    flex-shrink: 0;
+}
+
+.hall-sponsor-space {
+    width: 100%;
+    flex-shrink: 0;
+    overflow: hidden;
+    transition-property: height;
+    transition-duration: 0.22s;
+    transition-timing-function: ease-out;
+}
+
+/* The <ui:Instance> wrapper around the ad-loading skeleton, styled here the same way `.nav-slot` is.
+   Absolute so the skeleton fills whatever height the box was opened to without ever driving it. */
+.sponsor-slot {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}

@@ -1,0 +1,50 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Project/Themes/HallScreen.uss?fileID=7433441132597879392&amp;guid=374be4457ec7e46788af90c7b240d263&amp;type=3#HomeScreen"/>
+    <ui:Template name="TabDock" src="project://database/Assets/Project/UXML/TabDock.uxml" />
+    <ui:Template name="PromoPlaceholder" src="project://database/Assets/Project/UXML/PromoPlaceholder.uxml" />
+    <ui:Template name="TrailMap" src="project://database/Assets/Project/UXML/TrailMapScreen.uxml" />
+    <ui:VisualElement name="page-root" class="page-root">
+        <ui:VisualElement name="stage-body" class="stage-body">
+
+            <ui:VisualElement name="home-top" class="hall-top">
+                <ui:VisualElement class="crest" picking-mode="Ignore">
+                    <ui:VisualElement class="crest__logo" picking-mode="Ignore" />
+                    <ui:Label text="LANTERN&#10;DRAGONS" class="crest__name" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:Button name="options-button" class="disc-button">
+                    <ui:VisualElement class="disc-button__icon disc-button__icon--settings" picking-mode="Ignore" />
+                </ui:Button>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="home-center" class="hall-center">
+                <ui:VisualElement name="level-card" class="stage-card">
+                    <ui:Label name="stage-label" text="LEVEL 01" class="stage-label"/>
+                    <ui:VisualElement name="difficulty-pill" class="rank-pill">
+                        <ui:Label name="rank-text" text="EASY" class="rank-text"/>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="ledger" picking-mode="Ignore">
+                        <ui:Label name="ledger-text" text="0 CLEARED" class="ledger__text" picking-mode="Ignore" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+
+            <ui:VisualElement name="home-actions" class="hall-actions">
+                <ui:Button name="trail-button" class="trail-button disc-button">
+                    <ui:VisualElement class="disc-button__icon disc-button__icon--levels" picking-mode="Ignore" />
+                </ui:Button>
+                <ui:Button name="start-button" class="start-button">
+                    <ui:VisualElement picking-mode="Ignore" class="start-button__inner">
+                        <ui:Label text="PLAY" picking-mode="Ignore" class="start-button__label"/>
+                        <ui:Label text="&gt;" picking-mode="Ignore" class="start-button__chevron"/>
+                    </ui:VisualElement>
+                </ui:Button>
+            </ui:VisualElement>
+
+        </ui:VisualElement>
+        <ui:Instance template="TrailMap" name="trail-map-slot" class="trail-slot" />
+        <ui:Instance template="TabDock" name="bottom-nav-slot" class="tab-slot" />
+        <ui:VisualElement name="sponsor-space" class="hall-sponsor-space">
+            <ui:Instance template="PromoPlaceholder" name="ad-placeholder-slot" class="sponsor-slot" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

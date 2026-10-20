@@ -1,0 +1,243 @@
+/* Shared by WinScreen.uxml and LoseScreen.uxml — the two differ only in wording and accent colour.
+
+   The paper-lantern card chrome is redefined here rather than shared with GameplayScreen.uss: USS
+   has no import, and pulling the HUD's whole stylesheet into these screens to reuse ten lines would
+   drag its layout rules along with it. */
+
+.sheet-root {
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0);
+    -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-Bold%20SDF.asset?fileID=11400000&guid=2d8208c2123c041daaecd4a4cf0d1ae2&type=2#Oxanium-Bold SDF");
+}
+
+/* Veils the board in cream rather than covering it. The level stays faintly readable behind the
+   card, which is what makes the result feel attached to what just happened instead of being a
+   separate screen. */
+.sheet-scrim {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 248, 236, 0.85);
+}
+
+/* ============ Bottom sheet ============
+   The card is a sheet anchored to the bottom edge: full width, rounded on the TOP corners only,
+   with a thin ink top border. USS radius is used instead of the UIRound sprite because the sprite
+   rounds all four corners and a slice cannot square off two of them. The badge half-overlapping the
+   top edge carries the win/lose accent colour, so the sheet itself stays neutral.
+
+   It slides up from below the screen: `.result-card--hidden` pushes it down by its own height, and
+   ResultScreenController removes the class one beat after showing, which is what lets the
+   `translate` transition run. */
+.sheet-card {
+    width: 100%;
+    padding-top: 112px;
+    padding-bottom: 64px;
+    padding-left: 60px;
+    padding-right: 60px;
+    align-items: center;
+
+    background-color: rgb(255, 252, 244);
+    border-top-left-radius: 48px;
+    border-top-right-radius: 48px;
+    border-top-width: 4px;
+    border-top-color: rgba(58, 36, 24, 0.12);
+    border-left-width: 4px;
+    border-left-color: rgba(58, 36, 24, 0.12);
+    border-right-width: 4px;
+    border-right-color: rgba(58, 36, 24, 0.12);
+
+    transition-property: translate;
+    transition-duration: 0.35s;
+    transition-timing-function: ease-out;
+}
+
+/* Zero duration here is what makes it snap down instantly when the class is added; the slow
+   duration of the resting state above is then the one used when the class comes off. */
+.sheet-card--hidden {
+    translate: 0 100%;
+    transition-duration: 0s;
+}
+
+/* A big round badge sitting half on the sheet's top edge. The cream ring cuts it out of the sheet
+   behind it. Absolute so it never takes part in the sheet's column; left 50% plus a negative margin
+   of half its width centres it. */
+.sheet-badge {
+    position: absolute;
+    left: 50%;
+    top: -84px;
+    width: 168px;
+    height: 168px;
+    margin-left: -84px;
+    border-radius: 84px;
+    border-width: 8px;
+    border-color: rgb(255, 252, 244);
+    align-items: center;
+    justify-content: center;
+}
+
+.sheet-badge--win  { background-color: rgb(232, 140, 0); }
+.sheet-badge--lose { background-color: rgb(196, 52, 72); }
+
+.sheet-badge__glyph {
+    width: 84px;
+    height: 84px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    -unity-background-image-tint-color: rgb(255, 252, 244);
+}
+
+/* Ink on the gold-orange win badge: the cream glyph was 2.4:1, ink is 5.7:1. */
+.sheet-badge__glyph--win  { background-image: url("../Sprites/GlyphSeal.png"); -unity-background-image-tint-color: rgb(58, 36, 24); }
+.sheet-badge__glyph--lose { background-image: url("../Sprites/GlyphEmber.png"); scale: 1.2; }
+
+.sheet-card__level {
+    font-size: 34px;
+    letter-spacing: 8px;
+    color: rgb(150, 92, 0);
+    margin: 0;
+    margin-bottom: 18px;
+}
+
+.sheet-card__level--lose {
+    color: rgb(196, 52, 72);
+}
+
+.sheet-card__title {
+    font-size: 56px;
+    letter-spacing: 3px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+    color: rgb(58, 36, 24);
+    margin: 0;
+    margin-bottom: 52px;
+    -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-ExtraBold%20SDF.asset?fileID=11400000&guid=a1b658a48c21246d783d8c4f4c297d45&type=2#Oxanium-ExtraBold SDF");
+}
+
+/* ============ Primary action ============
+   Same shape as Home's PLAY button: a solid lantern-red capsule with a darker lip under it. This is
+   the "go forward" control on every screen that has one, and it should be recognisable as the same
+   thing each time. The lip is the bottom border; pressing shrinks it and nudges the button down so it
+   reads as being pushed in. */
+.sheet-primary {
+    width: 100%;
+    max-width: 620px;
+    height: 150px;
+    border-radius: 75px;
+    border-width: 0;
+    border-bottom-width: 5px;
+    border-bottom-color: rgb(150, 36, 54);
+    margin: 0;
+    padding: 0;
+
+    background-color: rgb(196, 52, 72);
+}
+
+.sheet-primary__inner {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.sheet-primary__label {
+    font-size: 48px;
+    letter-spacing: 6px;
+    color: rgb(255, 248, 236);
+}
+
+.sheet-primary__chevron {
+    font-size: 40px;
+    color: rgb(255, 248, 236);
+    margin-left: 22px;
+}
+
+.sheet-primary:hover {
+    background-color: rgb(210, 62, 84);
+}
+
+.sheet-primary:active {
+    border-bottom-width: 1px;
+    translate: 0 4px;
+}
+
+/* ============ Secondary action ============ */
+.sheet-home {
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+    margin: 0;
+    margin-top: 34px;
+    padding: 18px;
+
+    font-size: 32px;
+    letter-spacing: 6px;
+    color: rgba(58, 36, 24, 0.72);
+}
+
+.sheet-home:hover {
+    color: rgb(58, 36, 24);
+}
+
+.sheet-home:active {
+    scale: 0.94;
+}
+
+/* A sibling of the card, not a child: .result-root centres its children as a column, so the card
+   and the ad end up centred together as one group on any screen size. Width matches the card so the
+   two line up. Height comes from the measured template; display stays none until an ad exists. */
+/* ============ Scroll ============
+   The card and its ad scroll, so a short screen can still reach the ad instead of losing it off the
+   bottom. */
+.sheet-scroll {
+    flex-grow: 1;
+    width: 100%;
+}
+
+/* The centring moved here from .result-root, and this is the whole trick.
+   `flex-grow` makes the content container fill the viewport while the card and ad are SHORTER than
+   the screen, which is what gives `justify-content: center` free space to centre with — a plain
+   content-sized container has none. `flex-shrink: 0` is what stops it being squeezed back down to
+   the viewport when they are TALLER; without it the content would be clipped instead of scrolled.
+   The container's own height is therefore max(content, viewport), so free space is never negative —
+   which is why centring here cannot push the top of the card out of reach. Centring on the ROOT can,
+   and that is the trap: a centred group larger than its parent overflows in both directions at once
+   and the part above the top edge is unscrollable. */
+.sheet-scroll .unity-scroll-view__content-container {
+    flex-grow: 1;
+    flex-shrink: 0;
+    width: 100%;
+    justify-content: flex-end;
+    align-items: stretch;
+    padding-top: 110px;
+    padding-bottom: 0;
+}
+
+/* overflow hidden so a box opened to a sliver — which is what happens while the ad's real height is
+   still being measured — cannot leak the absolutely-positioned skeleton inside it past its edges. */
+.sheet-sponsor-space {
+    width: 100%;
+    flex-shrink: 0;
+    margin-top: 24px;
+    overflow: hidden;
+    display: none;
+}
+
+/* The <ui:Instance> wrapper around the ad-loading skeleton, styled here the same way `.nav-slot` is.
+   Absolute so the skeleton fills whatever height the box was opened to without ever driving it. */
+.sponsor-slot {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}

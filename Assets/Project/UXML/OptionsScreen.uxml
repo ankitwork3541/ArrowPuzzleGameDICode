@@ -1,0 +1,77 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Project/Themes/OptionsScreen.uss?fileID=7433441132597879392&amp;guid=61f7f2a6d75040d49a64611f413ba112&amp;type=3#SettingsScreen" />
+    <ui:Template name="TabDock" src="project://database/Assets/Project/UXML/TabDock.uxml" />
+    <ui:Template name="PromoPlaceholder" src="project://database/Assets/Project/UXML/PromoPlaceholder.uxml" />
+    <ui:VisualElement name="page-root" class="page-root">
+
+        <!-- Layout v2: a round back button, then a large left-aligned title under it, instead of a
+             centred title. -->
+        <ui:VisualElement name="settings-header" class="options-head">
+            <ui:Button name="options-return-button" class="options-back">
+                <ui:VisualElement class="options-back__icon" picking-mode="Ignore" />
+            </ui:Button>
+            <ui:Label text="SETTINGS" class="options-title" />
+        </ui:VisualElement>
+
+        <ui:ScrollView mode="Vertical" name="settings-scroll" class="options-scroll" vertical-scroller-visibility="Hidden">
+            <ui:VisualElement name="settings-list" class="options-list">
+
+                <!-- One grouped card: the preference switches, then the links, split by dividers. -->
+                <ui:VisualElement name="settings-card" class="paper">
+                    <ui:VisualElement class="entry">
+                        <ui:VisualElement class="entry__icon entry__icon--vibration" picking-mode="Ignore" />
+                        <ui:Label text="Vibrations" class="entry__label" picking-mode="Ignore" />
+                        <ui:VisualElement name="toggle-tremor" class="toggle">
+                            <ui:VisualElement class="toggle__knob" picking-mode="Ignore" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="entry entry--sep">
+                        <ui:VisualElement class="entry__icon entry__icon--sound" picking-mode="Ignore" />
+                        <ui:Label text="Sounds" class="entry__label" picking-mode="Ignore" />
+                        <ui:VisualElement name="toggle-bell" class="toggle">
+                            <ui:VisualElement class="toggle__knob" picking-mode="Ignore" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="entry entry--sep">
+                        <ui:VisualElement class="entry__icon entry__icon--refresh" picking-mode="Ignore" />
+                        <ui:Label text="Native Refresh Rate" class="entry__label" picking-mode="Ignore" />
+                        <ui:VisualElement name="toggle-pulse" class="toggle">
+                            <ui:VisualElement class="toggle__knob" picking-mode="Ignore" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement class="entry entry--sep">
+                        <ui:VisualElement class="entry__icon entry__icon--motion" picking-mode="Ignore" />
+                        <ui:Label text="Reduce Motion" class="entry__label" picking-mode="Ignore" />
+                        <ui:VisualElement name="toggle-calm" class="toggle">
+                            <ui:VisualElement class="toggle__knob" picking-mode="Ignore" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
+                    <ui:VisualElement name="link-rate" class="entry row--link entry--sep">
+                        <ui:VisualElement class="entry__icon entry__icon--star" picking-mode="Ignore" />
+                        <ui:Label text="Rate us" class="entry__label" picking-mode="Ignore" />
+                        <ui:Label text="&gt;" class="entry__chevron" picking-mode="Ignore" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="link-privacy" class="entry row--link entry--sep">
+                        <ui:VisualElement class="entry__icon entry__icon--document" picking-mode="Ignore" />
+                        <ui:Label text="Privacy" class="entry__label" picking-mode="Ignore" />
+                        <ui:Label text="&gt;" class="entry__chevron" picking-mode="Ignore" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="link-terms" class="entry row--link entry--sep">
+                        <ui:VisualElement class="entry__icon entry__icon--info" picking-mode="Ignore" />
+                        <ui:Label text="Terms of Service" class="entry__label" picking-mode="Ignore" />
+                        <ui:Label text="&gt;" class="entry__chevron" picking-mode="Ignore" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+
+            </ui:VisualElement>
+        </ui:ScrollView>
+
+        <ui:Instance template="TabDock" name="bottom-nav-slot" class="tab-slot" />
+
+        <!-- Below the nav, same as Home: Android draws the ad over the very bottom of the screen,
+             and this only reserves matching room above it. -->
+        <ui:VisualElement name="sponsor-space" class="options-sponsor-space">
+            <ui:Instance template="PromoPlaceholder" name="ad-placeholder-slot" class="sponsor-slot" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

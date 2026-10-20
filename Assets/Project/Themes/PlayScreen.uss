@@ -1,0 +1,428 @@
+/* ============ Root ============
+   No background-color on purpose — the grid and arrows are world-space
+   GameObjects behind this panel and must stay visible. */
+.play-root {
+    flex-grow: 1;
+    width: 100%;
+    height: 100%;
+    -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-Bold%20SDF.asset?fileID=11400000&guid=2d8208c2123c041daaecd4a4cf0d1ae2&type=2#Oxanium-Bold SDF");
+}
+
+/* Held back while the arrows draw themselves in, then faded up. `visibility` is what actually blocks
+   clicks — opacity 0 alone still picks up pointer events.
+   Applied to the two BARS, not to `.gameplay-root`: the ad box is a child of the root and must not
+   fade with them. Its loading skeleton has to be on screen from the moment the ad is requested,
+   which is level start — before the arrows have finished drawing in. A child cannot undo its
+   parent's opacity (opacity composites the whole subtree), so the only way to exempt the box is to
+   stop fading its parent. The bars carry their own transition, in the two rules below. */
+.chrome-hidden {
+    opacity: 0;
+    visibility: hidden;
+}
+
+/* ============ Paper-lantern chrome ============
+   The back button is a rounded square in two layers: `.card-fill` carries the cream paper interior,
+   and a `.card-frame` child laid over it carries the coloured edge. Two elements because the two need
+   different tints and -unity-background-image-tint-color applies to the whole image. Both sprites are
+   drawn white and recoloured here, so the accent colours cost one file instead of several.
+
+   Sliced at 40px on a 128px sprite: that is the whole rounded corner (radius 36), so a button of any
+   size keeps its corners undistorted. No glow margin anywhere — the edge is crisp so it reads on
+   cream. Everything else in the HUD (title chip, lives pill, dock, dock buttons) is drawn with USS
+   border-radius, see below. */
+.paper-fill {
+    background-image: url("../Sprites/UIRoundFill.png");
+    -unity-background-image-tint-color: rgb(255, 252, 244);
+    -unity-slice-left: 40;
+    -unity-slice-top: 40;
+    -unity-slice-right: 40;
+    -unity-slice-bottom: 40;
+    background-color: rgba(0, 0, 0, 0);
+    border-width: 0;
+}
+
+.paper-frame {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url("../Sprites/UIRoundFrame.png");
+    -unity-slice-left: 40;
+    -unity-slice-top: 40;
+    -unity-slice-right: 40;
+    -unity-slice-bottom: 40;
+}
+
+.paper-frame--purple { -unity-background-image-tint-color: rgb(104, 66, 176); }
+
+/* ============ Top panel ============
+   OPAQUE on purpose, and it must match the camera's Solid Color background
+   exactly. That is what stops arrows showing through the HUD when the board is
+   panned up — no camera clipping or masking needed. Because the two colours are
+   identical the panel has no visible edge of its own, so its height is set by
+   padding rather than by any drawn boundary. */
+/* The fade transition lives on each bar rather than on the shared .hud-hidden class, because
+   transition-property is not additive across rules — a class setting `opacity` would REPLACE
+   .bottom-bar's own `bottom` transition instead of adding to it. */
+.crown-panel {
+    background-color: rgb(255, 248, 236);
+    padding-top: 48px;
+    padding-bottom: 22px;
+    transition-property: opacity;
+    transition-duration: 0.35s;
+    transition-timing-function: ease-out;
+}
+
+.crown-row {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    height: 132px;
+    padding-left: 36px;
+    padding-right: 36px;
+}
+
+/* Overlays the whole row so the title lands on the SCREEN centre. Absolute children are laid out
+   against the parent's padding box, and that box is symmetric, so "centre" here really is centre.
+   Ignores picking so it never covers the back button underneath its edge. */
+.heading-centre {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ============ LEVEL title (centre) ============
+   Plain text, no capsule: the number is the one big thing in the header. Caption and number run at
+   the SAME size so they share a baseline without any nudging — USS has no baseline alignment, and
+   mixing sizes on one row leaves the small word floating against the big one. The contrast comes
+   from colour instead. Sized so "LEVEL 1500" still fits between back and the lives pill. */
+.stage-title {
+    flex-direction: row;
+    align-items: center;
+    /* "LEVEL 1500" is about 300 units wide, so this never bites on a normal level. It only caps an
+       absurdly long number so it can never run into the back button or the lives capsule. */
+    max-width: 46%;
+}
+
+.stage-title__caption {
+    font-size: 44px;
+    letter-spacing: 3px;
+    color: rgba(58, 36, 24, 0.72);
+    margin: 0;
+    margin-right: 12px;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.stage-title__number {
+    font-size: 44px;
+    color: rgb(58, 36, 24);
+    margin: 0;
+    flex-shrink: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ============ Difficulty chip (under the title) ============
+   A small capsule in dark gold. NIGHTMARE is the longest label it ever carries: at 20px that is
+   about 150px, comfortably inside the centre space. */
+.rank-chip {
+    margin-top: 6px;
+    padding-left: 18px;
+    padding-right: 18px;
+    height: 34px;
+    align-items: center;
+    justify-content: center;
+    background-color: rgb(255, 252, 244);
+    border-width: 3px;
+    border-color: rgb(232, 140, 0);
+    border-radius: 17px;
+}
+
+.rank-caption {
+    font-size: 20px;
+    letter-spacing: 2px;
+    color: rgb(150, 92, 0);
+    margin: 0;
+}
+
+/* ============ Rounded-square icon buttons ============ */
+.tool-button {
+    margin: 0;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Back sits in the top row, so it is a fixed 120px rounded square. */
+.tool-button--small {
+    width: 120px;
+    height: 120px;
+    flex-shrink: 0;
+}
+
+.tool-button:active {
+    scale: 0.93;
+}
+
+.tool-button__icon {
+    width: 56px;
+    height: 56px;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    -unity-background-image-tint-color: rgba(58, 36, 24, 0.85);
+}
+
+.tool-button--small .tool-button__icon {
+    width: 48px;
+    height: 48px;
+}
+
+/* The glyph sprites are drawn with a margin inside a 128px canvas, so back and restart are scaled up
+   to read at the same weight as the grid and hint glyphs. */
+.tool-button__icon--back    { background-image: url("../Sprites/GlyphReturn.png"); scale: 1.6; }
+.tool-button__icon--restart { background-image: url("../Sprites/GlyphRedo.png"); scale: 1.2; }
+.tool-button__icon--grid    { background-image: url("../Sprites/GlyphLattice.png"); }
+/* The hint button wears one of two glyphs. Free hints are the bulb; once they run out the hint
+   costs a rewarded ad, and the video glyph plus the red AD badge is what says so before the
+   player taps. Swapping the icon and not just the badge matters — a bulb with "AD" on it still
+   reads as a free hint at a glance. */
+.tool-button__icon--hint      { background-image: url("../Sprites/GlyphClue.png"); }
+.tool-button__icon--hint-ad   { background-image: url("../Sprites/GlyphPromo.png"); }
+
+/* Dock icons wear their button's accent colour; the small back icon stays
+   neutral so the top row has exactly one accent in it. */
+.tool-button__icon--teal   { -unity-background-image-tint-color: rgb(0, 122, 150); }
+.tool-button__icon--red    { -unity-background-image-tint-color: rgb(196, 52, 72); }
+.tool-button__icon--purple { -unity-background-image-tint-color: rgb(104, 66, 176); }
+
+/* ============ LIVES pill (right) ============
+   A capsule: border-radius is half the height, so the ends stay semicircles whatever the width. Red
+   border to match the hearts it holds. Kept compact so the centred title has room on both sides. */
+.ember-pill {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    height: 76px;
+    padding-left: 14px;
+    padding-right: 14px;
+    flex-shrink: 0;
+    background-color: rgb(255, 252, 244);
+    border-width: 5px;
+    border-color: rgb(196, 52, 72);
+    border-radius: 38px;
+}
+
+/* The "LIVES" caption is gone: in a single-row header the hearts read on their own, and the word
+   cost more width than it earned. */
+
+.embers {
+    flex-direction: row;
+}
+
+.ember {
+    width: 38px;
+    height: 38px;
+    margin-left: 3px;
+    margin-right: 3px;
+    background-image: url("../Sprites/GlyphEmber.png");
+    scale: 1.2;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    -unity-background-image-tint-color: rgb(214, 48, 49);
+}
+
+/* Empty hearts keep their shape and only drop to a faint ink tint, so the loss reads as a hollow,
+   not as a heart that was never there. */
+.ember--empty {
+    -unity-background-image-tint-color: rgba(58, 36, 24, 0.14);
+}
+
+/* ============ Level progress bar ============
+   A capsule about 60% of the panel wide, centred directly under the title and the difficulty chip.
+   Track and fill are both flat capsule sprites (128x32) sliced left/right only, so the fill
+   animates to any width while its rounded ends keep their shape.
+
+   The bar is 20px tall against a 32px sprite, so -unity-slice-scale of 0.625 shrinks the 16px end
+   caps to 10px: still exact semicircles, not squashed ovals.
+
+   Deliberately NO overflow:hidden on the track. It would clip the fill's end caps where the fill
+   reaches the track's ends. */
+.glow-track {
+    width: 60%;
+    height: 20px;
+    margin-top: 18px;
+    align-self: center;
+    background-image: url("../Sprites/InkBarTrack.png");
+    -unity-background-image-tint-color: rgba(58, 36, 24, 0.12);
+    -unity-slice-left: 16;
+    -unity-slice-right: 16;
+    -unity-slice-top: 0;
+    -unity-slice-bottom: 0;
+    -unity-slice-scale: 0.625px;
+
+    /* The track is the only thing that shows how far the level is, and ink 12% alone is 1.25:1 on
+       cream. A thin ink ring (about 3.4:1) outlines it so the empty bar is still visible. */
+    border-width: 2px;
+    border-color: rgba(58, 36, 24, 0.55);
+    border-radius: 10px;
+}
+
+.glow-fill {
+    width: 0;
+    height: 100%;
+    background-image: url("../Sprites/InkBarFill.png");
+    -unity-background-image-tint-color: rgb(232, 140, 0);
+    -unity-slice-left: 16;
+    -unity-slice-right: 16;
+    -unity-slice-top: 0;
+    -unity-slice-bottom: 0;
+    -unity-slice-scale: 0.625px;
+}
+
+/* ============ Bottom action dock ============
+   ONE floating cream-white card holding all three actions, instead of three separate squares.
+   This element IS `bottom-bar`: the controller lifts its `bottom` by the measured ad height, the
+   camera reads its top edge as the bottom board inset, and the HUD hit-test uses its bounds — so the
+   visible card and the measured box must be the same thing. 40px side margins keep it a floating
+   card, not an edge-to-edge bar. */
+.lower-dock {
+    position: absolute;
+    left: 40px;
+    right: 40px;
+    bottom: 70px;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: flex-start;
+    padding-top: 20px;
+    padding-bottom: 18px;
+    padding-left: 12px;
+    padding-right: 12px;
+    background-color: rgb(255, 252, 244);
+    border-width: 4px;
+    border-color: rgba(58, 36, 24, 0.12);
+    border-radius: 64px;
+    transition-property: bottom, opacity;
+    transition-duration: 0.22s, 0.35s;
+    transition-timing-function: ease-out, ease-out;
+}
+
+.tool {
+    align-items: center;
+    width: 180px;
+}
+
+.tool__label {
+    font-size: 26px;
+    letter-spacing: 3px;
+    color: rgba(58, 36, 24, 0.85);
+    margin: 0;
+    margin-top: 10px;
+}
+
+/* Round dock buttons: a 112px circle with a coloured 5px ring and a faint accent wash inside, so
+   the three are told apart by icon and label as well as by colour. */
+.ring-button {
+    width: 112px;
+    height: 112px;
+    border-width: 5px;
+    border-radius: 56px;
+}
+
+.ring-button--teal {
+    border-color: rgb(0, 122, 150);
+    background-color: rgba(0, 122, 150, 0.08);
+}
+
+.ring-button--red {
+    border-color: rgb(196, 52, 72);
+    background-color: rgba(196, 52, 72, 0.08);
+}
+
+.ring-button--purple {
+    border-color: rgb(104, 66, 176);
+    background-color: rgba(104, 66, 176, 0.08);
+}
+
+/* Set by the controller when the guide lines are on. The ring and wash change as well as the icon,
+   so the "on" state does not rely on colour alone. */
+.guide-button--on {
+    border-color: rgb(214, 120, 0);
+    background-color: rgba(214, 120, 0, 0.2);
+}
+
+.guide-button--on .tool-button__icon {
+    -unity-background-image-tint-color: rgb(214, 120, 0);
+}
+
+/* ============ Hint button badge & states ============ */
+.clue-badge {
+    position: absolute;
+    right: -10px;
+    top: -10px;
+    min-width: 44px;
+    height: 44px;
+    padding-left: 8px;
+    padding-right: 8px;
+    border-radius: 22px;
+    background-color: rgb(0, 122, 150);
+    align-items: center;
+    justify-content: center;
+}
+
+.clue-badge--ad {
+    background-color: rgb(196, 52, 72);
+    min-width: 52px;
+}
+
+.clue-badge__label {
+    font-size: 24px;
+    color: rgb(255, 248, 236);
+    margin: 0;
+    -unity-font-definition: url("project://database/Assets/Project/Fonts/Oxanium-ExtraBold%20SDF.asset?fileID=11400000&guid=a1b658a48c21246d783d8c4f4c297d45&type=2#Oxanium-ExtraBold SDF");
+}
+
+.tool-button--disabled {
+    opacity: 0.35;
+}
+
+/* The ad-loading modal's styles moved to Themes/AdLoadingOverlay.uss along with its markup. */
+
+/* Last child of gameplay-root, so a measured height pushes the flow up. bottom-bar is absolutely
+   positioned and is lifted separately in GameplayHUDController. */
+/* Pinned to the bottom, not laid out in flow like Home's and Settings' boxes are.
+   `.gameplay-root` is a column with exactly one other IN-FLOW child, `.top-panel` — `.bottom-bar` is
+   absolute, and an absolute element is invisible to the layout engine, so it neither takes space nor
+   shifts its siblings. That left this box as the second in-flow child, sitting directly under the
+   header, which is where the loading skeleton was appearing.
+   Nothing needs pushing down here either: the board is drawn by the camera, and the bar's lift is
+   applied straight to its own `bottom` from the measured ad height. So the only job left is to cover
+   the strip Android draws the anchored ad over, and absolute at bottom 0 is exactly that strip. */
+.play-sponsor-space {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+    transition-property: height;
+    transition-duration: 0.22s;
+    transition-timing-function: ease-out;
+}
+
+/* The <ui:Instance> wrapper around the ad-loading skeleton, styled here the same way `.nav-slot` is.
+   Absolute so the skeleton fills whatever height the box was opened to without ever driving it. */
+.sponsor-slot {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+}

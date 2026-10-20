@@ -1,0 +1,19 @@
+.type-heading {
+    font-size: 56px;
+    -unity-font-style: bold;
+}
+
+.type-button {
+    font-size: 40px;
+    -unity-font-style: bold;
+}
+
+.type-body {
+    font-size: 24px;
+    -unity-font-style: bold;
+}
+
+.type-caption {
+    font-size: 18px;
+    -unity-font-style: bold;
+}
