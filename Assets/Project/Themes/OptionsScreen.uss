@@ -112,6 +112,16 @@
     border-top-color: rgba(58, 36, 24, 0.12);
 }
 
+/* The game config can hide any row; the first row that stays visible drops its divider. Declared
+   after .entry--sep so it wins at equal specificity. */
+.entry--no-sep {
+    border-top-width: 0;
+}
+
+.entry--hidden {
+    display: none;
+}
+
 /* Link rows deliberately have NO :hover / :active highlight — a coloured wash across
    a whole row read as an accidental selection rather than as feedback. */
 

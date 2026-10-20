@@ -158,7 +158,7 @@ public class PromoLabScreenController : MonoBehaviour
 
         if (!settings.AdsEnabled)
         {
-            SetAllResults("Ads are switched off by the backend (ad_enable is not 1), so there is "
+            SetAllResults("Ads are switched off by the game config (ads.enabled is false), so there is "
                           + "nothing to request.");
             return;
         }
@@ -166,7 +166,7 @@ public class PromoLabScreenController : MonoBehaviour
         string unitId = settings.BannerId;
         if (string.IsNullOrEmpty(unitId))
         {
-            SetAllResults("No banner ad unit ID available from the backend or the baked config.");
+            SetAllResults("No banner ad unit id in the game config (ads.units.banner).");
             return;
         }
 

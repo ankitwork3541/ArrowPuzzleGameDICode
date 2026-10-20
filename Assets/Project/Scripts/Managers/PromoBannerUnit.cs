@@ -156,7 +156,7 @@ public class PromoBannerUnit : MonoBehaviour
         loadFailed = false;
 
         AdSize size = large ? LargeSize() : StandardSize();
-        string unitId = PromoManager.Instance.Settings.BannerId;
+        string unitId = PromoManager.Instance.Settings.BannerIdFor(large);
 
         // Room first, ad second. The size is fixed, so the final height is known before the request
         // is even sent — the UI can open the box to exactly that and fill it with a skeleton, and
@@ -234,11 +234,6 @@ public class PromoBannerUnit : MonoBehaviour
             ClickCount++;
             LogCounters("click");
         });
-
-        created.OnAdPaid += (AdValue adValue) =>
-        {
-            HostBridge.SendDataToAndroid(adValue.Value,adValue.CurrencyCode,"Banner");
-        };
 
         // created.OnAdPaid += value => MobileAdsEventExecutor.ExecuteInUpdate(() =>
         // {
@@ -406,7 +401,8 @@ public class PromoBannerUnit : MonoBehaviour
         return manager != null
                && manager.Settings != null
                && manager.Settings.AdsEnabled
-               && !string.IsNullOrEmpty(manager.Settings.BannerId);
+               && manager.Settings.BannerFormatEnabled
+               && !string.IsNullOrEmpty(manager.Settings.BannerIdFor(true));
     }
 
     // The two fixed IAB sizes from Google's standard banner table: BANNER (320x50 dp) for style 1

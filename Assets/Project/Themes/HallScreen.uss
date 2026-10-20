@@ -227,6 +227,92 @@
     translate: 0 4px;
 }
 
+/* ============ Notices from the game config ============ */
+.notice-banner {
+    align-self: center;
+    margin-top: 24px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    padding-left: 32px;
+    padding-right: 32px;
+    border-radius: 40px;
+    border-width: 3px;
+    border-color: rgb(196, 52, 72);
+    background-color: rgb(255, 252, 244);
+    font-size: 30px;
+    color: rgb(58, 36, 24);
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+.notice-banner--hidden {
+    display: none;
+}
+
+/* Covers the whole screen and swallows every tap, so the player cannot start a level behind it. */
+.notice-overlay {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    justify-content: center;
+    padding-left: 48px;
+    padding-right: 48px;
+    background-color: rgba(255, 248, 236, 0.96);
+}
+
+.notice-overlay--hidden {
+    display: none;
+}
+
+.notice-overlay__card {
+    align-items: center;
+    padding-top: 72px;
+    padding-bottom: 64px;
+    padding-left: 48px;
+    padding-right: 48px;
+    border-radius: 64px;
+    border-width: 6px;
+    border-color: rgb(196, 52, 72);
+    background-color: rgb(255, 252, 244);
+}
+
+.notice-overlay__title {
+    font-size: 60px;
+    letter-spacing: 4px;
+    color: rgb(58, 36, 24);
+    margin-bottom: 28px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+.notice-overlay__text {
+    font-size: 36px;
+    color: rgba(58, 36, 24, 0.72);
+    margin-bottom: 48px;
+    white-space: normal;
+    -unity-text-align: middle-center;
+}
+
+/* No button under the text (maintenance): no gap where it would have been. */
+.notice-overlay__text--last {
+    margin-bottom: 0;
+}
+
+.notice-overlay__button {
+    align-self: stretch;
+    flex-grow: 0;
+}
+
+.notice-overlay__button--hidden {
+    display: none;
+}
+
+.trail-button--hidden {
+    display: none;
+}
+
 /* The level map is an instance of LevelMapScreen.uxml, which carries its own stylesheet. Only the
    wrapper element the <ui:Instance> creates is styled here, same as .nav-slot. While the map is
    open it takes the place of .content (which hides), so the nav and ad box below never move. */

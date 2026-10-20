@@ -14,17 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AdConfig
   useTestIds: 0
   testDeviceIds: []
-  banner: 
-  interstitial: 
-  rewarded: 
-  nativeAd: 
-  preloadNativeAd: 
-  rewardedEnabled: 1
-  backAdEnabled: 0
-  defaultFreeHintCount: 3
-  levelsPerInterstitial: 2
-  interstitialCooldownSeconds: 30
-  adClickCount: 3
-  nativeRefreshSeconds: 30
   nativeStyles: []
-  adMaxAgeMinutes: 30

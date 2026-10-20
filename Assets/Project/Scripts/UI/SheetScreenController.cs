@@ -78,6 +78,9 @@ public class SheetScreenController : MonoBehaviour
 
     private VisualElement AdSpace => root != null ? root.Q<VisualElement>("sheet-sponsor-space") : null;
 
+    // Which ads.placements entry this sheet reads: win_sheet or lose_sheet.
+    private PromoScreen SheetPlacement => mode == Mode.Win ? PromoScreen.WinSheet : PromoScreen.LoseSheet;
+
     // Reserves the box and fills it with the loading skeleton until the overlay paints. Room here is
     // only ever opened for an ad already in hand, so this is a short bridge — a couple of frames plus
     // however long RenderTemplate takes — not an open-ended wait like the bottom slots have.
@@ -122,7 +125,7 @@ public class SheetScreenController : MonoBehaviour
         // Checked before anything is opened, not after. An ad that was never preloaded is not loaded
         // live here — the player taps Next or Retry long before a request would land — so if none is
         // in hand the card must look exactly as it does with ads off.
-        if (!PromoManager.Instance.LevelEndNativeReady)
+        if (!PromoManager.Instance.LevelEndNativeReady(SheetPlacement))
         {
             Debug.Log("[NativeAd] Result card: ads off, no unit ID, unsupported style, or nothing "
                       + "preloaded — leaving no space.");
@@ -204,7 +207,8 @@ public class SheetScreenController : MonoBehaviour
 
         // Consumes the ad preloaded when the level started, so the card does not wait on a network
         // round trip.
-        PromoManager.Instance.ShowLevelEndNative(PromoNativePlacement.At(topLeftDp.x, topLeftDp.y));
+        PromoManager.Instance.ShowLevelEndNative(SheetPlacement,
+                                                 PromoNativePlacement.At(topLeftDp.x, topLeftDp.y));
 
         placeRoutine = null;
     }
@@ -386,8 +390,9 @@ public class SheetScreenController : MonoBehaviour
     {
         if (confetti == null) return;
 
-        // Reduce Motion: no falling confetti at all (a burst already in flight is stopped).
-        if (OptionsManager.ReduceMotionOn)
+        // Reduce Motion, or ui.confetti off in the game config: no falling confetti at all (a burst
+        // already in flight is stopped).
+        if (OptionsManager.ReduceMotionOn || !GameConfigService.Current.ui.confetti)
         {
             confetti.Stop();
             return;

@@ -20,6 +20,8 @@ public class ProgressData
     public int currentLevelIndex;
 
     // Highest level NUMBER (1-based) ever beaten; 0 = none. Kept separate from currentLevelIndex,
-    // which wraps back to 0 at the end of the campaign — an unlocked milestone must never re-lock.
+    // which wraps back to 0 at the end of the campaign. It drives the level map (done / current /
+    // locked), the frontier rule and the ad rules that depend on progress. The bottom-dock level
+    // milestones it once also fed were removed; the field itself stays because it is saved.
     public int highestLevelCompleted;
 }

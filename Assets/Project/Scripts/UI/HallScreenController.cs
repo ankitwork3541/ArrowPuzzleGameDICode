@@ -15,6 +15,12 @@ public class HallScreenController : MonoBehaviour
     private Button settingsButton;
     private Label cardProgressText;
     private TrailMapController levelMap;
+    private Label noticeBanner;
+    private VisualElement noticeOverlay;
+    private Label noticeTitle;
+    private Label noticeText;
+    private Button noticeButton;
+    private string noticeButtonUrl;
 
     // Versioned overload of the reload callback (the plain one is obsolete). The lambda only drops the
     // version: these handlers rebuild their bindings from scratch on every reload, so a repeat of the
@@ -30,6 +36,8 @@ public class HallScreenController : MonoBehaviour
         // left open when the player started a level would still be open on the way back.
         levelMap?.Close();
         Refresh();
+        GameConfigService.Changed += OnConfigChanged;
+        ApplyConfig();
 
         if (PromoManager.Instance != null)
         {
@@ -41,6 +49,7 @@ public class HallScreenController : MonoBehaviour
     private void OnDisable()
     {
         panelRenderer.UnregisterUIReloadCallback(reloadCallback);
+        GameConfigService.Changed -= OnConfigChanged;
 
         if (PromoManager.Instance != null)
         {
@@ -100,10 +109,115 @@ public class HallScreenController : MonoBehaviour
 
         cardProgressText = root.Q<Label>("ledger-text");
 
+        noticeBanner = root.Q<Label>("notice-banner");
+        noticeOverlay = root.Q<VisualElement>("notice-overlay");
+        noticeTitle = root.Q<Label>("notice-title");
+        noticeText = root.Q<Label>("notice-text");
+        noticeButton = root.Q<Button>("notice-button");
+
+        if (noticeBanner != null)
+        {
+            noticeBanner.UnregisterCallback<ClickEvent>(OnNoticeBannerClicked);
+            noticeBanner.RegisterCallback<ClickEvent>(OnNoticeBannerClicked);
+        }
+
+        if (noticeButton != null)
+        {
+            TapSound.Attach(noticeButton);
+            noticeButton.clicked -= OnNoticeButtonClicked;
+            noticeButton.clicked += OnNoticeButtonClicked;
+        }
+
         // Home is the current screen, so its own nav item only highlights.
         TabDockBinder.Bind(root, "tab-hall", null, OnSettingsNavClicked);
 
         Refresh();
+        ApplyConfig();
+    }
+
+    private void OnConfigChanged()
+    {
+        ApplyConfig();
+    }
+
+    // Everything on Home that the game config controls: the LEVELS button (ui.level_map), the optional
+    // notice (message.*) and the two blocking sheets (app.maintenance_mode, app.force_update). A fresh
+    // payload can arrive after Home is already up, so this runs again on every config change.
+    private void ApplyConfig()
+    {
+        if (root == null) return;
+
+        GameConfig config = GameConfigService.Current;
+
+        levelsButton?.EnableInClassList("trail-button--hidden", !config.ui.level_map);
+
+        if (noticeBanner != null)
+        {
+            string text = config.message.banner_text;
+            bool hasText = !string.IsNullOrWhiteSpace(text);
+            noticeBanner.text = hasText ? text : "";
+            noticeBanner.EnableInClassList("notice-banner--hidden", !hasText);
+        }
+
+        ApplyBlockingNotice(config);
+    }
+
+    // Maintenance wins over a forced update: while the game is down there is nothing to update to.
+    private void ApplyBlockingNotice(GameConfig config)
+    {
+        if (noticeOverlay == null) return;
+
+        string title = null;
+        string text = null;
+        string buttonLabel = null;
+        string url = null;
+
+        if (config.app.maintenance_mode)
+        {
+            title = "BACK SOON";
+            text = string.IsNullOrWhiteSpace(config.app.maintenance_text)
+                ? "The game is being updated. Please try again in a little while."
+                : config.app.maintenance_text;
+        }
+        else if (config.app.force_update)
+        {
+            title = "UPDATE REQUIRED";
+            text = "A new version of " + (string.IsNullOrEmpty(config.app.name) ? "the game" : config.app.name)
+                   + " is available. Please update to keep playing.";
+            buttonLabel = "UPDATE";
+            url = config.app.update_url;
+        }
+
+        bool show = title != null;
+        noticeOverlay.EnableInClassList("notice-overlay--hidden", !show);
+
+        if (!show) return;
+
+        noticeTitle.text = title;
+        noticeText.text = text;
+        noticeButtonUrl = url;
+
+        bool showButton = buttonLabel != null && !string.IsNullOrEmpty(url);
+        noticeButton.EnableInClassList("notice-overlay__button--hidden", !showButton);
+        noticeText.EnableInClassList("notice-overlay__text--last", !showButton);
+        noticeButton.Q<Label>("notice-button-label").text = buttonLabel ?? "";
+    }
+
+    private void OnNoticeButtonClicked()
+    {
+        if (!string.IsNullOrEmpty(noticeButtonUrl))
+        {
+            Application.OpenURL(noticeButtonUrl);
+        }
+    }
+
+    private void OnNoticeBannerClicked(ClickEvent evt)
+    {
+        string url = GameConfigService.Current.message.banner_url;
+        if (!string.IsNullOrEmpty(url))
+        {
+            Application.OpenURL(url);
+        }
     }
 
     private void OnSettingsNavClicked(ClickEvent evt)
@@ -137,8 +251,6 @@ public class HallScreenController : MonoBehaviour
 
         // Levels beaten so far. The campaign size is deliberately never shown anywhere.
         cardProgressText.text = Mathf.Max(0, ProgressStore.Data.highestLevelCompleted) + " CLEARED";
-
-        TabDockBinder.RefreshMilestones(root);
 
         if (levelMap != null && levelMap.IsOpen) levelMap.Refresh();
 

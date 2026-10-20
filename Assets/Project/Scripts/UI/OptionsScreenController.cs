@@ -7,13 +7,8 @@ public class OptionsScreenController : MonoBehaviour
     [SerializeField] private FlowDirector gameFlowManager;
     [SerializeField] private OptionsManager settingsManager;
 
-    // Left empty on purpose: the store listing and the legal pages do not exist yet.
-    // An empty field logs instead of opening a broken link, so filling these in later
-    // is an Inspector change with no code change.
-    [Header("Links (fill in when the real pages exist)")]
-    [SerializeField] private string rateUsUrl;
-    [SerializeField] private string privacyUrl;
-    [SerializeField] private string termsUrl;
+    // The Rate / Privacy / Terms links and which rows show at all come from the game config
+    // (links.*, ui.options_rows.*), so nothing about them is hard-coded or set in the Inspector.
 
     private VisualElement root;
     private VisualElement soundSwitch, vibrationSwitch, refreshSwitch, motionSwitch;
@@ -27,20 +22,23 @@ public class OptionsScreenController : MonoBehaviour
     {
         reloadCallback = (reloaded, rootElement, version) => OnUIReload(reloaded, rootElement);
         panelRenderer.RegisterUIReloadCallback(reloadCallback);
+        GameConfigService.Changed += OnConfigChanged;
         Apply();
+        ApplyConfig();
 
-        // Settings is reached from Home's own bottom nav and is the same shell, so it carries the
-        // same ad. There is no settings_screen digit from the backend — main_screen governs both.
+        // Settings has its own placement (ads.placements.options); Home -> Settings hands over inside
+        // one frame, and when both ask for the same slot the banner is kept rather than rebuilt.
         if (PromoManager.Instance != null)
         {
             PromoManager.Instance.AddAdHeightListener(OnAdHeightChanged);
-            PromoManager.Instance.ShowHomeAd();
+            PromoManager.Instance.ShowOptionsAd();
         }
     }
 
     private void OnDisable()
     {
         panelRenderer.UnregisterUIReloadCallback(reloadCallback);
+        GameConfigService.Changed -= OnConfigChanged;
 
         if (PromoManager.Instance != null)
         {
@@ -76,9 +74,9 @@ public class OptionsScreenController : MonoBehaviour
         BindSwitch(refreshSwitch, OnRefreshClicked);
         BindSwitch(motionSwitch, OnMotionClicked);
 
-        BindLink("link-rate", rateUsUrl);
-        BindLink("link-privacy", privacyUrl);
-        BindLink("link-terms", termsUrl);
+        BindLink("link-rate");
+        BindLink("link-privacy");
+        BindLink("link-terms");
 
         // The round back button at the top left does the same as the nav's Home item.
         Button backButton = root.Q<Button>("options-return-button");
@@ -90,6 +88,7 @@ public class OptionsScreenController : MonoBehaviour
         TabDockBinder.Bind(root, "tab-options", OnHomeNavClicked, null);
 
         Apply();
+        ApplyConfig();
 
         // The reload can land after OnEnable, which ran with no root to size the box in.
         OnAdHeightChanged(PromoManager.Instance != null ? PromoManager.Instance.AdHeightPixels : 0f);
@@ -110,31 +109,88 @@ public class OptionsScreenController : MonoBehaviour
         hitArea.RegisterCallback(handler);
     }
 
-    private void BindLink(string elementName, string url)
+    private void BindLink(string elementName)
     {
         VisualElement element = root.Q<VisualElement>(elementName);
         if (element == null) return;
 
-        // The URL rides on the element itself, so all the link rows can share one
-        // handler and still be unregistered by method group.
-        element.userData = url;
+        // One shared handler, unregistered by method group. The URL is looked up from the config at
+        // the moment of the tap, so a fresh payload takes effect without rebinding.
         TapSound.Attach(element);
         element.UnregisterCallback<ClickEvent>(OnLinkClicked);
         element.RegisterCallback<ClickEvent>(OnLinkClicked);
     }
 
+    private static string LinkFor(string elementName)
+    {
+        LinksSection links = GameConfigService.Current.links;
+
+        switch (elementName)
+        {
+            case "link-rate": return links.rate_us;
+            case "link-privacy": return links.privacy;
+            case "link-terms": return links.terms;
+            default: return null;
+        }
+    }
+
     private void OnLinkClicked(ClickEvent evt)
     {
         VisualElement element = (VisualElement)evt.currentTarget;
-        string url = element.userData as string;
+        string url = LinkFor(element.name);
 
         if (string.IsNullOrEmpty(url))
         {
-            Debug.Log($"[Settings] '{element.name}' has no URL set yet.");
+            Debug.Log($"[Settings] '{element.name}' has no link in the game config.");
             return;
         }
 
         Application.OpenURL(url);
+    }
+
+    private void OnConfigChanged()
+    {
+        ApplyConfig();
+    }
+
+    // Shows or hides each row from ui.options_rows, and hides a link row whose link is empty. The
+    // first row that stays visible loses its divider, so hiding the top rows never leaves a stray line.
+    private void ApplyConfig()
+    {
+        if (root == null) return;
+
+        GameConfig config = GameConfigService.Current;
+        OptionsRows rows = config.ui.options_rows;
+
+        SetRowVisible(vibrationSwitch?.parent, rows.vibration);
+        SetRowVisible(soundSwitch?.parent, rows.sound);
+        SetRowVisible(refreshSwitch?.parent, rows.native_refresh_rate);
+        SetRowVisible(motionSwitch?.parent, rows.reduce_motion);
+        SetRowVisible(root.Q<VisualElement>("link-rate"), GameConfigParser.LinkRowVisible(config, "rate_us"));
+        SetRowVisible(root.Q<VisualElement>("link-privacy"), GameConfigParser.LinkRowVisible(config, "privacy"));
+        SetRowVisible(root.Q<VisualElement>("link-terms"), GameConfigParser.LinkRowVisible(config, "terms"));
+
+        VisualElement card = root.Q<VisualElement>("settings-card");
+        if (card == null) return;
+
+        bool first = true;
+        foreach (VisualElement row in card.Children())
+        {
+            if (row.ClassListContains("entry--hidden")) continue;
+
+            row.EnableInClassList("entry--no-sep", first);
+            first = false;
+        }
+
+        // The Reduce Motion switch may be showing the config default rather than a saved choice.
+        Apply();
+    }
+
+    private static void SetRowVisible(VisualElement row, bool visible)
+    {
+        if (row == null) return;
+
+        row.EnableInClassList("entry--hidden", !visible);
     }
 
     private void OnSoundClicked(ClickEvent evt)

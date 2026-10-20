@@ -16,6 +16,10 @@
                 </ui:Button>
             </ui:VisualElement>
 
+            <!-- Optional notice from the game config (message.banner_text / banner_url). Hidden while
+                 the text is empty. -->
+            <ui:Label name="notice-banner" text="" class="notice-banner notice-banner--hidden" />
+
             <ui:VisualElement name="home-center" class="hall-center">
                 <ui:VisualElement name="level-card" class="stage-card">
                     <ui:Label name="stage-label" text="LEVEL 01" class="stage-label"/>
@@ -45,6 +49,20 @@
         <ui:Instance template="TabDock" name="bottom-nav-slot" class="tab-slot" />
         <ui:VisualElement name="sponsor-space" class="hall-sponsor-space">
             <ui:Instance template="PromoPlaceholder" name="ad-placeholder-slot" class="sponsor-slot" />
+        </ui:VisualElement>
+
+        <!-- Blocking notice over Home: maintenance (app.maintenance_mode) or a forced update
+             (app.force_update). Hidden unless the game config asks for it. -->
+        <ui:VisualElement name="notice-overlay" class="notice-overlay notice-overlay--hidden">
+            <ui:VisualElement class="notice-overlay__card">
+                <ui:Label name="notice-title" text="" class="notice-overlay__title" />
+                <ui:Label name="notice-text" text="" class="notice-overlay__text" />
+                <ui:Button name="notice-button" class="start-button notice-overlay__button">
+                    <ui:VisualElement picking-mode="Ignore" class="start-button__inner">
+                        <ui:Label name="notice-button-label" text="UPDATE" picking-mode="Ignore" class="start-button__label" />
+                    </ui:VisualElement>
+                </ui:Button>
+            </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>
 </ui:UXML>

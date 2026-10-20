@@ -5,18 +5,6 @@
             <ui:VisualElement class="tab-icon tab-icon--home" picking-mode="Ignore" />
             <ui:Label text="Home" class="tab-label" picking-mode="Ignore" />
         </ui:VisualElement>
-        <ui:VisualElement name="nav-lvl10" class="tab-item tab-item--locked">
-            <ui:VisualElement class="tab-icon tab-icon--lock" picking-mode="Ignore" />
-            <ui:Label text="Lvl 10" class="tab-label" picking-mode="Ignore" />
-        </ui:VisualElement>
-        <ui:VisualElement name="nav-lvl20" class="tab-item tab-item--locked">
-            <ui:VisualElement class="tab-icon tab-icon--lock" picking-mode="Ignore" />
-            <ui:Label text="Lvl 20" class="tab-label" picking-mode="Ignore" />
-        </ui:VisualElement>
-        <ui:VisualElement name="nav-lvl30" class="tab-item tab-item--locked">
-            <ui:VisualElement class="tab-icon tab-icon--lock" picking-mode="Ignore" />
-            <ui:Label text="Lvl 30" class="tab-label" picking-mode="Ignore" />
-        </ui:VisualElement>
         <ui:VisualElement name="tab-options" class="tab-item tab-item--dim">
             <ui:VisualElement class="tab-icon tab-icon--settings" picking-mode="Ignore" />
             <ui:Label text="Settings" class="tab-label" picking-mode="Ignore" />

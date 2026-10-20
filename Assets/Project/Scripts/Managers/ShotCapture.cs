@@ -45,6 +45,23 @@ public class ShotCapture : MonoBehaviour
         // level with padlocks, and 5 beaten levels gives the map done, current and locked nodes.
         ProgressStore.Data.highestLevelCompleted = DemoLevelNumber - 1;
         ProgressStore.Data.currentLevelIndex = DemoLevelNumber - 1;
+
+        // A game config to run on, read from a file instead of the API, so the config-driven screens
+        // (hidden options rows, notices, maintenance, force update, lives) can be shot on demand.
+        string configPath = GetArg("--evidence-config");
+        if (configPath != null)
+        {
+            bool applied = File.Exists(configPath) && GameConfigService.ApplyJson(File.ReadAllText(configPath));
+            Report("evidence config loaded", applied, configPath);
+        }
+    }
+
+    private static string GetArg(string flag)
+    {
+        string[] args = System.Environment.GetCommandLineArgs();
+        for (int i = 0; i < args.Length - 1; i++)
+            if (args[i] == flag) return args[i + 1];
+        return null;
     }
 
     private void OnApplicationQuit()
@@ -111,6 +128,14 @@ public class ShotCapture : MonoBehaviour
         if (HasFlag("--evidence-small"))
         {
             yield return SmallRun();
+            Debug.Log("[ShotCapture] done");
+            Application.Quit();
+            yield break;
+        }
+
+        if (HasFlag("--evidence-config-run"))
+        {
+            yield return ConfigRun(GetArg("--evidence-prefix") ?? "cfg");
             Debug.Log("[ShotCapture] done");
             Application.Quit();
             yield break;
@@ -212,13 +237,10 @@ public class ShotCapture : MonoBehaviour
         Application.Quit();
     }
 
-    // Replaying a beaten level must leave PLAY on the frontier and send no analytics ping; beating the
-    // frontier itself advances by one and pings exactly once. The ping is counted, never sent.
+    // Replaying a beaten level must leave PLAY on the frontier; beating the frontier itself advances
+    // by one.
     private IEnumerator CheckFrontierRule()
     {
-        StageTracker.SuppressNetworkForTests = true;
-        int pingsBefore = StageTracker.ReportCount;
-
         ProgressStore.Data.highestLevelCompleted = 10;
         loader.SelectLevel(3);
         flow.ShowWin();
@@ -226,8 +248,6 @@ public class ShotCapture : MonoBehaviour
         Report("frontier: a replay win leaves PLAY on the frontier",
             loader.CurrentLevelNumber() == 11 && ProgressStore.Data.highestLevelCompleted == 10,
             $"current {loader.CurrentLevelNumber()}, highest {ProgressStore.Data.highestLevelCompleted} (want 11 and 10)");
-        Report("frontier: a replay win sends no analytics ping",
-            StageTracker.ReportCount == pingsBefore, $"pings {StageTracker.ReportCount - pingsBefore} (want 0)");
 
         loader.SelectLevel(11);
         flow.ShowWin();
@@ -235,13 +255,10 @@ public class ShotCapture : MonoBehaviour
         Report("frontier: beating the frontier advances to the next level",
             loader.CurrentLevelNumber() == 12 && ProgressStore.Data.highestLevelCompleted == 11,
             $"current {loader.CurrentLevelNumber()}, highest {ProgressStore.Data.highestLevelCompleted} (want 12 and 11)");
-        Report("frontier: beating the frontier sends exactly one ping",
-            StageTracker.ReportCount == pingsBefore + 1, $"pings {StageTracker.ReportCount - pingsBefore} (want 1)");
 
         flow.winRoot.SetActive(false);
         ProgressStore.Data.highestLevelCompleted = DemoLevelNumber - 1;
         loader.SelectLevel(DemoLevelNumber);
-        StageTracker.SuppressNetworkForTests = false;
     }
 
     // Reduce Motion ON must freeze the backdrop drift; OFF must let it move. Measured on the first
@@ -286,6 +303,36 @@ public class ShotCapture : MonoBehaviour
 
         options.SetReduceMotion(true);
         yield return new WaitForSecondsRealtime(0.5f);
+    }
+
+    // The config run: Home and Settings (and the board, when the game is not blocked by a notice) on
+    // whatever config --evidence-config loaded. One run per config file, frames named by the prefix.
+    private IEnumerator ConfigRun(string prefix)
+    {
+        yield return new WaitForSecondsRealtime(1.2f);
+        yield return new WaitUntil(() => flow.homeRoot.activeSelf);
+        yield return new WaitForSecondsRealtime(2f);
+
+        GameConfig config = GameConfigService.Current;
+        Report(prefix + ": a config payload is applied", GameConfigService.HasPayload, "HasPayload");
+        yield return Shoot(prefix + "-home");
+
+        if (config.app.maintenance_mode || config.app.force_update)
+            yield break;
+
+        flow.OnSettingsNavClicked();
+        yield return new WaitForSecondsRealtime(1.5f);
+        yield return Shoot(prefix + "-options");
+        flow.OnHomeNavClicked();
+        yield return new WaitForSecondsRealtime(0.5f);
+
+        flow.OnPlayButtonClicked();
+        yield return new WaitUntil(() => flow.gameplayRoot.activeSelf);
+        yield return new WaitForSecondsRealtime(6f);
+        Report(prefix + ": game.lives.max reaches the lives manager",
+            EmberManager.Instance.maxLives == config.game.lives.max,
+            $"lives {EmberManager.Instance.lives}/{EmberManager.Instance.maxLives}, config {config.game.lives.max}");
+        yield return Shoot(prefix + "-hud");
     }
 
     // The 360x640 run: the four screens most likely to overflow on a narrow phone.

@@ -47,7 +47,9 @@ public class PromoInterstitialManager : MonoBehaviour
     private float timer;
     private bool showInProgress;
     private bool adWasSeen;
+    private int shownThisSession;
 
+    public int ShownThisSession => shownThisSession;
     public int ClickCount => globalClickCount;
     public float TimeElapsed => timer;
 
@@ -81,6 +83,10 @@ public class PromoInterstitialManager : MonoBehaviour
     void OnAdOpened()
     {
         adWasSeen = true;
+
+        // Counted for the whole process, not reset with the click tracking: max_per_session is a cap
+        // on interstitials the player actually saw.
+        shownThisSession++;
     }
 
     // Guarded on adWasSeen because OnClosed also fires for an ad that failed to display. Resetting
@@ -138,12 +144,22 @@ public class PromoInterstitialManager : MonoBehaviour
             return;
         }
 
-        int requiredClicks = ads.Settings.AdClickCount;
-        int requiredTime = ads.Settings.AdClickTimeSec;
+        InterstitialRules rules = ads.Settings.Interstitials;
+        int requiredClicks = rules.min_click_count;
+        int requiredTime = rules.min_seconds_between;
+
+        // Too early in the campaign, or this session's cap is used up: no interstitial, and not even a
+        // counter worth keeping.
+        if (!AdRules.InterstitialsUnlocked(rules, GameConfigService.HighestLevelCompleted)
+            || AdRules.SessionCapReached(rules, shownThisSession))
+        {
+            onProceed?.Invoke();
+            return;
+        }
 
         // Both triggers off means there is no click-based interstitial at all — not even a counter
         // worth keeping.
-        if (requiredClicks <= 0 && requiredTime <= 0)
+        if (AdRules.ClickAdsOff(rules))
         {
             onProceed?.Invoke();
             return;
@@ -151,11 +167,11 @@ public class PromoInterstitialManager : MonoBehaviour
 
         globalClickCount++;
 
-        // EITHER gate is enough. A 0 from the backend switches that one trigger off rather than
-        // satisfying it instantly — otherwise ad_click_time_sec of 0 would put an ad on every
+        // EITHER gate is enough. A 0 from the config switches that one trigger off rather than
+        // satisfying it instantly — otherwise min_seconds_between of 0 would put an ad on every
         // single button in the game.
-        bool timeMet = requiredTime > 0 && timer >= requiredTime;
-        bool countMet = requiredClicks > 0 && globalClickCount >= requiredClicks;
+        bool timeMet = AdRules.TimeGateMet(rules, timer);
+        bool countMet = AdRules.CountGateMet(rules, globalClickCount);
 
         string state = "clicks=" + globalClickCount + "/" + requiredClicks
                        + ", timer=" + timer.ToString("F1") + "s/" + requiredTime + "s";
@@ -183,8 +199,8 @@ public class PromoInterstitialManager : MonoBehaviour
 
         PromoManager ads = PromoManager.Instance;
 
-        // back_ad_on off means the back button is not an interstitial site at all — it does not
-        // even count towards the click threshold.
+        // interstitial_rules.on_back_to_home off means the back button is not an interstitial site at
+        // all — it does not even count towards the click threshold.
         if (ads != null && ads.Settings != null && ads.Settings.BackAdEnabled)
         {
             TryShowClickAd(onProceed);
@@ -194,7 +210,8 @@ public class PromoInterstitialManager : MonoBehaviour
         onProceed?.Invoke();
     }
 
-    // Win-panel NEXT only. Runs off ad_level_count alone, with no click or time gate.
+    // Win-panel NEXT only. Runs off every_n_levels_on_next alone, with no click or time gate (the
+    // skip_first_levels and max_per_session rules still apply).
     public void TryShowLevelAd(int completedLevel, Action onProceed)
     {
         if (showInProgress)
@@ -210,8 +227,11 @@ public class PromoInterstitialManager : MonoBehaviour
             return;
         }
 
-        int interval = ads.Settings.AdLevelCount;
-        if (interval <= 0 || completedLevel <= 0 || (completedLevel % interval) != 0)
+        InterstitialRules rules = ads.Settings.Interstitials;
+        int interval = rules.every_n_levels_on_next;
+        if (!AdRules.LevelAdDue(rules, completedLevel)
+            || !AdRules.InterstitialsUnlocked(rules, GameConfigService.HighestLevelCompleted)
+            || AdRules.SessionCapReached(rules, shownThisSession))
         {
             onProceed?.Invoke();
             return;

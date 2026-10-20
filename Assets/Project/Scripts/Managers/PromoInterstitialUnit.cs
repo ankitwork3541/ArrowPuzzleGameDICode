@@ -241,11 +241,6 @@ public class PromoInterstitialUnit : MonoBehaviour
 
     private void RegisterEvents(InterstitialAd target)
     {
-        target.OnAdPaid += (AdValue adValue) =>
-        {
-            HostBridge.SendDataToAndroid(adValue.Value,adValue.CurrencyCode,"Interstitial");
-        };
-
         // target.OnAdPaid += value => MobileAdsEventExecutor.ExecuteInUpdate(() =>
         //     Debug.Log("[Interstitial] Paid " + value.Value + " micro-" + value.CurrencyCode + "."));
 

@@ -1334,7 +1334,7 @@ MonoBehaviour:
   panelRenderer: {fileID: 1699429037}
   gameFlowManager: {fileID: 1122562369}
   settingsManager: {fileID: 1808465325}
-  rateUsUrl: https://play.google.com/store/apps/details?id=in.dicodeinfotech.arrowqubepuzzle
+  rateUsUrl: https://play.google.com/store/apps/details?id=in.dicodeinfotech.arrowdragonpuzzle
   privacyUrl: https://neon-route-escape.blogspot.com/2026/08/neon-route-escape-game-privacy-policy.html
   termsUrl: https://neon-route-escape.blogspot.com/2026/08/neon-route-escape-terms-conditions.html
 --- !u!1931382934 &1699429037

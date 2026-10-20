@@ -269,6 +269,33 @@ public class PlayScreenController : MonoBehaviour
         hintButton.EnableInClassList("tool-button--disabled", !enabled);
     }
 
+    // The UXML ships three hearts, but game.lives.max comes from the game config, so the pill grows
+    // or shrinks to one heart per life. The config caps the value at 5, which is what the pill fits.
+    private void EnsureHearts()
+    {
+        VisualElement container = root.Q<VisualElement>("hearts");
+        if (container == null) return;
+
+        int want = Mathf.Clamp(maxLives, 1, 5);
+        container.EnableInClassList("embers--many", want > 3);
+
+        while (hearts.Count < want)
+        {
+            VisualElement heart = new VisualElement { name = "heart-" + hearts.Count };
+            heart.AddToClassList("ember");
+            heart.pickingMode = PickingMode.Ignore;
+            container.Add(heart);
+            hearts.Add(heart);
+        }
+
+        while (hearts.Count > want)
+        {
+            VisualElement last = hearts[hearts.Count - 1];
+            container.Remove(last);
+            hearts.RemoveAt(hearts.Count - 1);
+        }
+    }
+
     private void Apply()
     {
         if (root == null) return;
@@ -279,6 +306,8 @@ public class PlayScreenController : MonoBehaviour
 
         difficultyLabel.text = FlowDirector.GetDifficultyLabel(levelLoader.CurrentLevel());
         levelNumberLabel.text = levelLoader.CurrentLevelNumber().ToString();
+
+        EnsureHearts();
 
         for (int i = 0; i < hearts.Count; i++)
             hearts[i].EnableInClassList("ember--empty", i >= lives);

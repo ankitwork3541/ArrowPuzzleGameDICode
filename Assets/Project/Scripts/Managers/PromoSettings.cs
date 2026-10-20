@@ -1,123 +1,160 @@
-using System;
 using System.Collections.Generic;
 
-// The single place the rest of the game reads ad settings from. Resolves remote over baked, so no
-// caller ever has to know whether the backend answered.
+// The screens that can carry an ad. The names match the keys under ads.placements in the config.
+public enum PromoScreen
+{
+    Splash,
+    Home,
+    LevelMap,
+    Play,
+    WinSheet,
+    LoseSheet,
+    Options
+}
+
+// The single place the rest of the game reads ad settings from. Every value comes from the current
+// GameConfig (GameConfigService), so no caller needs to know whether the config API answered, was
+// cached, or is missing. The baked PromoConfig only supplies development switches (test ids, test
+// devices) and the native template table.
 public class PromoSettings
 {
     readonly PromoConfig baked;
-    PromoRemoteConfig remote;
 
     public PromoSettings(PromoConfig baked)
     {
-        this.baked = baked;
+        this.baked = baked ?? throw new System.ArgumentNullException(nameof(baked));
     }
 
-    public bool HasRemote => remote != null;
-    public bool UsingTestIds => baked.useTestIds;
+    static GameConfig Config => GameConfigService.Current;
+    static AdsSection Ads => Config.ads;
 
-    public bool ApplyRemote(PromoRemoteConfig config)
+    public bool HasRemote => GameConfigService.HasPayload;
+    public bool UsingTestIds => baked.useTestIds || Ads.test_mode;
+
+    // The config is the only authority on whether ads run at all. With no payload, and not even last
+    // launch's cached one, every format stays off. Test mode is the one exception, so the Editor and
+    // debug builds still serve.
+    public bool AdsEnabled => UsingTestIds || Ads.enabled;
+
+    // Master switch is ads.enabled. formats.rewarded turns only THIS format off while banners,
+    // interstitial and native stay on.
+    public bool RewardedEnabled => AdsEnabled && Ads.formats.rewarded.enabled;
+
+    // The hint button's rewarded fallback: the format has to be on AND hints have to be allowed to use it.
+    public bool HintRewardedEnabled => RewardedEnabled && Ads.rewarded_rules.hint.enabled;
+
+    public bool BackAdEnabled => AdsEnabled && Ads.interstitial_rules.on_back_to_home;
+
+    public bool BannerFormatEnabled => Ads.formats.banner.enabled;
+    public bool NativeFormatEnabled => Ads.formats.native.enabled;
+
+    public string BannerId => BannerIdFor(false);
+
+    // The large banner has its own unit id; without one it reuses the standard banner's.
+    public string BannerIdFor(bool large)
     {
-        if (config == null || config.code != 1)
+        if (UsingTestIds)
         {
-            return false;
+            return PromoTestIds.Banner;
         }
 
-        remote = config;
-        return true;
+        string id = large ? Ads.units.banner_large : null;
+        return GameConfigParser.IsAdUnit(id) ? id : Valid(Ads.units.banner);
     }
 
-    // The backend is the only authority on whether ads run at all. With no payload — not even last
-    // launch's cached one — every format stays off rather than falling back to whatever shipped in
-    // the build. Test mode is the one exception, so the Editor and debug builds still serve.
-    public bool AdsEnabled
+    public string InterstitialId => UsingTestIds ? PromoTestIds.Interstitial : Valid(Ads.units.interstitial);
+    public string RewardedId => UsingTestIds ? PromoTestIds.Rewarded : Valid(Ads.units.rewarded);
+    public string NativeId => UsingTestIds ? PromoTestIds.Native : Valid(Ads.units.native);
+
+    public string PreloadNativeId
     {
         get
         {
-            if (baked.useTestIds)
+            if (UsingTestIds)
             {
-                return true;
+                return PromoTestIds.Native;
             }
 
-            return remote != null && remote.ad_enable == 1;
+            string id = Valid(Ads.units.native_preload);
+            return id ?? Valid(Ads.units.native);
         }
     }
 
-    // Master switch is ad_enable (AdsEnabled). rewarded_ad_enable only turns THIS format off
-    // while banners / interstitial / native can stay on. Any digit other than 1 is off.
-    public bool RewardedEnabled =>
-        AdsEnabled && (remote != null ? remote.rewarded_ad_enable == 1 : baked.rewardedEnabled);
+    public bool InterstitialEnabled =>
+        AdsEnabled && Ads.formats.interstitial.enabled && !string.IsNullOrEmpty(InterstitialId);
 
-    public bool BackAdEnabled =>
-        AdsEnabled && (remote != null ? remote.back_ad_on == 1 : baked.backAdEnabled);
+    // The interstitial rules, for the policy manager.
+    public InterstitialRules Interstitials => Ads.interstitial_rules;
 
-    public string BannerId => Id(remote?.banner_adunit_id, baked.banner, PromoTestIds.Banner);
-    public string InterstitialId => Id(remote?.interstitial_adunit_id, baked.interstitial, PromoTestIds.Interstitial);
-    public string RewardedId => Id(remote?.rewarded_adunit_id, baked.rewarded, PromoTestIds.Rewarded);
-    public string NativeId => Id(remote?.native_adunit_id, baked.nativeAd, PromoTestIds.Native);
-    public string PreloadNativeId => Id(remote?.preload_native_adunit_id, baked.preloadNativeAd, PromoTestIds.Native);
+    // Kept as plain numbers for the call sites that only need one.
+    public int AdLevelCount => Ads.interstitial_rules.every_n_levels_on_next;
+    public int AdClickTimeSec => Ads.interstitial_rules.min_seconds_between;
+    public int AdClickCount => Ads.interstitial_rules.min_click_count;
 
-    public bool InterstitialEnabled => AdsEnabled && !string.IsNullOrEmpty(InterstitialId);
+    // Zero here means "no refresh", not "use a default": refresh_sec is taken as-is.
+    public int NativeRefreshSeconds => Ads.formats.native.refresh_sec;
 
-    // Lets a screen decide whether to open any room at all. Checking AdsEnabled alone would leave a
-    // gap whenever the backend sends an enabled flag but a blank unit ID, or a digit that maps to
-    // nothing this screen can show.
-    public bool CanShowPreloadNative =>
-        AdsEnabled && !string.IsNullOrEmpty(PreloadNativeId) && IsNative(SuccessScreenSlot);
+    // Not a publisher value: staleness is about the SDK's cache, not about how often the publisher
+    // wants a new creative. Never below a minute.
+    public float AdMaxAgeSeconds => System.Math.Max(60, Ads.formats.native.max_age_min * 60);
 
-    // 0 is a real answer (that trigger is off). Positive() would treat it as missing.
-    public int AdLevelCount =>
-        remote != null ? Math.Max(0, remote.ad_level_count) : Math.Max(0, baked.levelsPerInterstitial);
-
-    public int AdClickTimeSec =>
-        remote != null ? Math.Max(0, remote.ad_click_time_sec) : Math.Max(0, baked.interstitialCooldownSeconds);
-
-    public int AdClickCount =>
-        remote != null ? Math.Max(0, remote.ad_click_count) : Math.Max(0, baked.adClickCount);
-
-    // 0 is a real answer ("no free hints"). Positive() would treat it as missing and fall back.
-    public int FreeHintCount =>
-        remote != null ? Math.Max(0, remote.free_hint_count) : Math.Max(0, baked.defaultFreeHintCount);
-
-    public int NativeRefreshSeconds => Positive(remote?.refresh_native_sec, baked.nativeRefreshSeconds);
-
-    // Not a backend value: staleness is about the SDK's cache, not about how often the publisher
-    // wants a new creative.
-    public float AdMaxAgeSeconds => Math.Max(60, baked.adMaxAgeMinutes * 60);
-
-    public List<string> TestDeviceIds => baked.testDeviceIds;
-
-    // The backend is the only source for these. With no payload — not even last launch's cached one
-    // — the answer is 0, "no ad on this screen", not a baked guess: ads do not run without a payload
-    // anyway (AdsEnabled is false), so a fallback digit could only ever be misleading.
-    public int MainScreenStyle => remote != null ? remote.main_screen : 0;
-    public int PlayScreenStyle => remote != null ? remote.play_screen : 0;
-    public int SuccessScreenStyle => remote != null ? remote.success_screen : 0;
-
-    public PromoSlotKind MainScreenSlot => SlotFor(MainScreenStyle);
-    public PromoSlotKind PlayScreenSlot => SlotFor(PlayScreenStyle);
-
-    // The result cards never carry a banner — that is a product decision, not a technical limit. A
-    // banner digit here resolves to nothing rather than quietly showing one.
-    public PromoSlotKind SuccessScreenSlot
+    // The baked list (development devices) plus the config's.
+    public List<string> TestDeviceIds
     {
         get
         {
-            PromoSlotKind slot = SlotFor(SuccessScreenStyle);
-            return IsNative(slot) ? slot : PromoSlotKind.None;
+            var ids = new List<string>();
+            AddAll(ids, baked.testDeviceIds);
+            AddAll(ids, Ads.test_device_ids);
+            return ids;
         }
     }
 
-    public static PromoSlotKind SlotFor(int digit)
+    // What a screen shows. A placement that has not reached its show_after_level yet resolves to
+    // None, exactly as if the config had asked for no ad there.
+    public PromoSlotKind SlotFor(PromoScreen screen)
     {
-        switch (digit)
+        AdPlacement placement = PlacementFor(screen);
+        if (!AdRules.PlacementActive(placement, GameConfigService.HighestLevelCompleted))
         {
-            case 1: return PromoSlotKind.BannerStandard;
-            case 2: return PromoSlotKind.BannerLarge;
-            case 3: return PromoSlotKind.NativeSmall;
-            case 4: return PromoSlotKind.NativeBig;
-            default: return PromoSlotKind.None;
+            return PromoSlotKind.None;
         }
+
+        // The result sheets never carry a banner: that is a product decision, not a technical limit.
+        bool nativeOnly = screen == PromoScreen.WinSheet || screen == PromoScreen.LoseSheet;
+        return GameConfigParser.SlotFor(placement.type, nativeOnly);
+    }
+
+    public AdPlacement PlacementFor(PromoScreen screen)
+    {
+        AdPlacements p = Ads.placements;
+
+        switch (screen)
+        {
+            case PromoScreen.Splash: return p.splash;
+            case PromoScreen.Home: return p.home;
+            case PromoScreen.LevelMap: return p.level_map;
+            case PromoScreen.Play: return p.play;
+            case PromoScreen.WinSheet: return p.win_sheet;
+            case PromoScreen.LoseSheet: return p.lose_sheet;
+            default: return p.options;
+        }
+    }
+
+    // The slot the level-end native is preloaded for: the win sheet's if that is a native slot, else
+    // the lose sheet's. The preload happens at level start, before anyone knows which one is coming.
+    public PromoScreen LevelEndPreloadScreen =>
+        IsNative(SlotFor(PromoScreen.WinSheet)) ? PromoScreen.WinSheet : PromoScreen.LoseSheet;
+
+    // Lets a screen decide whether to open any room at all. Checking AdsEnabled alone would leave a
+    // gap whenever the config enables ads but sends a blank unit id, or a placement this screen
+    // cannot show.
+    public bool CanShowPreloadNative(PromoScreen sheet)
+    {
+        return AdsEnabled
+               && NativeFormatEnabled
+               && !string.IsNullOrEmpty(PreloadNativeId)
+               && IsNative(SlotFor(sheet));
     }
 
     public static bool IsBanner(PromoSlotKind slot)
@@ -130,8 +167,8 @@ public class PromoSettings
         return slot == PromoSlotKind.NativeSmall || slot == PromoSlotKind.NativeBig;
     }
 
-    // Every way a screen's slot can turn out to be nothing: ads off, an unmapped digit, or the digit
-    // asking for a format whose unit ID never arrived.
+    // Every way a screen's slot can turn out to be nothing: ads off, a placement of none, a format
+    // switched off, or a format whose unit id never arrived.
     public bool CanShow(PromoSlotKind slot)
     {
         if (!AdsEnabled)
@@ -141,18 +178,14 @@ public class PromoSettings
 
         if (IsBanner(slot))
         {
-            return !string.IsNullOrEmpty(BannerId);
+            return BannerFormatEnabled && !string.IsNullOrEmpty(BannerIdFor(slot == PromoSlotKind.BannerLarge));
         }
 
-        return IsNative(slot) && !string.IsNullOrEmpty(NativeId);
+        return IsNative(slot) && NativeFormatEnabled && !string.IsNullOrEmpty(NativeId);
     }
 
-    // The template a native slot renders as, or null when the slot is not a native one at all.
-    //
-    // SlotFor() is the authority and is checked FIRST. The PromoConfig table only refines a slot the
-    // digit scheme already agrees is native — otherwise an Inspector row saying "digit 1 is native"
-    // would contradict SlotFor(1), which says banner, and the two dispatch paths would disagree
-    // about what the same digit means.
+    // The template a native slot renders as, or null when the slot is not a native one at all. The
+    // baked table only refines a native slot; it can never turn a banner into one.
     public PromoStyleMapping NativeStyle(PromoSlotKind slot)
     {
         if (!IsNative(slot))
@@ -160,7 +193,7 @@ public class PromoSettings
             return null;
         }
 
-        // PromoSlotKind's values are the backend's digits, so the table can stay keyed by digit.
+        // PromoSlotKind's values double as the table's key, so the table stays keyed by number.
         int digit = (int)slot;
 
         if (baked.nativeStyles != null)
@@ -183,32 +216,26 @@ public class PromoSettings
         };
     }
 
-    // Returns null rather than falling back to a test unit: showing test ads to real players earns
+    // Null rather than a test unit when there is no valid id: showing test ads to real players earns
     // nothing and reads as a broken game.
-    string Id(string remoteId, string bakedId, string testId)
+    static string Valid(string id)
     {
-        if (baked.useTestIds)
-        {
-            return testId;
-        }
-
-        if (IsAdUnit(remoteId))
-        {
-            return remoteId;
-        }
-
-        return IsAdUnit(bakedId) ? bakedId : null;
+        return GameConfigParser.IsAdUnit(id) ? id : null;
     }
 
-    static int Positive(int? remoteValue, int bakedValue)
+    static void AddAll(List<string> into, List<string> from)
     {
-        return remoteValue.HasValue && remoteValue.Value > 0 ? remoteValue.Value : bakedValue;
-    }
+        if (from == null)
+        {
+            return;
+        }
 
-    static bool IsAdUnit(string id)
-    {
-        return !string.IsNullOrEmpty(id)
-               && id.StartsWith("ca-app-pub-", StringComparison.Ordinal)
-               && id.Contains("/");
+        foreach (string id in from)
+        {
+            if (!string.IsNullOrEmpty(id) && !into.Contains(id))
+            {
+                into.Add(id);
+            }
+        }
     }
 }

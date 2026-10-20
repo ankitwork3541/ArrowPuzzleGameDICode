@@ -61,7 +61,7 @@ public class ProgressMigrationTests
     [Test]
     public void Migrate_CurrentVersionSave_IsLeftUntouched()
     {
-        // currentLevelIndex wraps to 0 at the end of the campaign; the milestone must not re-lock.
+        // currentLevelIndex wraps to 0 at the end of the campaign; the beaten-level count must not reset.
         ProgressData current = new ProgressData { version = ProgressStore.Version, currentLevelIndex = 0, highestLevelCompleted = 1500 };
 
         ProgressData migrated = Migrate(current);

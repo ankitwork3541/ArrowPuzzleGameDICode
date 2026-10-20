@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using GoogleMobileAds.Api;
 using UnityEngine;
@@ -69,12 +70,9 @@ public class PromoManager : MonoBehaviour
         }
 
         // Last launch's payload, so an offline session still runs on real settings rather than
-        // whatever shipped in the build months ago. Applied before ClueManager so the first
-        // hint sync already sees free_hint_count.
-        if (Settings.ApplyRemote(fetcher.LoadCached()))
-        {
-            Debug.Log("[Ads] Cached config applied.");
-        }
+        // defaults. Applied before ClueManager so the first hint sync already sees hints.free_count.
+        fetcher.ApplyCached();
+        GameConfigService.Changed += OnConfigChanged;
 
         if (GetComponent<ClueManager>() == null)
         {
@@ -87,23 +85,29 @@ public class PromoManager : MonoBehaviour
         }
     }
 
-    void Start()
+    IEnumerator Start()
     {
-        PromoRemoteConfig config = fetcher.Fetch();
-        if (Settings.ApplyRemote(config))
-        {
-            Debug.Log("[Ads] Fresh config applied.");
-            OnSettingsChanged?.Invoke();
-
-            // The screen the player is already on asked for its ad using whatever settings were
-            // in hand at the time — last launch's cached payload, or the baked fallbacks on a
-            // first ever launch. Home opens in well under a second and the fetch has a five
-            // second timeout, so that is the normal case, not an edge one: without this the
-            // screen keeps a slot the backend has since changed for the rest of the session.
-            ReapplyScreenAd();
-        }
+        // With no config URL yet this returns on the same frame, so ads initialise as before. A
+        // fresh payload raises GameConfigService.Changed, which OnConfigChanged answers below.
+        yield return fetcher.Fetch(accepted => { });
 
         Initialize();
+    }
+
+    void OnDestroy()
+    {
+        GameConfigService.Changed -= OnConfigChanged;
+    }
+
+    // The screen the player is already on asked for its ad using whatever config was in hand at the
+    // time (last launch's cached payload, or the defaults on a first ever launch). Home opens in well
+    // under a second and the fetch has a five second timeout, so that is the normal case, not an edge
+    // one: without this the screen keeps a slot the config has since changed for the rest of the
+    // session.
+    void OnConfigChanged()
+    {
+        OnSettingsChanged?.Invoke();
+        ReapplyScreenAd();
     }
 
     // Resources.Load needs the exact file name, and Unity names a new asset after the menu entry
@@ -160,10 +164,13 @@ public class PromoManager : MonoBehaviour
         List<string> ids = Settings.TestDeviceIds;
         if (ids == null || ids.Count == 0)
         {
-            if (!Settings.UsingTestIds)
+            // Only worth saying when live ads can actually be served: with ads off, or on Google's own
+            // test units, an unregistered device is harmless.
+            if (Settings.AdsEnabled && !Settings.UsingTestIds)
             {
                 Debug.LogWarning("[Ads] Live ad unit IDs with no test devices registered. Add this "
-                                 + "device's ID to PromoConfig.testDeviceIds before testing on it.");
+                                 + "device's ID to PromoConfig.testDeviceIds or the config's "
+                                 + "ads.test_device_ids before testing on it.");
             }
 
             return;
@@ -182,26 +189,28 @@ public class PromoManager : MonoBehaviour
         }
 
         Ready = true;
-        Debug.Log("[Ads] SDK ready. remote=" + Settings.HasRemote
+        Debug.Log("[Ads] SDK ready. config=" + Settings.HasRemote
                   + " test=" + Settings.UsingTestIds
                   + " interstitial=" + Settings.InterstitialId
-                  + " levelsPerAd=" + Settings.AdLevelCount
+                  + " everyNLevels=" + Settings.AdLevelCount
                   + " clickCount=" + Settings.AdClickCount
                   + " clickTime=" + Settings.AdClickTimeSec + "s"
                   + " backAd=" + Settings.BackAdEnabled
                   + " native=" + Settings.NativeId
-                  + " home=" + Settings.MainScreenStyle + "(" + Settings.MainScreenSlot + ")"
-                  + " play=" + Settings.PlayScreenStyle + "(" + Settings.PlayScreenSlot + ")"
-                  + " result=" + Settings.SuccessScreenStyle + "(" + Settings.SuccessScreenSlot + ")"
+                  + " home=" + Settings.SlotFor(PromoScreen.Home)
+                  + " options=" + Settings.SlotFor(PromoScreen.Options)
+                  + " play=" + Settings.SlotFor(PromoScreen.Play)
+                  + " win=" + Settings.SlotFor(PromoScreen.WinSheet)
+                  + " lose=" + Settings.SlotFor(PromoScreen.LoseSheet)
                   + " refresh=" + Settings.NativeRefreshSeconds + "s");
 
         // LogError, not LogWarning: shipping with this on serves Google's test inventory to real
-        // players and earns nothing, and it also bypasses the "no backend config, no ads" rule.
+        // players and earns nothing, and it also bypasses the "no config, no ads" rule.
         if (Settings.UsingTestIds)
         {
-            Debug.LogError("[Ads] TEST AD UNITS ARE ON. Turn off PromoConfig.useTestIds before release "
-                           + "— the backend's ad unit IDs and its ad_enable flag are both ignored "
-                           + "while this is set.");
+            Debug.LogError("[Ads] TEST AD UNITS ARE ON. Turn off PromoConfig.useTestIds and "
+                           + "ads.test_mode before release: the config's ad unit ids and its "
+                           + "ads.enabled flag are both ignored while either is set.");
         }
 
         OnReady?.Invoke();
@@ -228,29 +237,35 @@ public class PromoManager : MonoBehaviour
         }
     }
 
-    // Home and gameplay reserve their box at the very bottom of the screen, so both an anchored
-    // banner and an anchored native line up with no coordinate conversion needed. The backend's digit
-    // decides which of the two the screen gets; the position is the screen's, not the format's.
+    // Home, Settings and gameplay reserve their box at the very bottom of the screen, so both an
+    // anchored banner and an anchored native line up with no coordinate conversion needed. The
+    // config's placement type decides which of the two the screen gets; the position is the screen's,
+    // not the format's.
     public void ShowHomeAd()
     {
         activeScreenAd = ScreenAd.Home;
-        ShowScreenAd(Settings != null ? Settings.MainScreenSlot : PromoSlotKind.None,
-                     Settings != null ? Settings.MainScreenStyle : 0, "home");
+        ShowScreenAd(PromoScreen.Home, "home");
+    }
+
+    public void ShowOptionsAd()
+    {
+        activeScreenAd = ScreenAd.Options;
+        ShowScreenAd(PromoScreen.Options, "options");
     }
 
     public void ShowGameplayAd()
     {
         activeScreenAd = ScreenAd.Gameplay;
-        ShowScreenAd(Settings != null ? Settings.PlayScreenSlot : PromoSlotKind.None,
-                     Settings != null ? Settings.PlayScreenStyle : 0, "gameplay");
+        ShowScreenAd(PromoScreen.Play, "gameplay");
     }
 
-    // Which screen's ad is currently up, so a settings change can re-ask for it. The screen itself
-    // cannot do this: it has no idea its slot digit just changed underneath it.
+    // Which screen's ad is currently up, so a config change can re-ask for it. The screen itself
+    // cannot do this: it has no idea its placement just changed underneath it.
     enum ScreenAd
     {
         None,
         Home,
+        Options,
         Gameplay
     }
 
@@ -263,20 +278,24 @@ public class PromoManager : MonoBehaviour
             case ScreenAd.Home:
                 ShowHomeAd();
                 break;
+            case ScreenAd.Options:
+                ShowOptionsAd();
+                break;
             case ScreenAd.Gameplay:
                 ShowGameplayAd();
                 break;
         }
     }
 
-    // digit is carried purely for the log: a slot of None prints as "None" and would not say which
-    // number the backend actually sent, which is the one thing worth knowing when a screen is bare.
-    void ShowScreenAd(PromoSlotKind slot, int digit, string screen)
+    void ShowScreenAd(PromoScreen placement, string screen)
     {
         if (Settings == null)
         {
             return;
         }
+
+        PromoSlotKind slot = Settings.SlotFor(placement);
+        string digit = Settings.PlacementFor(placement).type;
 
         // The screen we are replacing may have queued a teardown on its way out. It did not know
         // this screen wants the same ad; now that we do, call it off.
@@ -296,8 +315,8 @@ public class PromoManager : MonoBehaviour
 
         if (!Settings.CanShow(slot))
         {
-            Debug.Log("[Ads] " + screen + " slot " + digit + " (" + slot + ") shows nothing — "
-                      + "ads off, unmapped digit, or no unit ID.");
+            Debug.Log("[Ads] " + screen + " placement '" + digit + "' (" + slot + ") shows nothing: "
+                      + "ads off, placement none or not yet unlocked, format off, or no unit id.");
             return;
         }
 
@@ -362,32 +381,40 @@ public class PromoManager : MonoBehaviour
 
     Coroutine pendingHide;
 
+    // Preloaded at level start, before anyone knows whether the win or the lose sheet is coming, so
+    // it uses the win sheet's slot when that is a native one, else the lose sheet's.
     public void PreloadLevelEndNative()
     {
         if (Native != null && Settings != null)
         {
-            Native.Preload(Settings.PreloadNativeId, Settings.SuccessScreenSlot);
+            PromoScreen sheet = Settings.LevelEndPreloadScreen;
+            if (Settings.CanShowPreloadNative(sheet))
+            {
+                Native.Preload(Settings.PreloadNativeId, Settings.SlotFor(sheet));
+            }
         }
     }
 
     // The win and lose cards are centred, so their ad is placed over the card's own rect.
     // SheetScreenController owns that rect and calls this once its UI has laid out.
-    public void ShowLevelEndNative(PromoNativePlacement placement)
+    public void ShowLevelEndNative(PromoScreen sheet, PromoNativePlacement placement)
     {
         if (Native != null && Settings != null)
         {
-            Native.ShowPreloaded(Settings.PreloadNativeId, Settings.SuccessScreenSlot, placement);
+            Native.ShowPreloaded(Settings.PreloadNativeId, Settings.SlotFor(sheet), placement);
         }
     }
 
     // True only when an ad preloaded at level start is actually in hand. The result cards never load
     // one live — nobody waits on a win screen — so this is what decides whether the card reserves
     // any room at all.
-    public bool LevelEndNativeReady =>
-        Native != null
-        && Settings != null
-        && Settings.CanShowPreloadNative
-        && Native.HasPreloadedAd;
+    public bool LevelEndNativeReady(PromoScreen sheet)
+    {
+        return Native != null
+               && Settings != null
+               && Settings.CanShowPreloadNative(sheet)
+               && Native.HasPreloadedAd;
+    }
 
     // Called again after the ad's height has grown the card and shifted the reserved box.
     public void MoveNativeAd(int x, int y)

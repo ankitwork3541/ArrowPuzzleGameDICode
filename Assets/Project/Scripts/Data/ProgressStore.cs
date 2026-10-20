@@ -89,8 +89,8 @@ public static class ProgressStore
             return new ProgressData { version = Version };
         }
 
-        // v1 -> v2: highestLevelCompleted did not exist, so it reads back as 0 and every milestone
-        // would look unearned. currentLevelIndex is the count of levels already beaten (index 10 =
+        // v1 -> v2: highestLevelCompleted did not exist, so it reads back as 0 and the level map and
+        // frontier would look like a fresh start. currentLevelIndex is the count of levels already beaten (index 10 =
         // playing level 11 = ten done), which is exactly the number to backfill.
         if (loaded.version < 2)
             loaded.highestLevelCompleted = Mathf.Max(0, loaded.currentLevelIndex);

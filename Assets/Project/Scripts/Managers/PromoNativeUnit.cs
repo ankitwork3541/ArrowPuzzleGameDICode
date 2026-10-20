@@ -436,11 +436,6 @@ public class PromoNativeUnit : MonoBehaviour
             LogCounters("click");
         });
 
-        ad.OnAdPaid += (AdValue adValue) =>
-        {
-            HostBridge.SendDataToAndroid(adValue.Value,adValue.CurrencyCode,"Native");
-        };
-
         // ad.OnAdPaid += value => MobileAdsEventExecutor.ExecuteInUpdate(() =>
         // {
         //     if (value != null)

@@ -1,70 +1,54 @@
-using System;
 using System.Collections;
-using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
 
-
+// Fetches the game config (ads, links, tuning, UI switches) from the config API and hands it to
+// GameConfigService. The cache of the last good payload lives in the service too.
 public class PromoConfigFetcher : MonoBehaviour
 {
-    // Only a cache of the last good config: it is refetched from the host on every start, so the
-    // earlier-named cache files are simply left behind rather than migrated.
-    const string CacheFileName = "lanterndragons_ad_config.json";
+    // TODO(developer): the config API URL has not been supplied yet. While this is empty no request is
+    // made and the game runs on the cached copy of the last good config, else on GameConfig.Defaults()
+    // (ads off, no links). The endpoint must return the JSON in design/config/game-config.sample.json
+    // (code 1, config_version 2). Fill it in here, in this one place.
+    const string ConfigUrl = "";
+    const int TimeoutSeconds = 5;
 
-    static string CachePath => Path.Combine(Application.persistentDataPath, CacheFileName);
-
-    public PromoRemoteConfig LoadCached()
+    // Last launch's payload, so an offline session still runs on real settings rather than defaults.
+    public bool ApplyCached()
     {
-        try
-        {
-            return File.Exists(CachePath) ? Parse(File.ReadAllText(CachePath)) : null;
-        }
-        catch (Exception e)
-        {
-            Debug.LogWarning("[unity_Ads] Cache read failed: " + e.Message);
-            return null;
-        }
+        return GameConfigService.LoadCache();
     }
 
-    public PromoRemoteConfig Fetch()
+    // Applies the fresh payload and caches it. Returns on the same frame when there is no URL yet.
+    // onDone receives true only when a fresh payload was accepted.
+    public IEnumerator Fetch(System.Action<bool> onDone)
     {
-       
-		string body = HostBridge.GetConfigFromAndroid();
-		PromoRemoteConfig config = Parse(body);
-		
-		if (config == null)
-		{
-			Debug.LogWarning("[unity_Ads] Rejected response: " + body);
-			return null;
-		}
-
-		WriteCache(body);
-		return config;
-    }
-
-    static PromoRemoteConfig Parse(string json)
-    {
-        try
+        if (string.IsNullOrEmpty(ConfigUrl))
         {
-            PromoRemoteConfig config = JsonUtility.FromJson<PromoRemoteConfig>(json);
-            return config != null && config.code == 1 ? config : null;
+            onDone(false);
+            yield break;
         }
-        catch (Exception e)
-        {
-            Debug.LogWarning("[unity_Ads] Parse failed: " + e.Message);
-            return null;
-        }
-    }
 
-    static void WriteCache(string json)
-    {
-        try
+        using (UnityWebRequest request = UnityWebRequest.Get(ConfigUrl))
         {
-            File.WriteAllText(CachePath, json);
-        }
-        catch (Exception e)
-        {
-            Debug.LogWarning("[unity_Ads] Cache write failed: " + e.Message);
+            request.timeout = TimeoutSeconds;
+            yield return request.SendWebRequest();
+
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogWarning("[Config] Request failed: " + request.error);
+                onDone(false);
+                yield break;
+            }
+
+            string body = request.downloadHandler.text;
+            bool accepted = GameConfigService.ApplyJson(body);
+            if (accepted)
+            {
+                GameConfigService.WriteCache(body);
+            }
+
+            onDone(accepted);
         }
     }
 }

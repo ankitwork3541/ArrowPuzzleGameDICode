@@ -24,9 +24,14 @@ public class OptionsManager : MonoBehaviour
     public bool VibrationEnabled { get; private set; }
     public bool NativeRefreshRateEnabled { get; private set; }
 
-    // Off by default. Unity exposes no cheap read of the OS "reduce motion" preference, so it is a
-    // plain in-game switch.
-    public bool ReduceMotion { get; private set; }
+    // Until the player touches the switch it follows ui.reduce_motion_default from the game config
+    // (off when there is no config). Once they have chosen, their choice always wins. Unity exposes no
+    // cheap read of the OS "reduce motion" preference, so it is an in-game switch.
+    private bool reduceMotionChosen;
+    private bool reduceMotionValue;
+
+    public bool ReduceMotion =>
+        reduceMotionChosen ? reduceMotionValue : GameConfigService.Current.ui.reduce_motion_default;
 
     // True when reduced motion is on. Safe to call before the manager exists (then it is off), so
     // animation code can use it without a null check.
@@ -46,7 +51,8 @@ public class OptionsManager : MonoBehaviour
         SoundEnabled = PlayerPrefs.GetInt(SoundKey, 1) == 1;
         VibrationEnabled = PlayerPrefs.GetInt(VibrationKey, 1) == 1;
         NativeRefreshRateEnabled = PlayerPrefs.GetInt(RefreshKey, 1) == 1;
-        ReduceMotion = PlayerPrefs.GetInt(ReduceMotionKey, 0) == 1;
+        reduceMotionChosen = PlayerPrefs.HasKey(ReduceMotionKey);
+        reduceMotionValue = PlayerPrefs.GetInt(ReduceMotionKey, 0) == 1;
 
         ApplyFrameRate();
     }
@@ -72,11 +78,15 @@ public class OptionsManager : MonoBehaviour
 
     public void SetReduceMotion(bool on)
     {
-        if (ReduceMotion == on) return;
+        bool before = ReduceMotion;
 
-        ReduceMotion = on;
+        // Even when the value matches the config default this records the player's own choice, so a
+        // later change of the default no longer moves it.
+        reduceMotionChosen = true;
+        reduceMotionValue = on;
         Store(ReduceMotionKey, on);
-        ReduceMotionChanged?.Invoke(on);
+
+        if (before != on) ReduceMotionChanged?.Invoke(on);
     }
 
     private static void Store(string key, bool on)

@@ -175,10 +175,6 @@ public class PromoRewardedUnit : MonoBehaviour
                 }));
             });
 
-            loadedAd.OnAdPaid += (AdValue adValue) =>
-            {
-                HostBridge.SendDataToAndroid(adValue.Value,adValue.CurrencyCode,"Rewarded");
-            };
         });
 
         return true;

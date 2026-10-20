@@ -242,6 +242,15 @@
 
 /* Empty hearts keep their shape and only drop to a faint ink tint, so the loss reads as a hollow,
    not as a heart that was never there. */
+/* More than three lives (game.lives.max in the game config): smaller hearts, so a pill of five stays
+   clear of the centred level title. */
+.embers--many .ember {
+    width: 26px;
+    height: 26px;
+    margin-left: 2px;
+    margin-right: 2px;
+}
+
 .ember--empty {
     -unity-background-image-tint-color: rgba(58, 36, 24, 0.14);
 }

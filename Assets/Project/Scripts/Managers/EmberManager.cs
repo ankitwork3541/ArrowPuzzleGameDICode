@@ -15,7 +15,15 @@ public class EmberManager : MonoBehaviour
     void Awake()
     {
         Instance = this;
+        maxLives = ConfiguredMaxLives();
         lives = maxLives;
+    }
+
+    // game.lives.max from the game config. The Inspector value only matters until a config (cached or
+    // fresh) says otherwise; the change lands at the next level start (ResetLives), never mid-level.
+    static int ConfiguredMaxLives()
+    {
+        return Mathf.Max(1, GameConfigService.Current.game.lives.max);
     }
 
     // True between the losing tap and the end of that tap's bump-and-rewind animation.
@@ -46,6 +54,7 @@ public class EmberManager : MonoBehaviour
 
     public void ResetLives()
     {
+        maxLives = ConfiguredMaxLives();
         lives = maxLives;
         gameOverPending = false;   // a level abandoned mid-rewind must not lose on its first tap
         OnLivesChanged?.Invoke(lives, maxLives);

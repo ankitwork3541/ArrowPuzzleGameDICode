@@ -194,15 +194,9 @@ public class FlowDirector : MonoBehaviour
         // so closing the game there reopened it on the level that had just been beaten.
         LastCompletedLevelNumber = levelLoader.CurrentLevelNumber();
 
-        // Decided before AdvanceLevel() banks the win: afterwards every level up to this one reads
-        // as beaten. A replay from the map is not a new completion and must not be reported as one.
-        bool newProgress = FrontierRule.IsFrontierCompletion(
-            ProgressStore.Data.highestLevelCompleted, LastCompletedLevelNumber);
+        // AdvanceLevel() banks the win only when it is a new completion; a replay from the map leaves
+        // PLAY on the frontier (see FrontierRule).
         levelLoader.AdvanceLevel();
-
-        // Background analytics ping. Deliberately not awaited — the win card shows regardless of
-        // whether the network answers, or answers at all.
-        if (newProgress) StageTracker.ReportLevelComplete(LastCompletedLevelNumber);
 
         SoundDirector.Instance.PlayLevelComplete();
 

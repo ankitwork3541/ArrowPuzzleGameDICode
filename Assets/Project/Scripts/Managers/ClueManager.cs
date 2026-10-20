@@ -30,11 +30,12 @@ public class ClueManager : MonoBehaviour
     public int RemainingHints { get; private set; }
     public bool HasFreeHints => RemainingHints > 0;
 
+    // The rewarded format has to be on AND the config has to let hints use it (rewarded_rules.hint).
     public bool IsRewardedAvailable =>
         PromoManager.Instance != null
         && PromoManager.Instance.Ready
         && PromoManager.Instance.Settings != null
-        && PromoManager.Instance.Settings.RewardedEnabled;
+        && PromoManager.Instance.Settings.HintRewardedEnabled;
 
     public bool CanUseHint => HasFreeHints || IsRewardedAvailable;
 
@@ -59,21 +60,24 @@ public class ClueManager : MonoBehaviour
 
     void Start()
     {
-        if (PromoManager.Instance == null)
+        // The config can change at any time (a fresh payload after start-up), so the pool follows it
+        // whether or not the ad stack exists.
+        GameConfigService.Changed += SyncFromSettings;
+
+        if (PromoManager.Instance != null)
         {
-            return;
+            PromoManager.Instance.OnReady += NotifyState;
         }
 
-        PromoManager.Instance.OnSettingsChanged += SyncFromSettings;
-        PromoManager.Instance.OnReady += NotifyState;
         SyncFromSettings();
     }
 
     void OnDestroy()
     {
+        GameConfigService.Changed -= SyncFromSettings;
+
         if (PromoManager.Instance != null)
         {
-            PromoManager.Instance.OnSettingsChanged -= SyncFromSettings;
             PromoManager.Instance.OnReady -= NotifyState;
         }
 
@@ -83,40 +87,52 @@ public class ClueManager : MonoBehaviour
         }
     }
 
-    void SyncFromSettings()
+    // What the free pool should be after a config sync. Pure, so both directions of
+    // game.hints.reset_on_change are unit-tested.
+    //   hasLastKey false  -> first run: keep any leftover pool, pin it to today's free_count.
+    //   count unchanged   -> keep the leftover pool.
+    //   count changed     -> the pool resets to the new count, but only when reset_on_change is true.
+    public static int ResolvePool(bool hasLastKey, int lastApplied, bool hasStoredRemaining,
+                                  int storedRemaining, int freeCount, bool resetOnChange,
+                                  out int newLastApplied)
     {
-        int apiCount = PromoManager.Instance != null && PromoManager.Instance.Settings != null
-            ? PromoManager.Instance.Settings.FreeHintCount
-            : 3;
-
-        int lastApplied = PlayerPrefs.GetInt(PrefsLastFreeHintCount, UnsetCount);
-        bool hasLastKey = PlayerPrefs.HasKey(PrefsLastFreeHintCount);
+        newLastApplied = freeCount;
 
         if (!hasLastKey)
         {
-            // First run of this logic: keep any leftover pool, pin it to today's API count.
-            RemainingHints = PlayerPrefs.HasKey(PrefsRemainingHints)
-                ? PlayerPrefs.GetInt(PrefsRemainingHints, apiCount)
-                : apiCount;
-            PlayerPrefs.SetInt(PrefsLastFreeHintCount, apiCount);
+            return hasStoredRemaining ? storedRemaining : freeCount;
+        }
+
+        if (lastApplied != freeCount && resetOnChange)
+        {
+            return freeCount;
+        }
+
+        return hasStoredRemaining ? storedRemaining : freeCount;
+    }
+
+    void SyncFromSettings()
+    {
+        HintsSection hints = GameConfigService.Current.game.hints;
+        int apiCount = hints.free_count;
+
+        int lastApplied = PlayerPrefs.GetInt(PrefsLastFreeHintCount, UnsetCount);
+        bool hasLastKey = PlayerPrefs.HasKey(PrefsLastFreeHintCount);
+        bool hasRemaining = PlayerPrefs.HasKey(PrefsRemainingHints);
+
+        RemainingHints = ResolvePool(hasLastKey, lastApplied, hasRemaining,
+                                     PlayerPrefs.GetInt(PrefsRemainingHints, apiCount),
+                                     apiCount, hints.reset_on_change, out int newLast);
+
+        if (!hasLastKey || lastApplied != apiCount || !hasRemaining)
+        {
+            PlayerPrefs.SetInt(PrefsLastFreeHintCount, newLast);
             PlayerPrefs.SetInt(PrefsRemainingHints, RemainingHints);
             PlayerPrefs.DeleteKey("HintManager_Initialized");
             PlayerPrefs.Save();
-            Debug.Log("[ClueManager] Free hint pool " + RemainingHints
-                      + " (baseline free_hint_count=" + apiCount + ").");
-        }
-        else if (lastApplied != apiCount)
-        {
-            RemainingHints = apiCount;
-            PlayerPrefs.SetInt(PrefsLastFreeHintCount, apiCount);
-            PlayerPrefs.SetInt(PrefsRemainingHints, RemainingHints);
-            PlayerPrefs.Save();
-            Debug.Log("[ClueManager] free_hint_count changed " + lastApplied + " -> " + apiCount
-                      + ". Pool reset to " + RemainingHints + ".");
-        }
-        else
-        {
-            RemainingHints = PlayerPrefs.GetInt(PrefsRemainingHints, apiCount);
+            Debug.Log("[ClueManager] Free hint pool " + RemainingHints + " (game.hints.free_count="
+                      + apiCount + ", last " + (hasLastKey ? lastApplied.ToString() : "none")
+                      + ", reset_on_change=" + hints.reset_on_change + ").");
         }
 
         NotifyState();
