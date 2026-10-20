@@ -3,7 +3,7 @@
 > **Story**: `production/epics/lantern-dragons/story-008-light-paper-theme.md`
 > **Story Type**: Visual/Feel
 > **Date**: 2026-10-20
-> **Tester**: Claude. Frames come from a built Development Windows player (720x1280, windowed), driven by `Assets/Project/Scripts/Managers/EvidenceCapture.cs` (`--evidence <dir>`). The Editor cannot be used: when it is not the active application, UI Toolkit panels never paint.
+> **Tester**: Claude. Frames come from a built Development Windows player (720x1280, windowed), driven by `Assets/Project/Scripts/Managers/ShotCapture.cs` (`--evidence <dir>`; it was `EvidenceCapture.cs` before the rename pass). The Editor cannot be used: when it is not the active application, UI Toolkit panels never paint.
 > **Build**: working tree on top of `ad4a449`, Unity 6000.6.3f1, save seeded to level 6 (5 levels beaten; level 6 is the first padlock level of the re-baked campaign). Frames re-captured for Layout v2 (positions redesigned) after the polish round.
 
 ---
@@ -48,7 +48,22 @@ Frames re-captured from a rebuilt dev player after the four layout forks; the Ed
 | Level map | PASS with note | Left header and path as specified, nodes clear of the dock. The topmost locked node and the lowest path segment are cut hard by the list edges (no fade). |
 | Settings | PASS | One grouped card with dividers. A default grey scrollbar showed down the right edge; fixed with `vertical-scroller-visibility="Hidden"` on the ScrollView (a USS `display: none` did not work because the ScrollView sets its own inline display). |
 | Win / Lose | PASS | Bottom sheet fully visible, so the slide-up completes; the badge overlaps the top edge; text is not clipped. The same scrollbar defect was fixed the same way. Confetti sits over the sheet on Win. |
-| Ad modal / placeholder | NOT TESTED | Not reachable in the Windows player (no Google Mobile Ads client). |
+| Ad modal / placeholder | PASS for the modal, placeholder NOT TESTED | The loading modal is now captured (`11-ad-loading-modal.png`). The in-page ad placeholder is not reachable in the Windows player (no Google Mobile Ads client). |
+
+## Re-verification after the rename pass (2026-10-20, final frames)
+
+All frames in `story-008/` were recaptured from a fresh dev player built after the rename pass (`production/qa/rename-report-2026-10-20.md`) and the `LDLC` re-bake. Copies are also in `story-008-v3/`. Compared against the earlier set by eye: same screens, nothing blank, nothing unstyled; the only visible differences are the intended ones.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Home and map show "N CLEARED" and never a total | PASS | `02-home.png` ("5 CLEARED"), `03-level-map.png` (chip "5 CLEARED"). No frame shows "/ 1500". |
+| Settings gear reads as a cog, not a ship's wheel | PASS | `14-gear-home.png`, `02-home.png`, `04-settings.png` |
+| 4-digit title "LEVEL 1500" fits, no collision with back or lives | PASS | `12-hud-level-1500.png` |
+| Ad loading modal | PASS | `11-ad-loading-modal.png`: cream card, red frame and spinner arc over a dimmed board. Previously NOT TESTED. |
+| Small phone 360x640 | PASS | `13-small-1-splash.png`, `13-small-2-home.png`, `13-small-3-hud.png`, `13-small-4-win.png`: nothing overflows or wraps. |
+| Pearl tail marker | PARTIAL | `15-pearl-zoom.png` (zoomed board crop): each tail ends in a small gold dot with an ink outline, now visible in the crop. At full 720x1280 it is still a small marker. |
+| Padlock digit | PASS with note | `05-hud-board.png`, `15-pearl-zoom.png`: the digit reads, but it is a greyer ink than the spec, because the badge's outline layer dims it slightly. |
+| `[EvidenceCheck]` automated checks | 5 of 5 PASS | locked tap costs no life (3 to 3); map accepts a completed level (3) and the current level (6); map refuses a locked level (asked 46, got 6); progress read back from the save file on disk (42); one bump costs exactly one life (3 to 2). |
 
 ## Defects found in the frames and fixed during this run
 
@@ -77,3 +92,13 @@ Frames re-captured from a rebuilt dev player after the four layout forks; the Ed
 | Role | Name | Date | Signature |
 |------|------|------|-----------|
 | Lead (art-director / designer) | | | [ ] Approved |
+
+## Round 2 re-check (2026-10-20, after Y1 + Y2)
+
+Frames: `story-008-v4/` (21 frames from a Windows development player, `--evidence`). Full write-up: `production/qa/verification-2026-10-20-round2.md`.
+
+- 13 of 13 `[EvidenceCheck]` PASS (frontier rule, Reduce Motion, locked tap, bump, map selection, persistence, save restored).
+- Defect fixed: cropped star glyph (stale sprite rect in `GlyphSeal.png.meta`); five glyphs re-imported as Single and their USS scaled to match.
+- Darker muted ink text, enlarged touch targets and the Reduce Motion row were checked by eye and read correctly.
+- Still PARTIAL: pearl tail marker small at full size. Still unverified: device feel, animation feel, Android look.
+- Sign-off remains with the developer.

@@ -1,0 +1,1672 @@
+{
+ "generated": "2026-10-20",
+ "baseCommit": "0063ab5 (safety snapshot)",
+ "naming": "dragon/lantern theme words",
+ "counts": {
+  "typesRenamed": 70,
+  "scriptFilesMoved": 63,
+  "assetFilesOrFoldersMoved": 75,
+  "ussClassesRenamed": 189,
+  "elementNamesRenamed": 44,
+  "persistedKeysMigrated": 7,
+  "textFilesNeedingContentEdits": 105,
+  "textFilesByExtension": {
+   ".cs": 63,
+   ".uss": 6,
+   ".uxml": 7,
+   ".unity": 3,
+   ".prefab": 2,
+   ".asset": 3,
+   ".md": 21
+  }
+ },
+ "csharpTypes": [
+  {
+   "old": "ArrowController",
+   "new": "DragonController",
+   "oldFile": "Assets/Project/Scripts/Core/ArrowController.cs",
+   "newFile": "Assets/Project/Scripts/Core/DragonController.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "Dot",
+   "new": "Spark",
+   "oldFile": "Assets/Project/Scripts/Core/Dot.cs",
+   "newFile": "Assets/Project/Scripts/Core/Spark.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "GridBuilder",
+   "new": "BoardBuilder",
+   "oldFile": "Assets/Project/Scripts/Core/GridBuilder.cs",
+   "newFile": "Assets/Project/Scripts/Core/BoardBuilder.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "GridCell",
+   "new": "BoardCell",
+   "oldFile": "Assets/Project/Scripts/Core/GridCell.cs",
+   "newFile": "Assets/Project/Scripts/Core/BoardCell.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "GuideLines",
+   "new": "LatticeGuides",
+   "oldFile": "Assets/Project/Scripts/Core/GuideLines.cs",
+   "newFile": "Assets/Project/Scripts/Core/LatticeGuides.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "AdConfig",
+   "new": "PromoConfig",
+   "oldFile": "Assets/Project/Scripts/Data/AdConfig.cs",
+   "newFile": "Assets/Project/Scripts/Data/PromoConfig.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "AdRemoteConfig",
+   "new": "PromoRemoteConfig",
+   "oldFile": "Assets/Project/Scripts/Data/AdRemoteConfig.cs",
+   "newFile": "Assets/Project/Scripts/Data/PromoRemoteConfig.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "AdTestIds",
+   "new": "PromoTestIds",
+   "oldFile": "Assets/Project/Scripts/Data/AdTestIds.cs",
+   "newFile": "Assets/Project/Scripts/Data/PromoTestIds.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "ArrowPalette",
+   "new": "DragonPalette",
+   "oldFile": "Assets/Project/Scripts/Data/ArrowPalette.cs",
+   "newFile": "Assets/Project/Scripts/Data/DragonPalette.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "ArrowPathData",
+   "new": "DragonPathData",
+   "oldFile": "Assets/Project/Scripts/Data/ArrowPathData.cs",
+   "newFile": "Assets/Project/Scripts/Data/DragonPathData.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "LevelBinary",
+   "new": "StagePack",
+   "oldFile": "Assets/Project/Scripts/Data/LevelBinary.cs",
+   "newFile": "Assets/Project/Scripts/Data/StagePack.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "LevelData",
+   "new": "StageData",
+   "oldFile": "Assets/Project/Scripts/Data/LevelData.cs",
+   "newFile": "Assets/Project/Scripts/Data/StageData.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "SaveData",
+   "new": "ProgressData",
+   "oldFile": "Assets/Project/Scripts/Data/SaveData.cs",
+   "newFile": "Assets/Project/Scripts/Data/ProgressData.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "SaveSystem",
+   "new": "ProgressStore",
+   "oldFile": "Assets/Project/Scripts/Data/SaveSystem.cs",
+   "newFile": "Assets/Project/Scripts/Data/ProgressStore.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "LevelBinaryWriter",
+   "new": "StagePackWriter",
+   "oldFile": "Assets/Project/Scripts/Editor/LevelBinaryWriter.cs",
+   "newFile": "Assets/Project/Scripts/Editor/StagePackWriter.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "LevelCampaignGenerator",
+   "new": "StageCampaignGenerator",
+   "oldFile": "Assets/Project/Scripts/Editor/LevelCampaignGenerator.cs",
+   "newFile": "Assets/Project/Scripts/Editor/StageCampaignGenerator.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "LevelCarver",
+   "new": "StageCarver",
+   "oldFile": "Assets/Project/Scripts/Editor/LevelCarver.cs",
+   "newFile": "Assets/Project/Scripts/Editor/StageCarver.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "LevelDifficulty",
+   "new": "StageRating",
+   "oldFile": "Assets/Project/Scripts/Editor/LevelDifficulty.cs",
+   "newFile": "Assets/Project/Scripts/Editor/StageRating.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "LevelLocks",
+   "new": "StageLocks",
+   "oldFile": "Assets/Project/Scripts/Editor/LevelLocks.cs",
+   "newFile": "Assets/Project/Scripts/Editor/StageLocks.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "LevelShapeMask",
+   "new": "StageShapeMask",
+   "oldFile": "Assets/Project/Scripts/Editor/LevelShapeMask.cs",
+   "newFile": "Assets/Project/Scripts/Editor/StageShapeMask.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "AdConfigFetcher",
+   "new": "PromoConfigFetcher",
+   "oldFile": "Assets/Project/Scripts/Managers/AdConfigFetcher.cs",
+   "newFile": "Assets/Project/Scripts/Managers/PromoConfigFetcher.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "AdSettings",
+   "new": "PromoSettings",
+   "oldFile": "Assets/Project/Scripts/Managers/AdSettings.cs",
+   "newFile": "Assets/Project/Scripts/Managers/PromoSettings.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "AdsManager",
+   "new": "PromoManager",
+   "oldFile": "Assets/Project/Scripts/Managers/AdsManager.cs",
+   "newFile": "Assets/Project/Scripts/Managers/PromoManager.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "AndroidDataBridge",
+   "new": "HostBridge",
+   "oldFile": "Assets/Project/Scripts/Managers/AndroidDataBridge.cs",
+   "newFile": "Assets/Project/Scripts/Managers/HostBridge.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "AudioManager",
+   "new": "SoundDirector",
+   "oldFile": "Assets/Project/Scripts/Managers/AudioManager.cs",
+   "newFile": "Assets/Project/Scripts/Managers/SoundDirector.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "BackdropArrows",
+   "new": "LanternBackdrop",
+   "oldFile": "Assets/Project/Scripts/Managers/BackdropArrows.cs",
+   "newFile": "Assets/Project/Scripts/Managers/LanternBackdrop.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "BannerAdUnit",
+   "new": "PromoBannerUnit",
+   "oldFile": "Assets/Project/Scripts/Managers/BannerAdUnit.cs",
+   "newFile": "Assets/Project/Scripts/Managers/PromoBannerUnit.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "CameraController",
+   "new": "BoardCamera",
+   "oldFile": "Assets/Project/Scripts/Managers/CameraController.cs",
+   "newFile": "Assets/Project/Scripts/Managers/BoardCamera.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "EvidenceCapture",
+   "new": "ShotCapture",
+   "oldFile": "Assets/Project/Scripts/Managers/EvidenceCapture.cs",
+   "newFile": "Assets/Project/Scripts/Managers/ShotCapture.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "GameFlowManager",
+   "new": "FlowDirector",
+   "oldFile": "Assets/Project/Scripts/Managers/GameFlowManager.cs",
+   "newFile": "Assets/Project/Scripts/Managers/FlowDirector.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "HintManager",
+   "new": "ClueManager",
+   "oldFile": "Assets/Project/Scripts/Managers/HintManager.cs",
+   "newFile": "Assets/Project/Scripts/Managers/ClueManager.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "InterstitialAdUnit",
+   "new": "PromoInterstitialUnit",
+   "oldFile": "Assets/Project/Scripts/Managers/InterstitialAdUnit.cs",
+   "newFile": "Assets/Project/Scripts/Managers/PromoInterstitialUnit.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "InterstitialManager",
+   "new": "PromoInterstitialManager",
+   "oldFile": "Assets/Project/Scripts/Managers/InterstitialManager.cs",
+   "newFile": "Assets/Project/Scripts/Managers/PromoInterstitialManager.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "LevelLoader",
+   "new": "StageLoader",
+   "oldFile": "Assets/Project/Scripts/Managers/LevelLoader.cs",
+   "newFile": "Assets/Project/Scripts/Managers/StageLoader.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "LevelManager",
+   "new": "StageManager",
+   "oldFile": "Assets/Project/Scripts/Managers/LevelManager.cs",
+   "newFile": "Assets/Project/Scripts/Managers/StageManager.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "LevelTracker",
+   "new": "StageTracker",
+   "oldFile": "Assets/Project/Scripts/Managers/LevelTracker.cs",
+   "newFile": "Assets/Project/Scripts/Managers/StageTracker.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "LivesManager",
+   "new": "EmberManager",
+   "oldFile": "Assets/Project/Scripts/Managers/LivesManager.cs",
+   "newFile": "Assets/Project/Scripts/Managers/EmberManager.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "NativeAdUnit",
+   "new": "PromoNativeUnit",
+   "oldFile": "Assets/Project/Scripts/Managers/NativeAdUnit.cs",
+   "newFile": "Assets/Project/Scripts/Managers/PromoNativeUnit.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "RewardedAdUnit",
+   "new": "PromoRewardedUnit",
+   "oldFile": "Assets/Project/Scripts/Managers/RewardedAdUnit.cs",
+   "newFile": "Assets/Project/Scripts/Managers/PromoRewardedUnit.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "ScreenBackdrop",
+   "new": "SkyBackdrop",
+   "oldFile": "Assets/Project/Scripts/Managers/ScreenBackdrop.cs",
+   "newFile": "Assets/Project/Scripts/Managers/SkyBackdrop.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "SettingsManager",
+   "new": "OptionsManager",
+   "oldFile": "Assets/Project/Scripts/Managers/SettingsManager.cs",
+   "newFile": "Assets/Project/Scripts/Managers/OptionsManager.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "AdLoadingOverlay",
+   "new": "WaitSheet",
+   "oldFile": "Assets/Project/Scripts/UI/AdLoadingOverlay.cs",
+   "newFile": "Assets/Project/Scripts/UI/WaitSheet.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "AdPlaceholder",
+   "new": "PromoPlaceholder",
+   "oldFile": "Assets/Project/Scripts/UI/AdPlaceholder.cs",
+   "newFile": "Assets/Project/Scripts/UI/PromoPlaceholder.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "BannerTestScreenController",
+   "new": "PromoLabScreenController",
+   "oldFile": "Assets/Project/Scripts/UI/BannerTestScreenController.cs",
+   "newFile": "Assets/Project/Scripts/UI/PromoLabScreenController.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "BottomNavBinder",
+   "new": "TabDockBinder",
+   "oldFile": "Assets/Project/Scripts/UI/BottomNavBinder.cs",
+   "newFile": "Assets/Project/Scripts/UI/TabDockBinder.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "ConfettiView",
+   "new": "PetalBurstView",
+   "oldFile": "Assets/Project/Scripts/UI/ConfettiView.cs",
+   "newFile": "Assets/Project/Scripts/UI/PetalBurstView.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "DeviceScaleCategory",
+   "new": "ScreenScaleProfile",
+   "oldFile": "Assets/Project/Scripts/UI/DeviceScaleCategory.cs",
+   "newFile": "Assets/Project/Scripts/UI/ScreenScaleProfile.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "GameplayHUDController",
+   "new": "PlayScreenController",
+   "oldFile": "Assets/Project/Scripts/UI/GameplayHUDController.cs",
+   "newFile": "Assets/Project/Scripts/UI/PlayScreenController.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "HomeScreenController",
+   "new": "HallScreenController",
+   "oldFile": "Assets/Project/Scripts/UI/HomeScreenController.cs",
+   "newFile": "Assets/Project/Scripts/UI/HallScreenController.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "LevelMapController",
+   "new": "TrailMapController",
+   "oldFile": "Assets/Project/Scripts/UI/LevelMapController.cs",
+   "newFile": "Assets/Project/Scripts/UI/TrailMapController.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "NativeAdSpace",
+   "new": "PromoSpace",
+   "oldFile": "Assets/Project/Scripts/UI/NativeAdSpace.cs",
+   "newFile": "Assets/Project/Scripts/UI/PromoSpace.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "ResultScreenController",
+   "new": "SheetScreenController",
+   "oldFile": "Assets/Project/Scripts/UI/ResultScreenController.cs",
+   "newFile": "Assets/Project/Scripts/UI/SheetScreenController.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "SettingsScreenController",
+   "new": "OptionsScreenController",
+   "oldFile": "Assets/Project/Scripts/UI/SettingsScreenController.cs",
+   "newFile": "Assets/Project/Scripts/UI/OptionsScreenController.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "SplashScreenController",
+   "new": "IntroScreenController",
+   "oldFile": "Assets/Project/Scripts/UI/SplashScreenController.cs",
+   "newFile": "Assets/Project/Scripts/UI/IntroScreenController.cs",
+   "referencedBySceneOrPrefabOrAsset": true
+  },
+  {
+   "old": "UIClickSound",
+   "new": "TapSound",
+   "oldFile": "Assets/Project/Scripts/UI/UIClickSound.cs",
+   "newFile": "Assets/Project/Scripts/UI/TapSound.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "ArrowPaletteTests",
+   "new": "DragonPaletteTests",
+   "oldFile": "Assets/Tests/EditMode/Editor/ArrowPaletteTests.cs",
+   "newFile": "Assets/Tests/EditMode/Editor/DragonPaletteTests.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "BakedCampaignTests",
+   "new": "ShippedCampaignTests",
+   "oldFile": "Assets/Tests/EditMode/Editor/BakedCampaignTests.cs",
+   "newFile": "Assets/Tests/EditMode/Editor/ShippedCampaignTests.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "LevelBinaryTests",
+   "new": "StagePackTests",
+   "oldFile": "Assets/Tests/EditMode/Editor/LevelBinaryTests.cs",
+   "newFile": "Assets/Tests/EditMode/Editor/StagePackTests.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "LevelCarverTests",
+   "new": "StageCarverTests",
+   "oldFile": "Assets/Tests/EditMode/Editor/LevelCarverTests.cs",
+   "newFile": "Assets/Tests/EditMode/Editor/StageCarverTests.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "LevelLocksTests",
+   "new": "StageLocksTests",
+   "oldFile": "Assets/Tests/EditMode/Editor/LevelLocksTests.cs",
+   "newFile": "Assets/Tests/EditMode/Editor/StageLocksTests.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "LevelSolverTests",
+   "new": "StageSolverTests",
+   "oldFile": "Assets/Tests/EditMode/Editor/LevelSolverTests.cs",
+   "newFile": "Assets/Tests/EditMode/Editor/StageSolverTests.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "SaveMigrationTests",
+   "new": "ProgressMigrationTests",
+   "oldFile": "Assets/Tests/EditMode/Editor/SaveMigrationTests.cs",
+   "newFile": "Assets/Tests/EditMode/Editor/ProgressMigrationTests.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  },
+  {
+   "old": "TestLevels",
+   "new": "TestStages",
+   "oldFile": "Assets/Tests/EditMode/Editor/TestLevels.cs",
+   "newFile": "Assets/Tests/EditMode/Editor/TestStages.cs",
+   "referencedBySceneOrPrefabOrAsset": false
+  }
+ ],
+ "nestedTypes": {
+  "AdSlotKind": "PromoSlotKind",
+  "NativeTemplateSize": "PromoTemplateSize",
+  "NativeStyleMapping": "PromoStyleMapping",
+  "NativeAdPlacement": "PromoNativePlacement",
+  "Dealer": "Shuffler",
+  "Difficulty": "StageTier",
+  "LevelRecord": "StageRecord"
+ },
+ "assetMoves": [
+  {
+   "old": "Assets/Project/Prefabs/ArrowPrefab.prefab",
+   "new": "Assets/Project/Prefabs/DragonPrefab.prefab",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Prefabs/CommittedLineTemplate.prefab",
+   "new": "Assets/Project/Prefabs/TrailLineTemplate.prefab",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Prefabs/Dot.prefab",
+   "new": "Assets/Project/Prefabs/Spark.prefab",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/IconAd.png",
+   "new": "Assets/Project/Sprites/GlyphPromo.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/IconBack.png",
+   "new": "Assets/Project/Sprites/GlyphReturn.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/IconBulb.png",
+   "new": "Assets/Project/Sprites/GlyphClue.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/IconDocument.png",
+   "new": "Assets/Project/Sprites/GlyphScroll.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/IconGrid.png",
+   "new": "Assets/Project/Sprites/GlyphLattice.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/IconHeart.png",
+   "new": "Assets/Project/Sprites/GlyphEmber.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/IconInfo.png",
+   "new": "Assets/Project/Sprites/GlyphNote.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/IconPencil.png",
+   "new": "Assets/Project/Sprites/GlyphBrush.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/IconRefreshRate.png",
+   "new": "Assets/Project/Sprites/GlyphPulse.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/IconRestart.png",
+   "new": "Assets/Project/Sprites/GlyphRedo.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/IconSound.png",
+   "new": "Assets/Project/Sprites/GlyphBell.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/IconStar.png",
+   "new": "Assets/Project/Sprites/GlyphSeal.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/IconVibration.png",
+   "new": "Assets/Project/Sprites/GlyphTremor.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/HomeIcon.png",
+   "new": "Assets/Project/Sprites/GlyphHall.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/LockIcon.png",
+   "new": "Assets/Project/Sprites/GlyphLatch.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/SettingsIcon.png",
+   "new": "Assets/Project/Sprites/GlyphCog.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/LogoSquare.png",
+   "new": "Assets/Project/Sprites/CrestSquare.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/Circle.png",
+   "new": "Assets/Project/Sprites/DiscSolid.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/Circle01.png",
+   "new": "Assets/Project/Sprites/DiscSoft.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/Flare01.png",
+   "new": "Assets/Project/Sprites/SparkFlare.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/Gradient01.png",
+   "new": "Assets/Project/Sprites/FadeRamp.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/Triangle.png",
+   "new": "Assets/Project/Sprites/WedgeSolid.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/UIBarFill.png",
+   "new": "Assets/Project/Sprites/InkBarFill.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/UIBarTrack.png",
+   "new": "Assets/Project/Sprites/InkBarTrack.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/BackdropArrowBend.png",
+   "new": "Assets/Project/Sprites/BackdropRibbonBend.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/BackdropArrowStraight.png",
+   "new": "Assets/Project/Sprites/BackdropRibbonStraight.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Sprites/BackdropArrowZigzag.png",
+   "new": "Assets/Project/Sprites/BackdropRibbonZigzag.png",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Audio/MainMixer.mixer",
+   "new": "Assets/Project/Audio/LanternMixer.mixer",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/UXML/AdLoadingOverlay.uxml",
+   "new": "Assets/Project/UXML/WaitSheet.uxml",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Themes/AdLoadingOverlay.uss",
+   "new": "Assets/Project/Themes/WaitSheet.uss",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/UXML/AdPlaceholder.uxml",
+   "new": "Assets/Project/UXML/PromoPlaceholder.uxml",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Themes/AdPlaceholder.uss",
+   "new": "Assets/Project/Themes/PromoPlaceholder.uss",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/UXML/BannerTestScreen.uxml",
+   "new": "Assets/Project/UXML/PromoLabScreen.uxml",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Themes/BannerTestScreen.uss",
+   "new": "Assets/Project/Themes/PromoLabScreen.uss",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/UXML/BottomNav.uxml",
+   "new": "Assets/Project/UXML/TabDock.uxml",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Themes/BottomNav.uss",
+   "new": "Assets/Project/Themes/TabDock.uss",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/UXML/GameplayScreen.uxml",
+   "new": "Assets/Project/UXML/PlayScreen.uxml",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Themes/GameplayScreen.uss",
+   "new": "Assets/Project/Themes/PlayScreen.uss",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/UXML/HomeScreen.uxml",
+   "new": "Assets/Project/UXML/HallScreen.uxml",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Themes/HomeScreen.uss",
+   "new": "Assets/Project/Themes/HallScreen.uss",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/UXML/LevelMapScreen.uxml",
+   "new": "Assets/Project/UXML/TrailMapScreen.uxml",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Themes/LevelMapScreen.uss",
+   "new": "Assets/Project/Themes/TrailMapScreen.uss",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/UXML/SettingsScreen.uxml",
+   "new": "Assets/Project/UXML/OptionsScreen.uxml",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Themes/SettingsScreen.uss",
+   "new": "Assets/Project/Themes/OptionsScreen.uss",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/UXML/SplashScreen.uxml",
+   "new": "Assets/Project/UXML/IntroScreen.uxml",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Themes/SplashScreen.uss",
+   "new": "Assets/Project/Themes/IntroScreen.uss",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/UXML/LoseScreen.uxml",
+   "new": "Assets/Project/UXML/SheetLose.uxml",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/UXML/WinScreen.uxml",
+   "new": "Assets/Project/UXML/SheetWin.uxml",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Themes/ResultScreen.uss",
+   "new": "Assets/Project/Themes/SheetScreen.uss",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Themes/Typography.uss",
+   "new": "Assets/Project/Themes/TypeScale.uss",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/UXML/MainPanelSettings.asset",
+   "new": "Assets/Project/UXML/LanternPanelSettings.asset",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/UXML/OverlayPanelSettings.asset",
+   "new": "Assets/Project/UXML/OverlayPanelLantern.asset",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Scenes/Game.unity",
+   "new": "Assets/Project/Scenes/LanternDragons.unity",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Scenes/Game",
+   "new": "Assets/Project/Scenes/LanternDragons",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Resources/AdConfig.asset",
+   "new": "Assets/Project/Resources/PromoConfig.asset",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Resources/Levels",
+   "new": "Assets/Project/Resources/Stages",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Resources/Levels/Chunk_00.bytes",
+   "new": "Assets/Project/Resources/Stages/Pack_00.bytes",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Resources/Levels/Chunk_01.bytes",
+   "new": "Assets/Project/Resources/Stages/Pack_01.bytes",
+   "retiredNotRenamed": false
+  },
+  {
+   "old": "Assets/Project/Materials/Mat_NeonDot.mat",
+   "new": "Assets/Project/Materials/_Retired/Mat_NeonDot.mat",
+   "retiredNotRenamed": true
+  },
+  {
+   "old": "Assets/Project/Materials/Mat_NeonFlare.mat",
+   "new": "Assets/Project/Materials/_Retired/Mat_NeonFlare.mat",
+   "retiredNotRenamed": true
+  },
+  {
+   "old": "Assets/Project/Materials/Mat_NeonTrail.mat",
+   "new": "Assets/Project/Materials/_Retired/Mat_NeonTrail.mat",
+   "retiredNotRenamed": true
+  },
+  {
+   "old": "Assets/Project/Sprites/NeonGradient.png",
+   "new": "Assets/Project/Sprites/_Retired/NeonGradient.png",
+   "retiredNotRenamed": true
+  },
+  {
+   "old": "Assets/Project/Sprites/UIHexPillFill.png",
+   "new": "Assets/Project/Sprites/_Retired/UIHexPillFill.png",
+   "retiredNotRenamed": true
+  },
+  {
+   "old": "Assets/Project/Sprites/UIHexPillFrame.png",
+   "new": "Assets/Project/Sprites/_Retired/UIHexPillFrame.png",
+   "retiredNotRenamed": true
+  },
+  {
+   "old": "Assets/Project/Sprites/UIOctagonFill.png",
+   "new": "Assets/Project/Sprites/_Retired/UIOctagonFill.png",
+   "retiredNotRenamed": true
+  },
+  {
+   "old": "Assets/Project/Sprites/UIOctagonFrame.png",
+   "new": "Assets/Project/Sprites/_Retired/UIOctagonFrame.png",
+   "retiredNotRenamed": true
+  },
+  {
+   "old": "Assets/Project/Audio/ArrowClick_Blocked.ogg",
+   "new": "Assets/Project/Audio/_Retired/ArrowClick_Blocked.ogg",
+   "retiredNotRenamed": true
+  },
+  {
+   "old": "Assets/Project/Audio/ArrowClick_Success.mp3",
+   "new": "Assets/Project/Audio/_Retired/ArrowClick_Success.mp3",
+   "retiredNotRenamed": true
+  },
+  {
+   "old": "Assets/Project/Audio/ArrowTap.wav",
+   "new": "Assets/Project/Audio/_Retired/ArrowTap.wav",
+   "retiredNotRenamed": true
+  },
+  {
+   "old": "Assets/Project/Audio/LevelComplete.wav",
+   "new": "Assets/Project/Audio/_Retired/LevelComplete.wav",
+   "retiredNotRenamed": true
+  },
+  {
+   "old": "Assets/Project/Audio/LevelFailed.wav",
+   "new": "Assets/Project/Audio/_Retired/LevelFailed.wav",
+   "retiredNotRenamed": true
+  },
+  {
+   "old": "Assets/Project/Audio/UIClick.wav",
+   "new": "Assets/Project/Audio/_Retired/UIClick.wav",
+   "retiredNotRenamed": true
+  }
+ ],
+ "ussClassMap": {
+  "action": "tool",
+  "action-button": "tool-button",
+  "action-button--disabled": "tool-button--disabled",
+  "action-button--small": "tool-button--small",
+  "action-button__icon": "tool-button__icon",
+  "action-button__icon--back": "tool-button__icon--back",
+  "action-button__icon--grid": "tool-button__icon--grid",
+  "action-button__icon--hint": "tool-button__icon--hint",
+  "action-button__icon--hint-ad": "tool-button__icon--hint-ad",
+  "action-button__icon--purple": "tool-button__icon--purple",
+  "action-button__icon--red": "tool-button__icon--red",
+  "action-button__icon--restart": "tool-button__icon--restart",
+  "action-button__icon--teal": "tool-button__icon--teal",
+  "action__label": "tool__label",
+  "ad-loading-modal": "wait-sheet",
+  "ad-loading-modal--hidden": "wait-sheet--hidden",
+  "ad-loading-modal__backdrop": "wait-sheet__backdrop",
+  "ad-loading-modal__card": "wait-sheet__card",
+  "ad-loading-modal__subtitle": "wait-sheet__subtitle",
+  "ad-loading-modal__title": "wait-sheet__title",
+  "ad-loading-spinner": "wait-spinner",
+  "ad-ph": "sponsor-ph",
+  "ad-ph--tall": "sponsor-ph--tall",
+  "ad-ph__caption": "sponsor-ph__caption",
+  "ad-ph__cta": "sponsor-ph__cta",
+  "ad-ph__head": "sponsor-ph__head",
+  "ad-ph__line": "sponsor-ph__line",
+  "ad-ph__line--title": "sponsor-ph__line--title",
+  "ad-ph__lines": "sponsor-ph__lines",
+  "ad-ph__media": "sponsor-ph__media",
+  "ad-ph__sheen": "sponsor-ph__sheen",
+  "ad-ph__thumb": "sponsor-ph__thumb",
+  "ad-placeholder-slot": "sponsor-slot",
+  "bottom-bar": "lower-dock",
+  "bottom-nav": "tab-dock",
+  "brand": "crest",
+  "brand__logo": "crest__logo",
+  "brand__name": "crest__name",
+  "card": "paper",
+  "card-fill": "paper-fill",
+  "card-frame": "paper-frame",
+  "card-frame--purple": "paper-frame--purple",
+  "card-progress": "ledger",
+  "card-progress__fill": "ledger__fill",
+  "card-progress__text": "ledger__text",
+  "card-progress__track": "ledger__track",
+  "close-button": "shut-button",
+  "content": "stage-body",
+  "content--hidden": "stage-body--hidden",
+  "device-info": "probe-info",
+  "dialog-ad-space": "sheet-sponsor-space",
+  "difficulty-chip": "rank-chip",
+  "difficulty-pill": "rank-pill",
+  "difficulty-text": "rank-text",
+  "dock-button": "ring-button",
+  "dock-button--purple": "ring-button--purple",
+  "dock-button--red": "ring-button--red",
+  "dock-button--teal": "ring-button--teal",
+  "footer": "foot",
+  "gameplay-ad-space": "play-sponsor-space",
+  "gameplay-root": "play-root",
+  "grid-button--on": "guide-button--on",
+  "header": "head",
+  "heart": "ember",
+  "heart--empty": "ember--empty",
+  "hearts": "embers",
+  "hint-badge": "clue-badge",
+  "hint-badge--ad": "clue-badge--ad",
+  "hint-badge__label": "clue-badge__label",
+  "home-actions": "hall-actions",
+  "home-ad-space": "hall-sponsor-space",
+  "home-center": "hall-center",
+  "home-top": "hall-top",
+  "hud-difficulty": "rank-caption",
+  "hud-hidden": "chrome-hidden",
+  "level-card": "stage-card",
+  "level-label": "stage-label",
+  "level-map": "trail-map",
+  "level-title": "stage-title",
+  "level-title__caption": "stage-title__caption",
+  "level-title__number": "stage-title__number",
+  "levels-button": "trail-button",
+  "lives-pill": "ember-pill",
+  "map-back": "trail-back",
+  "map-back__icon": "trail-back__icon",
+  "map-header": "trail-head",
+  "map-list": "trail-list",
+  "map-node": "trail-node",
+  "map-node--current": "trail-node--current",
+  "map-node--done": "trail-node--done",
+  "map-node--locked": "trail-node--locked",
+  "map-node__lock": "trail-node__lock",
+  "map-node__number": "trail-node__number",
+  "map-node__star": "trail-node__star",
+  "map-progress": "trail-progress",
+  "map-row": "trail-row",
+  "map-slot": "trail-slot",
+  "map-slot--open": "trail-slot--open",
+  "map-title": "trail-title",
+  "map-titles": "trail-titles",
+  "nav-icon": "tab-icon",
+  "nav-icon--home": "tab-icon--home",
+  "nav-icon--lock": "tab-icon--lock",
+  "nav-icon--settings": "tab-icon--settings",
+  "nav-icon--star": "tab-icon--star",
+  "nav-item": "tab-item",
+  "nav-item--active": "tab-item--active",
+  "nav-item--dim": "tab-item--dim",
+  "nav-item--locked": "tab-item--locked",
+  "nav-item--unlocked": "tab-item--unlocked",
+  "nav-label": "tab-label",
+  "nav-slot": "tab-slot",
+  "neon-progress": "lantern-progress",
+  "play-button": "start-button",
+  "play-button__chevron": "start-button__chevron",
+  "play-button__inner": "start-button__inner",
+  "play-button__label": "start-button__label",
+  "progress-fill": "glow-fill",
+  "progress-track": "glow-track",
+  "result-badge": "sheet-badge",
+  "result-badge--lose": "sheet-badge--lose",
+  "result-badge--win": "sheet-badge--win",
+  "result-badge__glyph": "sheet-badge__glyph",
+  "result-badge__glyph--lose": "sheet-badge__glyph--lose",
+  "result-badge__glyph--win": "sheet-badge__glyph--win",
+  "result-card": "sheet-card",
+  "result-card--hidden": "sheet-card--hidden",
+  "result-card__level": "sheet-card__level",
+  "result-card__level--lose": "sheet-card__level--lose",
+  "result-card__title": "sheet-card__title",
+  "result-home": "sheet-home",
+  "result-primary": "sheet-primary",
+  "result-primary__chevron": "sheet-primary__chevron",
+  "result-primary__inner": "sheet-primary__inner",
+  "result-primary__label": "sheet-primary__label",
+  "result-root": "sheet-root",
+  "result-scrim": "sheet-scrim",
+  "result-scroll": "sheet-scroll",
+  "round": "ring",
+  "round-button": "disc-button",
+  "round-button__icon": "disc-button__icon",
+  "round-button__icon--levels": "disc-button__icon--levels",
+  "round-button__icon--settings": "disc-button__icon--settings",
+  "round__frame": "ring__frame",
+  "round__frame--red": "ring__frame--red",
+  "row": "entry",
+  "row--sep": "entry--sep",
+  "row__chevron": "entry__chevron",
+  "row__icon": "entry__icon",
+  "row__icon--document": "entry__icon--document",
+  "row__icon--info": "entry__icon--info",
+  "row__icon--refresh": "entry__icon--refresh",
+  "row__icon--sound": "entry__icon--sound",
+  "row__icon--star": "entry__icon--star",
+  "row__icon--vibration": "entry__icon--vibration",
+  "row__label": "entry__label",
+  "screen-root": "page-root",
+  "scroll": "pane",
+  "settings-ad-space": "options-sponsor-space",
+  "settings-back": "options-back",
+  "settings-back__icon": "options-back__icon",
+  "settings-header": "options-head",
+  "settings-list": "options-list",
+  "settings-scroll": "options-scroll",
+  "settings-title": "options-title",
+  "slot": "bay",
+  "slot__note": "bay__note",
+  "slot__result": "bay__result",
+  "slot__space": "bay__space",
+  "slot__text": "bay__text",
+  "slot__title": "bay__title",
+  "slot__warn": "bay__warn",
+  "splash-bottom": "intro-bottom",
+  "splash-caption": "intro-caption",
+  "splash-icon": "intro-icon",
+  "splash-root": "intro-root",
+  "splash-title": "intro-title",
+  "splash-top": "intro-top",
+  "switch": "toggle",
+  "switch--on": "toggle--on",
+  "switch__knob": "toggle__knob",
+  "text-body": "type-body",
+  "text-button": "type-button",
+  "text-caption": "type-caption",
+  "text-heading": "type-heading",
+  "title": "heading",
+  "title-centre": "heading-centre",
+  "top-panel": "crown-panel",
+  "top-row": "crown-row"
+ },
+ "ussClassesUnmapped_leaveAsIs": [],
+ "elementNameMap_readByCSharp": {
+  "ad-placeholder": "sponsor-card",
+  "ad-placeholder-sheen": "sponsor-sheen",
+  "back-button": "return-button",
+  "card-progress-text": "ledger-text",
+  "difficulty-label": "rank-label",
+  "grid-button": "guide-button",
+  "hint-badge": "clue-badge",
+  "hint-badge-label": "clue-badge-label",
+  "hint-button": "clue-button",
+  "hint-icon": "clue-icon",
+  "home-button": "hall-button",
+  "level-map-slot": "trail-map-slot",
+  "level-number": "stage-number",
+  "loading-bar": "intro-bar",
+  "map-back-button": "trail-return-button",
+  "native-ad-space": "sponsor-space",
+  "nav-home": "tab-hall",
+  "nav-settings": "tab-options",
+  "primary-button": "go-button",
+  "restart-button": "redo-button",
+  "settings-back-button": "options-return-button",
+  "settings-button": "options-button",
+  "switch-refresh": "toggle-pulse",
+  "switch-sound": "toggle-bell",
+  "switch-vibration": "toggle-tremor",
+  "ad-loading-modal": "wait-sheet",
+  "ad-loading-spinner": "wait-spinner",
+  "bottom-bar": "lower-dock",
+  "close-button": "shut-button",
+  "content": "stage-body",
+  "device-info": "probe-info",
+  "dialog-ad-space": "sheet-sponsor-space",
+  "difficulty-text": "rank-text",
+  "footer": "foot",
+  "level-label": "stage-label",
+  "levels-button": "trail-button",
+  "map-list": "trail-list",
+  "map-progress": "trail-progress",
+  "play-button": "start-button",
+  "progress-fill": "glow-fill",
+  "result-card": "sheet-card",
+  "result-scroll": "sheet-scroll",
+  "screen-root": "page-root",
+  "top-panel": "crown-panel"
+ },
+ "elementNameRule": "every name in elementNameMap changes in .uxml name=, in .uss #id selectors and in the C# string passed to Q<>/Q(...)/BottomNavBinder.Bind. The other ~47 uxml names are not read by C# and may be renamed with the same token rules or left alone",
+ "persistedKeys": [
+  {
+   "kind": "file",
+   "where": "ProgressStore (was SaveSystem).FileName",
+   "new": "lanterndragons_progress.json",
+   "migrateFrom": [
+    "arrowqube_progress.json",
+    "progress.json"
+   ],
+   "note": "copy contents; both live under Application.persistentDataPath"
+  },
+  {
+   "kind": "file",
+   "where": "PromoConfigFetcher (was AdConfigFetcher).CacheFileName",
+   "new": "lanterndragons_ad_config.json",
+   "migrateFrom": [
+    "arrowqube_ad_config.json",
+    "ad_config.json"
+   ],
+   "note": "cache only; safe to drop instead of migrate"
+  },
+  {
+   "kind": "prefs-int",
+   "where": "ClueManager (was HintManager).PrefsRemainingHints",
+   "new": "lanterndragons.hint.remaining",
+   "migrateFrom": [
+    "arrowqube.hint.remaining",
+    "HintManager_RemainingHints"
+   ]
+  },
+  {
+   "kind": "prefs-int",
+   "where": "ClueManager.PrefsLastFreeHintCount",
+   "new": "lanterndragons.hint.lastFreeCount",
+   "migrateFrom": [
+    "arrowqube.hint.lastFreeCount",
+    "HintManager_LastFreeHintCount"
+   ]
+  },
+  {
+   "kind": "prefs-int",
+   "where": "OptionsManager (was SettingsManager).SoundKey",
+   "new": "lanterndragons.settings.sound",
+   "migrateFrom": [
+    "arrowqube.settings.sound",
+    "settings.sound"
+   ]
+  },
+  {
+   "kind": "prefs-int",
+   "where": "OptionsManager.VibrationKey",
+   "new": "lanterndragons.settings.vibration",
+   "migrateFrom": [
+    "arrowqube.settings.vibration",
+    "settings.vibration"
+   ]
+  },
+  {
+   "kind": "prefs-int",
+   "where": "OptionsManager.RefreshKey",
+   "new": "lanterndragons.settings.nativeRefreshRate",
+   "migrateFrom": [
+    "arrowqube.settings.nativeRefreshRate",
+    "settings.nativeRefreshRate"
+   ]
+  },
+  {
+   "kind": "prefs-legacy-delete",
+   "where": "ClueManager",
+   "new": null,
+   "migrateFrom": [
+    "HintManager_Initialized"
+   ],
+   "note": "already deleted by existing code; keep that DeleteKey"
+  }
+ ],
+ "otherStrings": {
+  "menuPaths": {
+   "ArrowPuzzle/Campaign/...": "LanternDragons/Campaign/...",
+   "ArrowPuzzle/Ad Config": "LanternDragons/Promo Config",
+   "ArrowPuzzle/Level Data": "LanternDragons/Stage Data"
+  },
+  "resourcePaths": {
+   "Levels/Chunk_NN": "Stages/Pack_NN (StagePack.ResourceFolder and ChunkPrefix)",
+   "Resources.Load<AdConfig>(AdConfig)": "Resources.Load<PromoConfig>(PromoConfig)",
+   "StagePackWriter.OutputFolder": "Assets/Project/Resources/Stages"
+  },
+  "binaryHeader": "StagePack.Magic 0x434C5041 ('APLC' = Arrow Puzzle Level Chunk) is a visible fingerprint of the old game. OPTIONAL: change to 0x434C444C ('LDLC'), bump Version to 3, re-bake, update the pack tests. Renaming identifiers alone does NOT change baked bytes.",
+  "logTags": "[Ads]/[Campaign]/[Shapes] log prefixes are cosmetic; rename them in the same text pass if wanted"
+ },
+ "identifierRules": {
+  "tokenRules": [
+   [
+    "Arrows",
+    "Dragons"
+   ],
+   [
+    "Arrow",
+    "Dragon"
+   ],
+   [
+    "arrows",
+    "dragons"
+   ],
+   [
+    "arrow",
+    "dragon"
+   ],
+   [
+    "Qube",
+    "Ember"
+   ],
+   [
+    "qube",
+    "ember"
+   ]
+  ],
+  "appliesTo": "identifiers in .cs only (not string literals, not comments); run AFTER the type renames; skip the 5 serialized fields in fieldsRenamedWithFormerlySerializedAs_optionalPhaseB unless Phase B is chosen",
+  "distinctIdentifiersAffected": "about 62 (arrows, arrow, wantArrows, RowArrows, spawnedArrows, arrowData, arrowCount, RemainingArrows, OnArrowCountChanged, TotalArrows, OnArrowLeft, PlayArrowClickBlocked, PlayArrowClickSuccess, FindHintableArrow, TryGetArrowBounds, FitCameraToSpawnedArrows and test method names)",
+  "collisionCheck": "before applying, grep each candidate new identifier (DragonHead, DragonPearl, dragonHead, dragonCount...) for collisions with existing names"
+ },
+ "fieldsRenamedWithFormerlySerializedAs_optionalPhaseB": {
+  "LevelLoader.arrowPrefab": "dragonPrefab",
+  "BackdropArrows.arrowSprites": "ribbonSprites",
+  "GuideLines.onlyArrowsThatCanExit": "onlyDragonsThatCanExit",
+  "AudioManager.arrowClickSuccessClip": "dragonTapClip",
+  "AudioManager.arrowClickBlockedClip": "dragonBumpClip"
+ },
+ "doNotRename": [
+  "Assets/GoogleMobileAds, Assets/Plugins, Assets/ExternalDependencyManager, Assets/MultiTech Studio (reference template), Assets/Plugins/Demigiant (DOTween) and Resources/DOTweenSettings.asset, Assets/TextMesh Pro, Packages/*, Library/*",
+  "Third-party/Unity types and members: GoogleMobileAds.*, PrimeTween, UnityEngine.UIElements built-ins, USS classes beginning unity-",
+  "Unity message methods (Awake, OnEnable, OnDisable, Update, LateUpdate, OnValidate, OnDestroy, OnApplicationFocus...)",
+  "HostBridge.BridgeClass string 'in.dicodeinfotech.arrowqubepuzzle.UnityAdBridge' and the package id / applicationIdentifier / companyName: the developer decides these (Story 007 questions), not part of this pass",
+  "Serialized field NAMES on every MonoBehaviour/ScriptableObject used in the scene, prefabs and assets (see serializedFieldsPerScript_leaveAlone): renaming loses the value unless [FormerlySerializedAs] is added",
+  "JsonUtility types: SaveData/ProgressData fields (version, currentLevelIndex, highestLevelCompleted) and PromoRemoteConfig fields (they mirror backend JSON keys). Class names may change, field names may not",
+  "Difficulty/StageTier enum member ORDER, StagePack.Dirs ORDER and the chunk header layout: they are the baked binary format. Member names may change, order and values may not",
+  "Font assets (Oxanium family, SIL OFL)",
+  "Unity .meta GUIDs: always move the .meta with the file, never delete or recreate",
+  "AudioMixer exposed parameter names and AudioMixerGroup names (serialized in the mixer, referenced by sfxMixerGroup)",
+  "Assets created in this project that carry no old-game name: LD_* audio, Dragon*/Padlock/BackdropBlossom/BackdropCloud/BackdropLantern sprites, UIRound*/UICapsule* sprites, LogoRound, AppIcon/*"
+ ],
+ "serializedFieldsPerScript_leaveAlone": {
+  "AdConfig": {
+   "files": [
+    "AdConfig.asset"
+   ],
+   "count": 1,
+   "fields": [
+    "adClickCount",
+    "adMaxAgeMinutes",
+    "backAdEnabled",
+    "banner",
+    "defaultFreeHintCount",
+    "interstitial",
+    "interstitialCooldownSeconds",
+    "levelsPerInterstitial",
+    "nativeAd",
+    "nativeRefreshSeconds",
+    "nativeStyles",
+    "preloadNativeAd",
+    "rewarded",
+    "rewardedEnabled",
+    "testDeviceIds",
+    "useTestIds"
+   ]
+  },
+  "AdConfigFetcher": {
+   "files": [
+    "Game.unity"
+   ],
+   "count": 1,
+   "fields": []
+  },
+  "AdLoadingOverlay": {
+   "files": [
+    "Game.unity"
+   ],
+   "count": 1,
+   "fields": [
+    "panelRenderer"
+   ]
+  },
+  "AdsManager": {
+   "files": [
+    "Game.unity"
+   ],
+   "count": 1,
+   "fields": [
+    "adConfig"
+   ]
+  },
+  "ArrowController": {
+   "files": [
+    "ArrowPrefab.prefab"
+   ],
+   "count": 1,
+   "fields": [
+    "activeBoost",
+    "baseColor",
+    "bumpColor",
+    "gridBuilder",
+    "headVisual",
+    "hintColor",
+    "hintPulseScale",
+    "hintPulseTime",
+    "lockRemaining",
+    "minFramesPerStep",
+    "minStepTime",
+    "padlockSprite",
+    "path",
+    "revertStepTime",
+    "stepSpeedUp",
+    "stepTime",
+    "tailVisual"
+   ]
+  },
+  "AudioManager": {
+   "files": [
+    "Game.unity"
+   ],
+   "count": 1,
+   "fields": [
+    "arrowClickBlockedClip",
+    "arrowClickSuccessClip",
+    "jingleSource",
+    "levelCompleteClip",
+    "levelFailedClip",
+    "lockShakeClip",
+    "sfxMixerGroup",
+    "sfxSource",
+    "uiClickClip",
+    "unlockClip"
+   ]
+  },
+  "BackdropArrows": {
+   "files": [
+    "Game.unity"
+   ],
+   "count": 1,
+   "fields": [
+    "arrowSprites",
+    "centreKeepOut",
+    "columns",
+    "count",
+    "driftRadius",
+    "driftSpeed",
+    "jitter",
+    "maxSize",
+    "minSize",
+    "rows",
+    "seed",
+    "sortingOrder",
+    "spinDegreesPerSecond",
+    "tint"
+   ]
+  },
+  "BannerAdUnit": {
+   "files": [
+    "Game.unity"
+   ],
+   "count": 1,
+   "fields": []
+  },
+  "CameraController": {
+   "files": [
+    "Game.unity"
+   ],
+   "count": 1,
+   "fields": [
+    "cellsVisibleHorizontally",
+    "dragThresholdPixels",
+    "dragThresholdScreenFraction",
+    "edgeSpringSpeed",
+    "focusCellsVisible",
+    "focusDuration",
+    "introDuration",
+    "introFitPadding",
+    "introMinimumGain",
+    "maxTapSeconds",
+    "maxVisibleContentFraction",
+    "minZoomOutFactor",
+    "mouseZoomSpeed",
+    "panFriction",
+    "panPadding",
+    "velocitySmoothing",
+    "zoomInFactor"
+   ]
+  },
+  "DeviceScaleCategory": {
+   "files": [
+    "Game.unity"
+   ],
+   "count": 1,
+   "fields": [
+    "panelSettings",
+    "tabletDiagonalInchThreshold",
+    "tabletScaleMultiplier"
+   ]
+  },
+  "Dot": {
+   "files": [
+    "Dot.prefab"
+   ],
+   "count": 1,
+   "fields": [
+    "GridPosition"
+   ]
+  },
+  "GameFlowManager": {
+   "files": [
+    "Game.unity"
+   ],
+   "count": 1,
+   "fields": [
+    "gameplayRoot",
+    "homeRoot",
+    "levelLoader",
+    "livesManager",
+    "loseRoot",
+    "settingsRoot",
+    "winRoot"
+   ]
+  },
+  "GameplayHUDController": {
+   "files": [
+    "Game.unity"
+   ],
+   "count": 1,
+   "fields": [
+    "gameFlowManager",
+    "guideLines",
+    "levelLoader",
+    "levelManager",
+    "livesManager",
+    "panelRenderer"
+   ]
+  },
+  "GridBuilder": {
+   "files": [
+    "Game.unity"
+   ],
+   "count": 1,
+   "fields": [
+    "dotPrefab",
+    "height",
+    "origin",
+    "spacing",
+    "width"
+   ]
+  },
+  "GuideLines": {
+   "files": [
+    "Game.unity"
+   ],
+   "count": 1,
+   "fields": [
+    "gridBuilder",
+    "levelLoader",
+    "lineColor",
+    "lineWidth",
+    "onlyArrowsThatCanExit",
+    "screenMarginCells",
+    "sortingOrder",
+    "targetCamera"
+   ]
+  },
+  "HomeScreenController": {
+   "files": [
+    "Game.unity"
+   ],
+   "count": 1,
+   "fields": [
+    "gameFlowManager",
+    "levelLoader",
+    "panelRenderer"
+   ]
+  },
+  "InterstitialAdUnit": {
+   "files": [
+    "Game.unity"
+   ],
+   "count": 1,
+   "fields": []
+  },
+  "LevelLoader": {
+   "files": [
+    "Game.unity"
+   ],
+   "count": 1,
+   "fields": [
+    "arrowPrefab",
+    "cameraController",
+    "entranceDuration",
+    "entranceStagger",
+    "gridBuilder"
+   ]
+  },
+  "LevelManager": {
+   "files": [
+    "Game.unity"
+   ],
+   "count": 1,
+   "fields": [
+    "gameFlowManager"
+   ]
+  },
+  "LivesManager": {
+   "files": [
+    "Game.unity"
+   ],
+   "count": 1,
+   "fields": [
+    "gameFlowManager",
+    "maxLives"
+   ]
+  },
+  "NativeAdUnit": {
+   "files": [
+    "Game.unity"
+   ],
+   "count": 1,
+   "fields": []
+  },
+  "ResultScreenController": {
+   "files": [
+    "Game.unity"
+   ],
+   "count": 2,
+   "fields": [
+    "gameFlowManager",
+    "levelLoader",
+    "mode",
+    "panelRenderer"
+   ]
+  },
+  "SettingsManager": {
+   "files": [
+    "Game.unity"
+   ],
+   "count": 1,
+   "fields": []
+  },
+  "SettingsScreenController": {
+   "files": [
+    "Game.unity"
+   ],
+   "count": 1,
+   "fields": [
+    "gameFlowManager",
+    "panelRenderer",
+    "privacyUrl",
+    "rateUsUrl",
+    "settingsManager",
+    "termsUrl"
+   ]
+  },
+  "SplashScreenController": {
+   "files": [
+    "Game.unity"
+   ],
+   "count": 1,
+   "fields": [
+    "homeRoot",
+    "panelRenderer",
+    "splashDuration"
+   ]
+  }
+ },
+ "checks": {
+  "missingSourceFiles": [],
+  "ussNewNameDuplicates": [],
+  "ussNewNameClashesWithUnchangedOld": [],
+  "elementNameDuplicates": []
+ },
+ "textFilesNeedingContentEdits": [
+  "Assets/Project/Prefabs/ArrowPrefab.prefab",
+  "Assets/Project/Prefabs/Dot.prefab",
+  "Assets/Project/Resources/AdConfig.asset",
+  "Assets/Project/Scenes/Game.unity",
+  "Assets/Project/Scripts/Core/ArrowController.cs",
+  "Assets/Project/Scripts/Core/Dot.cs",
+  "Assets/Project/Scripts/Core/GridBuilder.cs",
+  "Assets/Project/Scripts/Core/GridCell.cs",
+  "Assets/Project/Scripts/Core/GuideLines.cs",
+  "Assets/Project/Scripts/Data/AdConfig.cs",
+  "Assets/Project/Scripts/Data/AdRemoteConfig.cs",
+  "Assets/Project/Scripts/Data/AdTestIds.cs",
+  "Assets/Project/Scripts/Data/ArrowPalette.cs",
+  "Assets/Project/Scripts/Data/ArrowPathData.cs",
+  "Assets/Project/Scripts/Data/LevelBinary.cs",
+  "Assets/Project/Scripts/Data/LevelData.cs",
+  "Assets/Project/Scripts/Data/SaveData.cs",
+  "Assets/Project/Scripts/Data/SaveSystem.cs",
+  "Assets/Project/Scripts/Editor/LevelBinaryWriter.cs",
+  "Assets/Project/Scripts/Editor/LevelCampaignGenerator.cs",
+  "Assets/Project/Scripts/Editor/LevelCarver.cs",
+  "Assets/Project/Scripts/Editor/LevelDifficulty.cs",
+  "Assets/Project/Scripts/Editor/LevelLocks.cs",
+  "Assets/Project/Scripts/Editor/LevelShapeMask.cs",
+  "Assets/Project/Scripts/Managers/AdConfigFetcher.cs",
+  "Assets/Project/Scripts/Managers/AdSettings.cs",
+  "Assets/Project/Scripts/Managers/AdsManager.cs",
+  "Assets/Project/Scripts/Managers/AndroidDataBridge.cs",
+  "Assets/Project/Scripts/Managers/AudioManager.cs",
+  "Assets/Project/Scripts/Managers/BackdropArrows.cs",
+  "Assets/Project/Scripts/Managers/BannerAdUnit.cs",
+  "Assets/Project/Scripts/Managers/CameraController.cs",
+  "Assets/Project/Scripts/Managers/EvidenceCapture.cs",
+  "Assets/Project/Scripts/Managers/GameFlowManager.cs",
+  "Assets/Project/Scripts/Managers/HintManager.cs",
+  "Assets/Project/Scripts/Managers/InterstitialAdUnit.cs",
+  "Assets/Project/Scripts/Managers/InterstitialManager.cs",
+  "Assets/Project/Scripts/Managers/LevelLoader.cs",
+  "Assets/Project/Scripts/Managers/LevelManager.cs",
+  "Assets/Project/Scripts/Managers/LevelTracker.cs",
+  "Assets/Project/Scripts/Managers/LivesManager.cs",
+  "Assets/Project/Scripts/Managers/NativeAdUnit.cs",
+  "Assets/Project/Scripts/Managers/RewardedAdUnit.cs",
+  "Assets/Project/Scripts/Managers/ScreenBackdrop.cs",
+  "Assets/Project/Scripts/Managers/SettingsManager.cs",
+  "Assets/Project/Scripts/UI/AdLoadingOverlay.cs",
+  "Assets/Project/Scripts/UI/AdPlaceholder.cs",
+  "Assets/Project/Scripts/UI/BannerTestScreenController.cs",
+  "Assets/Project/Scripts/UI/BottomNavBinder.cs",
+  "Assets/Project/Scripts/UI/ConfettiView.cs",
+  "Assets/Project/Scripts/UI/DeviceScaleCategory.cs",
+  "Assets/Project/Scripts/UI/GameplayHUDController.cs",
+  "Assets/Project/Scripts/UI/HomeScreenController.cs",
+  "Assets/Project/Scripts/UI/LevelMapController.cs",
+  "Assets/Project/Scripts/UI/NativeAdSpace.cs",
+  "Assets/Project/Scripts/UI/ResultScreenController.cs",
+  "Assets/Project/Scripts/UI/SettingsScreenController.cs",
+  "Assets/Project/Scripts/UI/SplashScreenController.cs",
+  "Assets/Project/Scripts/UI/UIClickSound.cs",
+  "Assets/Project/Themes/AdLoadingOverlay.uss",
+  "Assets/Project/Themes/AdPlaceholder.uss",
+  "Assets/Project/Themes/BottomNav.uss",
+  "Assets/Project/Themes/GameplayScreen.uss",
+  "Assets/Project/Themes/HomeScreen.uss",
+  "Assets/Project/Themes/ResultScreen.uss",
+  "Assets/Project/UXML/AdLoadingOverlay.uxml",
+  "Assets/Project/UXML/AdPlaceholder.uxml",
+  "Assets/Project/UXML/GameplayScreen.uxml",
+  "Assets/Project/UXML/HomeScreen.uxml",
+  "Assets/Project/UXML/LoseScreen.uxml",
+  "Assets/Project/UXML/SettingsScreen.uxml",
+  "Assets/Project/UXML/WinScreen.uxml",
+  "Assets/Tests/EditMode/Editor/ArrowPaletteTests.cs",
+  "Assets/Tests/EditMode/Editor/BakedCampaignTests.cs",
+  "Assets/Tests/EditMode/Editor/LevelBinaryTests.cs",
+  "Assets/Tests/EditMode/Editor/LevelCarverTests.cs",
+  "Assets/Tests/EditMode/Editor/LevelLocksTests.cs",
+  "Assets/Tests/EditMode/Editor/LevelSolverTests.cs",
+  "Assets/Tests/EditMode/Editor/SaveMigrationTests.cs",
+  "Assets/Tests/EditMode/Editor/TestLevels.cs",
+  "Assets/_Recovery/0 (2).unity",
+  "Assets/_Recovery/0 (3).unity",
+  "CLAUDE.md",
+  "ProjectSettings/AudioManager.asset",
+  "ProjectSettings/ProjectSettings.asset",
+  "design/accessibility-requirements.md",
+  "design/ux/interaction-patterns.md",
+  "production/epics/lantern-dragons/story-001-locked-arrows.md",
+  "production/epics/lantern-dragons/story-002-new-level-pipeline.md",
+  "production/epics/lantern-dragons/story-003-festival-board-shapes.md",
+  "production/epics/lantern-dragons/story-004-lantern-theme-art.md",
+  "production/epics/lantern-dragons/story-005-level-display-and-map.md",
+  "production/epics/lantern-dragons/story-006-ui-retheme-names-audio.md",
+  "production/epics/lantern-dragons/story-007-new-identity-and-kept-systems.md",
+  "production/epics/lantern-dragons/story-008-light-paper-theme.md",
+  "production/qa/code-review-2026-10-20.md",
+  "production/qa/evidence/story-004-evidence.md",
+  "production/qa/evidence/story-005-evidence.md",
+  "production/qa/evidence/story-007-audit.md",
+  "production/qa/evidence/story-008-evidence.md",
+  "production/qa/smoke-2026-10-20.md",
+  "production/qa/story-007-identity-switch-plan.md",
+  "production/qa/test-plan-2026-10-20.md",
+  "production/session-state/active.md",
+  "production/sprints/sprint-2026-10-20.md"
+ ]
+}

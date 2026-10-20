@@ -12,7 +12,7 @@
 4. Animations are listed and each has a plan to be skippable or reduced (see Motion).
 5. Text sizes are set in the USS in reference pixels so they scale with the panel; no text is baked into a sprite.
 
-Not committed at Standard: screen reader support, remappable input, colourblind palettes, in-game text scaling.
+Not committed at Standard: screen reader support, remappable input, colourblind palettes, in-game text scaling. **Still open and unbuilt:** an in-game text-size setting, screen reader support, and a colour-blind check of the seven dragon colours (they differ in lightness and every dragon also has a head sprite, but no simulation was run).
 
 ## 1. Touch targets (reference pixels)
 
@@ -26,8 +26,8 @@ Not committed at Standard: screen reader support, remappable input, colourblind 
 | NEXT / RETRY (`.result-primary`) | 150 high, up to 620 wide | yes |
 | Level map node (`.map-node`) | 132 x 132 | yes |
 | Settings row (`.row`) | 132 high, full width | yes (row), see switch |
-| Settings switch (`.switch`) | 104 x 56 | **gap**: the control is 56 high. It is only compliant if the whole row is the hit area. Not verified. |
-| Bottom nav items (`.nav-item`) | icon 44px, hit area not measured | **gap**: not measured. |
+| Settings switch (`.toggle`) | 104 x 56 drawn; **tap area is the whole row, 132 high x full width** | yes, **closed 2026-10-20**: `OptionsScreenController.BindSwitch` registers the click on the row, so a tap anywhere on the row flips the switch (a tap on the switch bubbles up, fires once). Look unchanged. Needs one on-device check. |
+| Bottom nav items (`.tab-item`) | min 96 wide x 100 high | yes, **closed 2026-10-20**: `min-width: 96px; min-height: 100px` (dock vertical padding cut by the same amount, so the dock keeps its height). |
 | Board taps | one grid cell, size varies with level and zoom | **gap**: cells on big boards are smaller than 96px until the player zooms (existing design; pinch zoom is the mitigation). |
 
 ## 2. Contrast (computed, WCAG relative luminance)
@@ -39,8 +39,8 @@ Cream is `rgb(255,248,236)`, card is `rgb(255,252,244)`, ink is `rgb(58,36,24)`.
 | ink on cream | 13.76 | pass |
 | ink on card | 14.17 | pass |
 | ink 72% (HUD "LEVEL" caption) on cream | 5.74 | pass |
-| ink 60% (muted text, map count, "Loading...", nav labels) on cream | 3.96 | **gap**: under 4.5 for text; passes only as large text |
-| ink 60% on card (nav labels) | 4.03 | **gap**, same reason |
+| ink 72% (muted text, map count, "Loading...", nav labels, chevrons) on cream | 5.72 | pass, **closed 2026-10-20** (was ink 60%, 3.96) |
+| ink 72% on card (nav labels) | 5.80 | pass, **closed 2026-10-20** (was 4.03) |
 | lantern red `#C43448` on cream | 5.06 | pass |
 | cream on lantern red (PLAY / NEXT label) | 5.06 | pass |
 | hint teal `#007A96` on cream | 4.71 | pass |
@@ -48,9 +48,13 @@ Cream is `rgb(255,248,236)`, card is `rgb(255,252,244)`, ink is `rgb(58,36,24)`.
 | purple `#6842B0` on cream | 6.64 | pass |
 | heart red `#D63031` on cream | 4.60 | pass |
 | ink digit on gold badge `#FFC83D` (padlock) | 9.40 | pass |
-| dark gold `#B07000` on cream (difficulty text, map counts) | 3.85 | **gap** for 20-22px text; passes as large text only |
-| gold-orange `#E88C00` on cream (progress fill, node fill, borders) | 2.43 | **gap**: under 3:1. Used for fills and borders only, never for text. The progress track uses ink 12% (1.25:1), so the empty bar is barely visible. |
-| ink 12% track vs cream | 1.25 | **gap**: decorative track |
+| dark gold `#965C00` (150,92,0) on cream (difficulty text, map counts, unlocked nav label, win "LEVEL" line) | 5.19 | pass, **closed 2026-10-20** (was `#B07000`, 3.85). On card 5.35. |
+| ink on gold-orange `#E88C00` (done map node number and star, win badge glyph) | 5.66 | pass. Cream on gold-orange is only 2.43, so gold-orange fills now carry **ink**, never cream (`TrailMapScreen.uss`, `SheetScreen.uss`). |
+| gold-orange `#E88C00` on cream (progress fill, node fill, borders) | 2.43 | **open, accepted**: fills and borders only, never text. Where it is the only state cue (map node "done") it also carries a star glyph and a darker `#B07000` ring. |
+| ink 12% track vs cream | 1.25 | decorative track. **Closed for the level progress bar 2026-10-20**: it now has a 2px ink 55% ring (3.45:1) so the empty bar is visible (`PlayScreen.uss`, `.glow-track`). The splash loading bar track stays decorative (the "Loading..." text carries the state). |
+| locked map node padlock (ink 60% on `rgb(239,232,220)`) | 3.77 | pass, **closed 2026-10-20** (was ink 45%, about 2.5) |
+
+Automated: `UiContrastTests` (EditMode) recomputes every pair above with the WCAG formula and lints all `.uss` files for text colours under ink 70% alpha or the old `rgb(176,112,0)`.
 
 Dragon colours on cream (all are line art 28px or more thick, so 3:1 applies):
 
@@ -64,7 +68,7 @@ Dragon colours on cream (all are line art 28px or more thick, so 3:1 applies):
 | Lime Lantern | `#5E9400` | 3.48 | pass |
 | Night Violet | `#7B4DFF` | 4.57 | pass |
 
-Known gaps from contrast: muted ink text (3.96 to 4.03), dark gold small text (3.85), gold-orange fills and borders (2.43), ink-12% tracks (1.25). Each is a one-line USS change if the tier is raised (use ink at 0.72 for text, a darker gold for borders).
+Contrast gaps closed on 2026-10-20: muted ink text, dark gold small text, cream-on-gold-orange glyphs, the level progress track, the locked padlock. Opacity on locked and dim nav items was removed too (it multiplied the label alpha and pushed the text under 4.5:1). Still open: gold-orange fills and borders as pure decoration (2.43, accepted), and the empty-heart cue (see section 3).
 
 ## 3. State is never colour alone
 
@@ -84,22 +88,24 @@ Known gaps from contrast: muted ink text (3.96 to 4.03), dark gold small text (3
 
 ## 4. Motion and reduced motion
 
-There is **no reduced-motion setting** in the game today (`SettingsManager` has sound, vibration and refresh rate only). Animations that exist:
+**Built 2026-10-20 (needs on-device and Editor verification):** Settings has a **Reduce Motion** switch (`OptionsManager.ReduceMotion`, key `lanterndragons.reduceMotion`, default off; Unity exposes no cheap read of the OS preference). Each animation reads `OptionsManager.ReduceMotionOn` when it starts, so there is no per-frame cost beyond a static bool read in the backdrop.
 
-| Animation | Where | Skippable / reducible now? |
+| Animation | Where | With Reduce Motion ON |
 |---|---|---|
-| Arrow slide, bump and reverse | `ArrowController` (PrimeTween) | no (it is the core feedback, short) |
-| Bump flash (ink) and hint pulse and swell | `ArrowController` | no |
-| Padlock shake on a locked tap | `ShakeLock` | no |
-| Padlock unlock swell and fade | `OnOtherArrowLeft` | no |
-| Confetti on win | `ResultScreenController` | no |
-| Result sheet slide-up (0.35s) | `.result-card--hidden` transition | no |
-| HUD fade-in after the entrance | `.hud-hidden` | no |
-| Level entrance | `LevelLoader` | no |
-| Backdrop drift (BackdropArrows) | `BackdropArrows` | no |
-| Splash progress tween | `SplashScreenController` | no |
+| Dragon slide, bump rewind | `DragonController` (PrimeTween) | unchanged: it is the core feedback and short |
+| Bump: head overshoot and ink flash | `DragonController.BlockedBounce` | no overshoot; the ink colour is held for the same time, then the run rewinds |
+| Hint pulse (swell plus blue) | `DragonController.PlayHintPulse` | blue colour pulse only, no swell |
+| Padlock shake on a locked tap | `DragonController.ShakeLock` | no shake; a quick opacity dip instead |
+| Padlock unlock swell and fade | `DragonController.OnOtherDragonLeft` | fade only, no scale |
+| Confetti on win | `SheetScreenController`, `PetalBurstView` | not shown |
+| Result sheet slide-up (0.35s) | `.sheet-card--hidden` transition | appears at once |
+| Backdrop drift and spin | `LanternBackdrop` | frozen at the t = 0 pose |
+| Map open auto-scroll | `TrailMapController.ScrollToCurrent` | already a jump (sets the offset directly), nothing animates |
+| HUD fade-in after the entrance (opacity only) | `.hud-hidden` | **kept**: an opacity fade is not movement |
+| Level entrance | `StageLoader` | **open**: not reduced yet |
+| Splash progress tween | `IntroScreenController` | **open**: not reduced yet, it is a short bar fill |
 
-Plan if the tier is raised: add a "Reduce motion" switch in Settings that stops backdrop drift and confetti, replaces the slide-up with a fade, and shortens the swell. Nothing is built yet.
+The tier is still Standard (reduced motion is a bonus above it).
 
 ## 5. Text scaling
 
@@ -112,4 +118,4 @@ Touch only. The old UI rules mention gamepad and keyboard focus; this game is po
 ## Revisit when
 
 - Before any store release, re-check the four contrast gaps and the nav / switch hit areas on a real device.
-- If a "Reduce motion" setting is wanted, raise the tier to Comprehensive and build section 4's plan.
+- Verify Reduce Motion on a device (toggle it on the Settings screen, then play a bump, a hint, a locked tap, an unlock, a win and a map open).

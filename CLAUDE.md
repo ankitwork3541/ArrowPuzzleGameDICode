@@ -57,16 +57,30 @@ The user is a **complete Unity/programming beginner**. This drives everything:
 ## Folder Structure
 
 `Assets/Project/`
-- `Scripts/Core/` — grid + arrow gameplay logic (`GridBuilder`, `GridCell`, `ArrowController`, `Dot`)
-- `Scripts/Data/` — `ScriptableObject` / serializable data models (`LevelData`, `ArrowPathData`, `LevelBinary`)
-- `Scripts/Managers/` — scene-level coordinators (`GameFlowManager`, `LevelLoader`, `LevelManager`,
-  `LivesManager`, `AudioManager`, `SettingsManager`, `CameraController`)
-- `Scripts/UI/` — UI Toolkit controllers (`SplashScreenController`, `HomeScreenController`,
-  `GameplayHUDController`, `SettingsScreenController`, `BottomNavBinder`, `DeviceScaleCategory`)
-- `Scripts/Editor/` — editor-only tools (level generators, binary writer)
-- `UXML/` — `.uxml` documents + `MainPanelSettings.asset`
+Names below are the current ones (renamed 2026-10-20, full old to new map in `production/qa/rename-map.json`
+and `production/qa/rename-report-2026-10-20.md`; the progress log further down still uses the old names
+because it is history).
+
+- `Scripts/Core/` — board + dragon gameplay logic (`BoardBuilder`, `BoardCell`, `DragonController`, `Spark`,
+  `LatticeGuides`)
+- `Scripts/Data/` — `ScriptableObject` / serializable data models (`StageData`, `DragonPathData`, `StagePack`,
+  `DragonPalette`, `ProgressStore`/`ProgressData`, `KeyMigration`, `PromoConfig`)
+- `Scripts/Managers/` — scene-level coordinators (`FlowDirector`, `StageLoader`, `StageManager`,
+  `EmberManager` (lives), `ClueManager` (hints), `SoundDirector`, `OptionsManager`, `BoardCamera`,
+  `PromoManager` (ads), `LanternBackdrop`, `ShotCapture` (dev-build screenshot driver, `--evidence`))
+- `Scripts/UI/` — UI Toolkit controllers (`IntroScreenController`, `HallScreenController`,
+  `PlayScreenController`, `OptionsScreenController`, `SheetScreenController`, `TrailMapController`,
+  `TabDockBinder`, `ScreenScaleProfile`, `WaitSheet`)
+- `Scripts/Editor/` — editor-only tools (`StageCampaignGenerator`, `StagePackWriter`, `StageCarver`, ...);
+  menu root is `LanternDragons/`
+- `UXML/` — `.uxml` documents + `LanternPanelSettings.asset`
 - `Themes/` — `.uss` stylesheets
-- `Prefabs/`, `Sprites/`, `Audio/`, `Levels/`, `Scenes/` (`Game.unity` — single-scene project)
+- `Prefabs/`, `Sprites/`, `Audio/`, `Resources/Stages/` (baked `Pack_NN.bytes`, header `LDLC` v3), `Scenes/`
+  (`LanternDragons.unity` — single-scene project). Retired old-game assets sit in `_Retired/` folders
+  (nothing was deleted).
+- Persisted names: save file `lanterndragons_progress.json`, PlayerPrefs `lanterndragons.*`. Older names
+  (`arrowqube_*` and the shipped `progress.json`, `HintManager_*`, `settings.*`) are copied across once
+  (`ProgressStore.CopyLegacyFileIfMissing`, `KeyMigration`), never moved.
 
 Moving a Unity asset must move its paired `.meta` file too (references are GUID-based).
 
@@ -178,6 +192,19 @@ Keep this updated as work progresses — add an entry after each meaningful step
     `story-005-evidence.md` (sign-off boxes still unticked, the lead's call). Polish round done:
     smaller level badge, ink padlock digit, map bottom padding, mid-board unlock frame. Fixed a real
     Windows build error (`Handheld.Vibrate()` now guarded).
+  - **Rename pass (afternoon)**: snapshot commit `0063ab5` (tag `pre-rename-safety`) first, then 63 script
+    files / 70 types, 75 asset moves (14 retired to `_Retired/`), 189 USS classes and 44 UXML element names
+    renamed on both sides, scene `Game.unity` to `LanternDragons.unity`, `Levels/Chunk_NN` to
+    `Stages/Pack_NN`. Done with `AssetDatabase.MoveAsset` (all 235 GUIDs unchanged, 0 missing scripts),
+    then a token-aware text pass, one recompile. Chunk hashes were byte-identical after the rename; Phase B
+    then changed the level file header to `LDLC` v3 and re-baked (only 3 header bytes differ, level data is
+    identical). Five serialized fields renamed with `[FormerlySerializedAs]` (values kept). New save keys
+    `lanterndragons_*` with copy-not-move migration from both older generations (tests:
+    `LegacyKeyMigrationTests`). Total level count is never shown anywhere (Home and map say "N CLEARED").
+    EditMode: 78 of 78 pass, plus `ShippedCampaignTests` (explicit, run alone) 2 of 2. Windows dev player
+    rebuilt, 18 frames recaptured, `[EvidenceCheck]` 5 of 5 PASS. Not renamed on purpose: third-party code,
+    package id / host bridge class (Story 007 answers pending), Inspector field names, JSON field names.
+    Report: `production/qa/rename-report-2026-10-20.md`.
   - Still open: pearl tail marker is hard to see; animation feel, backdrop drift and Android look
     unverified; package id / AdMob units / `LevelTracker` endpoint need the user.
   - (superseded) Open: screenshots for Story 008 evidence. `capture_game_view` with a size drops UI Toolkit, and
