@@ -1,14 +1,14 @@
 # Session Subagent Cost
 
-**Session:** `31052188-47a0-4d42-a222-13880449e613`  
-**Updated:** 20261020_150641
+**Session:** `f794299e-c4d8-469a-a89f-cc523b7d3ef5`  
+**Updated:** 20261020_162404
 
-Subagent spawns this session: **44**
+Subagent spawns this session: **3**
 
 | Agent | Spawns |
 |-------|--------|
-| fork | 42 |
-| sound-designer | 1 |
+| qa-tester | 1 |
+| fork | 1 |
 | agent-skills:code-reviewer | 1 |
 
 Each spawn is a fresh context window that re-reads its own inputs.

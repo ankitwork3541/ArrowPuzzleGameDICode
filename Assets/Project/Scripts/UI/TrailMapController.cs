@@ -17,6 +17,15 @@ public class TrailMapController
     private const float RowHeight = 210f;
     private const float NavClearance = 80f;
 
+    // How many locked levels past the frontier the map shows. The map is a window onto the player's
+    // progress, not the whole campaign: with every level listed, one fling carried the view thousands
+    // of pixels up into locked levels and the beaten ones were out of reach. Also keeps the campaign
+    // length off the screen.
+    private const int LookaheadLevels = 12;
+
+    // Lower than ScrollView's 0.135 default: a flick stops sooner, so the map stays controllable.
+    private const float DecelerationRate = 0.05f;
+
     private readonly VisualElement slot;
     private readonly VisualElement homeContent;
     private readonly ListView list;
@@ -31,6 +40,7 @@ public class TrailMapController
 
     private readonly List<int> rows = new List<int>();
     private int total;
+    private int shown;
     private int highest;
 
     private bool scrollPending;
@@ -61,7 +71,7 @@ public class TrailMapController
         list.selectionType = SelectionType.None;
         list.horizontalScrollingEnabled = false;
         list.makeItem = () => new MapRow(OnNodeClicked);
-        list.bindItem = (element, index) => ((MapRow)element).Bind(total - index, total, highest);
+        list.bindItem = (element, index) => ((MapRow)element).Bind(shown - index, shown, highest);
         list.itemsSource = rows;
 
         // The scroll bar is noise on a touch map; dragging and the wheel still work without it.
@@ -70,6 +80,7 @@ public class TrailMapController
         {
             scroll.verticalScrollerVisibility = ScrollerVisibility.Hidden;
             scroll.touchScrollBehavior = ScrollView.TouchScrollBehavior.Elastic;
+            scroll.scrollDecelerationRate = DecelerationRate;
         }
     }
 
@@ -106,12 +117,15 @@ public class TrailMapController
         total = Mathf.Max(0, levelLoader.TotalLevels);
         highest = Mathf.Clamp(ProgressStore.Data.highestLevelCompleted, 0, total);
 
+        // Only the frontier plus a few locked levels are listed (see LookaheadLevels).
+        shown = Mathf.Min(total, highest + 1 + LookaheadLevels);
+
         // One extra row past level 1: an empty spacer that lets the lowest node scroll up clear of
         // the bottom nav, which is drawn over the map. Its level is 0, so it draws nothing.
-        if (rows.Count != total + 1)
+        if (rows.Count != shown + 1)
         {
             rows.Clear();
-            for (int i = 0; i <= total; i++) rows.Add(i);
+            for (int i = 0; i <= shown; i++) rows.Add(i);
         }
 
         progressLabel.text = highest + " CLEARED";
@@ -147,7 +161,7 @@ public class TrailMapController
     // layout is not ready yet and the caller should try again.
     private bool ScrollToCurrent()
     {
-        if (total == 0) return true;
+        if (shown == 0) return true;
 
         // ListView owns its ScrollView; offset lives on that, not on the list itself.
         ScrollView scroll = list.Q<ScrollView>();
@@ -161,8 +175,8 @@ public class TrailMapController
         float content = scroll.contentContainer.layout.height;
         if (float.IsNaN(content) || content <= viewport) return false;
 
-        // Level n sits in row (total - n); put that row's centre in the middle of the view.
-        int row = total - CurrentLevel;
+        // Level n sits in row (shown - n); put that row's centre in the middle of the view.
+        int row = shown - CurrentLevel;
         // Aim a little above the true centre so the current node and the two below it sit clear of
         // the floating nav dock under the list.
         float centred = Mathf.Max(0f, row * RowHeight + RowHeight * 0.5f - viewport * 0.5f + NavClearance * 0.5f);

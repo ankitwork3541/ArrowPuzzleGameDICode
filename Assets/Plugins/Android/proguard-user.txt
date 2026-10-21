@@ -34,3 +34,14 @@
 # ---------------------------------------------------------------------------
 -keep class androidx.startup.InitializationProvider { *; }
 -keep class * implements androidx.startup.Initializer { *; }
+
+# ---------------------------------------------------------------------------
+# Google Mobile Ads Unity plugin: legacy bridge classes
+#
+# googlemobileads-unity.aar still ships com.google.unity.ads.* classes that reference the old
+# com.google.android.gms.ads.* API. This project depends on the next-gen SDK (ads-mobile-sdk), so
+# play-services-ads is excluded on purpose (see next_gen_exclusions.gradle) and those references can
+# never resolve. R8 reports them as missing classes and fails the release build; the classes are not
+# on any code path the next-gen SDK uses, so the warning is safe to suppress.
+# ---------------------------------------------------------------------------
+-dontwarn com.google.android.gms.ads.**

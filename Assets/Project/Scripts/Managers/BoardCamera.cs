@@ -297,15 +297,16 @@ public class BoardCamera : MonoBehaviour
         focusTween.Stop();
         panVelocity = Vector2.zero;   // a leftover glide would fight the hint's camera move
 
-        // On a level that already fits on screen everything is visible anyway, so a zoom-in
-        // would be pure noise — pan only. Big boards are the ones that actually need it.
+        // A board that already fits on screen has nothing to bring into view, so the hint leaves the
+        // camera alone: the arrow's own pulse is the cue. Gliding anyway dragged a small board off
+        // the side of the screen (the pan range allows panPadding of empty space past each edge)
+        // and then let it spring back, which read as the board shaking away.
         bool contentFits = contentBounds.size.y <= cam.orthographicSize * 2f
                         && contentBounds.size.x <= cam.orthographicSize * 2f * cam.aspect;
+        if (contentFits) return;
 
         float startSize = cam.orthographicSize;
-        float targetSize = contentFits
-            ? startSize
-            : Mathf.Clamp(focusCellsVisible * spacing / 2f, minZoom, maxZoom);
+        float targetSize = Mathf.Clamp(focusCellsVisible * spacing / 2f, minZoom, maxZoom);
 
         Vector3 startPos = transform.position;
         Vector3 targetPos = new Vector3(bounds.center.x, bounds.center.y, startPos.z);
