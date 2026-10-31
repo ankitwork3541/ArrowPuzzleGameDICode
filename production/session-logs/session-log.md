@@ -5606,3 +5606,70 @@ production/session-logs/session-cost.md
 production/session-logs/session-log.md
 ---
 
+## Session End: 20261021_175817
+### Commits
+d035a79 Add Proto-5 Manual and Evidence Checklist for QA testing
+### Uncommitted Changes
+.gitignore
+Assets/Project/Scripts/Data/GameConfig.cs
+Assets/Project/Scripts/Managers/PromoConfigFetcher.cs
+Assets/Project/Sprites/AppIcon/AppIconBackground.png
+Assets/Project/Sprites/AppIcon/AppIconForeground.png
+Assets/Project/Sprites/AppIcon/AppIconRound.png
+Assets/Project/Sprites/LogoRound.png
+Assets/Tests/EditMode/Editor/GameConfigTests.cs
+CLAUDE.md
+---
+
+## Session End: 20261021_175854
+### Commits
+d035a79 Add Proto-5 Manual and Evidence Checklist for QA testing
+### Uncommitted Changes
+.gitignore
+Assets/Project/Scripts/Data/GameConfig.cs
+Assets/Project/Scripts/Managers/PromoConfigFetcher.cs
+Assets/Project/Sprites/AppIcon/AppIconBackground.png
+Assets/Project/Sprites/AppIcon/AppIconForeground.png
+Assets/Project/Sprites/AppIcon/AppIconRound.png
+Assets/Project/Sprites/LogoRound.png
+Assets/Tests/EditMode/Editor/GameConfigTests.cs
+CLAUDE.md
+production/session-logs/.session-end.hash
+production/session-logs/session-log.md
+---
+
+## Session End: 20261027_192156
+### Uncommitted Changes
+.gitignore
+Assets/Project/Scripts/Data/GameConfig.cs
+Assets/Project/Scripts/Managers/PromoConfigFetcher.cs
+Assets/Project/Sprites/AppIcon/AppIconBackground.png
+Assets/Project/Sprites/AppIcon/AppIconForeground.png
+Assets/Project/Sprites/AppIcon/AppIconRound.png
+Assets/Project/Sprites/LogoRound.png
+Assets/Tests/EditMode/Editor/GameConfigTests.cs
+CLAUDE.md
+production/session-logs/.session-end.hash
+production/session-logs/session-log.md
+---
+
+## Session End: 20261031_120758
+### Uncommitted Changes
+.gitignore
+Assets/Project/Scripts/Data/GameConfig.cs
+Assets/Project/Scripts/Managers/PromoConfigFetcher.cs
+Assets/Project/Scripts/Managers/PromoManager.cs
+Assets/Project/Scripts/UI/OptionsScreenController.cs
+Assets/Project/Sprites/AppIcon/AppIconBackground.png
+Assets/Project/Sprites/AppIcon/AppIconForeground.png
+Assets/Project/Sprites/AppIcon/AppIconRound.png
+Assets/Project/Sprites/LogoRound.png
+Assets/Project/UXML/OptionsScreen.uxml
+"Assets/Settings/Build Profiles/Android\342\204\242.asset"
+Assets/Tests/EditMode/Editor/GameConfigTests.cs
+CLAUDE.md
+ProjectSettings/ProjectSettings.asset
+production/session-logs/.session-end.hash
+production/session-logs/session-log.md
+---
+

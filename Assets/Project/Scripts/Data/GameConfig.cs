@@ -34,6 +34,17 @@ public class GameConfig
     }
 }
 
+// The config API's outer wrapper. Only `status` and `data` matter; `version` and `timestamp` are
+// the server's own bookkeeping.
+[Serializable]
+public class GameConfigEnvelope
+{
+    public string status;
+    public string version;
+    public long timestamp;
+    public GameConfig data;
+}
+
 [Serializable]
 public class AppSection
 {
@@ -221,8 +232,6 @@ public class MessageSection
 // Parse + validate. Pure (no Unity objects, no disk), so every rule here is unit-tested.
 public static class GameConfigParser
 {
-    public const string AdUnitPrefix = "ca-app-pub-";
-
     // The HUD's lives pill shows one heart per life and fits this many.
     public const int MaxLivesCap = 5;
 
@@ -242,7 +251,19 @@ public static class GameConfigParser
         GameConfig parsed;
         try
         {
-            parsed = JsonUtility.FromJson<GameConfig>(json);
+            // The live API wraps the config: { "status": "success", ..., "data": { code, config_version, ... } }.
+            // A bare config (the sample file, older caches) has no "data" block, so the envelope's data
+            // comes back null or empty and the payload is read as the config itself.
+            GameConfigEnvelope envelope = JsonUtility.FromJson<GameConfigEnvelope>(json);
+            if (envelope != null && !string.IsNullOrEmpty(envelope.status) && envelope.status != "success")
+            {
+                reason = "status is \"" + envelope.status + "\", expected \"success\"";
+                return false;
+            }
+
+            parsed = envelope != null && envelope.data != null && envelope.data.config_version != 0
+                ? envelope.data
+                : JsonUtility.FromJson<GameConfig>(json);
         }
         catch (Exception e)
         {
@@ -274,12 +295,17 @@ public static class GameConfigParser
         return true;
     }
 
-    // A valid AdMob unit id looks like ca-app-pub-<publisher>/<unit>.
+    // Any non-blank id is requested as-is: the API sends both AdMob ids (ca-app-pub-...) and Ad Manager /
+    // AdX ids (/network/unit), so the format is not checked here; the ad SDK reports a bad id as a load
+    // failure. Blank, whitespace or the literal "null" means "no ad on this unit".
     public static bool IsAdUnit(string id)
     {
-        return !string.IsNullOrEmpty(id)
-               && id.StartsWith(AdUnitPrefix, StringComparison.Ordinal)
-               && id.Contains("/");
+        if (string.IsNullOrWhiteSpace(id))
+        {
+            return false;
+        }
+
+        return !string.Equals(id.Trim(), "null", StringComparison.OrdinalIgnoreCase);
     }
 
     // Maps a placement `type` string to the slot kind the ad code understands. Anything unknown is
@@ -406,7 +432,7 @@ public static class GameConfigParser
 
     static string KeepAdUnit(string id)
     {
-        return IsAdUnit(id) ? id : "";
+        return IsAdUnit(id) ? id.Trim() : "";
     }
 
     static AdPlacement CleanPlacement(AdPlacement placement, bool nativeOnly)

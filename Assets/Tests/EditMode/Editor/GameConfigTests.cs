@@ -259,6 +259,33 @@ public class GameConfigTests
     }
 
     [Test]
+    public void Parse_ApiEnvelope_UnwrapsData()
+    {
+        GameConfig c = Parse(@"{ ""status"": ""success"", ""version"": ""1.0.1"", ""timestamp"": 1792585415,
+            ""data"": { ""code"": 1, ""config_version"": 2, ""game"": { ""lives"": { ""max"": 4 } },
+                        ""links"": { ""privacy"": ""https://example.com/p"" } } }");
+
+        Assert.AreEqual(4, c.game.lives.max);
+        Assert.AreEqual("https://example.com/p", c.links.privacy);
+    }
+
+    [Test]
+    public void Parse_ApiEnvelopeWithErrorStatus_IsIgnored()
+    {
+        Assert.IsFalse(GameConfigParser.TryParse(
+            @"{ ""status"": ""error"", ""data"": { ""code"": 1, ""config_version"": 2 } }", out GameConfig c, out string reason));
+        Assert.IsNull(c);
+        StringAssert.Contains("status", reason);
+    }
+
+    [Test]
+    public void Parse_ApiEnvelopeWithBadInnerVersion_IsIgnored()
+    {
+        Assert.IsFalse(GameConfigParser.TryParse(
+            @"{ ""status"": ""success"", ""data"": { ""code"": 1, ""config_version"": 3 } }", out _, out _));
+    }
+
+    [Test]
     public void Parse_MissingConfigVersion_IsIgnored()
     {
         Assert.IsFalse(GameConfigParser.TryParse(@"{ ""code"": 1 }", out _, out _));
@@ -283,15 +310,38 @@ public class GameConfigTests
     }
 
     [Test]
-    public void Parse_InvalidUnitIds_AreRejected()
+    public void Parse_BlankOrNullUnitIds_BecomeEmpty()
     {
         GameConfig c = Parse(@"{ ""code"": 1, ""config_version"": 2, ""ads"": { ""units"": {
-            ""banner"": ""not-an-ad-unit"", ""interstitial"": ""ca-app-pub-1234"",
+            ""banner"": """", ""interstitial"": ""   "", ""native"": ""null"",
             ""rewarded"": ""ca-app-pub-3940256099942544/5224354917"" } } }");
 
         Assert.AreEqual("", c.ads.units.banner);
-        Assert.AreEqual("", c.ads.units.interstitial, "no slash means it is not a unit id");
+        Assert.AreEqual("", c.ads.units.interstitial, "whitespace is blank");
+        Assert.AreEqual("", c.ads.units.native, "the literal \"null\" is blank");
         Assert.AreEqual("ca-app-pub-3940256099942544/5224354917", c.ads.units.rewarded);
+    }
+
+    [Test]
+    public void Parse_AdxAndOtherUnitIds_AreKeptAsIs()
+    {
+        GameConfig c = Parse(@"{ ""code"": 1, ""config_version"": 2, ""ads"": { ""units"": {
+            ""banner"": ""/21775744923/example/banner"", ""interstitial"": "" ca-app-pub-1234 "",
+            ""rewarded"": ""any-id-the-api-sends"" } } }");
+
+        Assert.AreEqual("/21775744923/example/banner", c.ads.units.banner, "an AdX / Ad Manager id is requested");
+        Assert.AreEqual("ca-app-pub-1234", c.ads.units.interstitial, "kept, only trimmed");
+        Assert.AreEqual("any-id-the-api-sends", c.ads.units.rewarded);
+    }
+
+    [Test]
+    public void Settings_NullAdUnit_GivesNoId()
+    {
+        PromoSettings s = SettingsFor(@"{ ""code"": 1, ""config_version"": 2, ""ads"": {
+            ""enabled"": true, ""units"": { ""interstitial"": ""null"", ""rewarded"": ""/1/adx_rewarded"" } } }");
+
+        Assert.IsNull(s.InterstitialId, "no id means no request");
+        Assert.AreEqual("/1/adx_rewarded", s.RewardedId);
     }
 
     [Test]

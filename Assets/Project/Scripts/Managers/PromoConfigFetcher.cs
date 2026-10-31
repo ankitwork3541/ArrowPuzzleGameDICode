@@ -6,12 +6,20 @@ using UnityEngine.Networking;
 // GameConfigService. The cache of the last good payload lives in the service too.
 public class PromoConfigFetcher : MonoBehaviour
 {
-    // TODO(developer): the config API URL has not been supplied yet. While this is empty no request is
-    // made and the game runs on the cached copy of the last good config, else on GameConfig.Defaults()
-    // (ads off, no links). The endpoint must return the JSON in design/config/game-config.sample.json
-    // (code 1, config_version 2). Fill it in here, in this one place.
-    const string ConfigUrl = "";
+    // The config API. It returns { "status": "success", "data": <the JSON in
+    // design/config/game-config.sample.json> }; GameConfigParser unwraps the envelope. If the URL is
+    // ever emptied no request is made and the game runs on the cached copy, else GameConfig.Defaults().
+    const string ConfigUrl = "https://api.dicodeinfotech.in/api/arrow-dragon-puzzle/config";
+    // The bearer token lives in Assets/Project/Resources/ConfigApiToken.txt, which is git-ignored so the
+    // key never lands in the repository. It still ships inside the build, so it must be a read-only key.
+    const string TokenResource = "ConfigApiToken";
     const int TimeoutSeconds = 5;
+
+    static string LoadToken()
+    {
+        TextAsset asset = Resources.Load<TextAsset>(TokenResource);
+        return asset != null ? asset.text.Trim() : "";
+    }
 
     // Last launch's payload, so an offline session still runs on real settings rather than defaults.
     public bool ApplyCached()
@@ -32,6 +40,17 @@ public class PromoConfigFetcher : MonoBehaviour
         using (UnityWebRequest request = UnityWebRequest.Get(ConfigUrl))
         {
             request.timeout = TimeoutSeconds;
+            request.SetRequestHeader("accept", "application/json");
+            string token = LoadToken();
+            if (token.Length > 0)
+            {
+                request.SetRequestHeader("Authorization", "Bearer " + token);
+            }
+            else
+            {
+                Debug.LogWarning("[Config] Resources/" + TokenResource + ".txt is missing; calling without a token.");
+            }
+
             yield return request.SendWebRequest();
 
             if (request.result != UnityWebRequest.Result.Success)

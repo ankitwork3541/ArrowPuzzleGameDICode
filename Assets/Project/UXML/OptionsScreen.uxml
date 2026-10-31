@@ -61,6 +61,12 @@
                         <ui:Label text="Terms of Service" class="entry__label" picking-mode="Ignore" />
                         <ui:Label text="&gt;" class="entry__chevron" picking-mode="Ignore" />
                     </ui:VisualElement>
+                    <!-- Google's consent form. Only shown where the region needs consent (PromoConsent). -->
+                    <ui:VisualElement name="link-consent" class="entry row--link entry--sep entry--hidden">
+                        <ui:VisualElement class="entry__icon entry__icon--document" picking-mode="Ignore" />
+                        <ui:Label text="Privacy choices" class="entry__label" picking-mode="Ignore" />
+                        <ui:Label text="&gt;" class="entry__chevron" picking-mode="Ignore" />
+                    </ui:VisualElement>
                 </ui:VisualElement>
 
             </ui:VisualElement>

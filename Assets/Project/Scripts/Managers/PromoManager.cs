@@ -28,6 +28,10 @@ public class PromoManager : MonoBehaviour
     // Fired after a cached or fresh backend payload is applied. Hint count follows this.
     public event System.Action OnSettingsChanged;
 
+    // Fired once the launch consent check has finished, so the Options screen can show or hide its
+    // Privacy choices row.
+    public event System.Action OnConsentGathered;
+
     PromoConfigFetcher fetcher;
 
     void Awake()
@@ -91,7 +95,31 @@ public class PromoManager : MonoBehaviour
         // fresh payload raises GameConfigService.Changed, which OnConfigChanged answers below.
         yield return fetcher.Fetch(accepted => { });
 
+        // Consent comes before the SDK starts, as Google requires. With ads off there is nothing to
+        // consent to, so the form is not shown.
+        if (Settings.AdsEnabled)
+        {
+            yield return Consent.Gather();
+
+            if (!Consent.CanRequestAds)
+            {
+                Debug.Log("[Ads] Consent does not allow ad requests — the ads SDK is not started.");
+                OnConsentGathered?.Invoke();
+                yield break;
+            }
+        }
+
+        OnConsentGathered?.Invoke();
         Initialize();
+    }
+
+    /// <summary>Google's consent state. The Options screen reads it for its Privacy choices row.</summary>
+    public PromoConsent Consent { get; } = new PromoConsent();
+
+    /// <summary>Opens Google's privacy options form (the Options screen's Privacy choices row).</summary>
+    public void ShowPrivacyOptions()
+    {
+        Consent.ShowPrivacyOptions();
     }
 
     void OnDestroy()

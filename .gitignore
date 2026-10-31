@@ -106,3 +106,10 @@ InitTestScene*.unity*
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
 
+
+# Config API bearer token (read by PromoConfigFetcher, never committed)
+/Assets/Project/Resources/ConfigApiToken.txt
+/Assets/Project/Resources/ConfigApiToken.txt.meta
+
+# Android release signing: keystore path + passwords, read by ReleaseSigning.cs. Never commit.
+/ReleaseSigning.local.json

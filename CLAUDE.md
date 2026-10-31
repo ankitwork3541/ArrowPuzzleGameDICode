@@ -249,6 +249,26 @@ Keep this updated as work progresses — add an entry after each meaningful step
   - **Level entrance styles** (`ui.entrance_style`: `ink` default / `fly` / `classic` for comparing; `EntranceMath`,
     tap skips, Reduce Motion = finished board, no new sound): 0.9 s small, about 1.17 s on 198 dragons; developer to
     pick one, see `production/qa/evidence/entrance-evidence.md` (270 of 270 EditMode tests, player checks all PASS).
+  - **Config API live (2026-10-21)**: `PromoConfigFetcher.ConfigUrl` = `https://api.dicodeinfotech.in/api/arrow-dragon-puzzle/config`.
+    The API wraps the config as `{ status, version, timestamp, data: {...} }`; `GameConfigParser.TryParse` unwraps
+    `GameConfigEnvelope` (a bare config still parses; `status` other than `success` is rejected). The bearer token is
+    read from `Assets/Project/Resources/ConfigApiToken.txt`, which is **git-ignored** (never commit it; a fresh
+    clone must recreate that file). New logo from the appicon.co pack: `LogoRound.png` (Splash + Home crest, corners
+    made transparent) and the Android icons in `Sprites/AppIcon/` (adaptive foreground + white background) replaced
+    in place, GUIDs unchanged.
+  - **Ad unit ids (2026-10-31)**: the `ca-app-pub-` format check is gone (`GameConfigParser.IsAdUnit`), because the
+    API also sends Ad Manager / AdX ids (`/network/unit`). Any non-blank id is requested as-is (trimmed); blank,
+    whitespace or the literal `null` means no request for that format. EditMode 275 of 275. Play release audit found
+    blockers that live outside code: AdMob **App ID** in `GoogleMobileAdsSettings.asset` is still Google's test id,
+    release keystore not set (`androidUseCustomKeystore: 0`), and the live API still serves Google test ad units and
+    `example.com` privacy/terms links.
+  - **UMP consent + release signing (2026-10-31)**: `PromoConsent` runs Google's consent flow before
+    `MobileAds.Initialize` (only when ads are on; 10 s timeout on the status update, then the stored answer decides);
+    the SDK is not started when `CanRequestAds()` is false. Options has a "Privacy choices" row (`link-consent`),
+    shown only when UMP says privacy options are required. New upload keystore **outside the repo** at
+    `E:/UnityProjects/Keystores/ArrowDragonPuzzle/` (passwords in `PASSWORDS.txt` there); `Editor/ReleaseSigning.cs`
+    applies it from the git-ignored `ReleaseSigning.local.json` on Editor load and before every Android build.
+    Build output: `E:/UnityProjects/Builds/ArrowDragonPuzzle/` (AAB on).
   - Still open: pearl tail marker is hard to see; animation feel, backdrop drift and Android look
     unverified.
   - (superseded) Open: screenshots for Story 008 evidence. `capture_game_view` with a size drops UI Toolkit, and

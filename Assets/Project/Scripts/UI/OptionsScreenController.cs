@@ -31,6 +31,7 @@ public class OptionsScreenController : MonoBehaviour
         if (PromoManager.Instance != null)
         {
             PromoManager.Instance.AddAdHeightListener(OnAdHeightChanged);
+            PromoManager.Instance.OnConsentGathered += OnConfigChanged;
             PromoManager.Instance.ShowOptionsAd();
         }
     }
@@ -43,6 +44,7 @@ public class OptionsScreenController : MonoBehaviour
         if (PromoManager.Instance != null)
         {
             PromoManager.Instance.RemoveAdHeightListener(OnAdHeightChanged);
+            PromoManager.Instance.OnConsentGathered -= OnConfigChanged;
 
             // Deferred: going back to Home, that screen's OnEnable lands later in this same frame
             // and asks for the very same ad, which cancels this.
@@ -77,6 +79,7 @@ public class OptionsScreenController : MonoBehaviour
         BindLink("link-rate");
         BindLink("link-privacy");
         BindLink("link-terms");
+        BindConsentRow();
 
         // The round back button at the top left does the same as the nav's Home item.
         Button backButton = root.Q<Button>("options-return-button");
@@ -119,6 +122,32 @@ public class OptionsScreenController : MonoBehaviour
         TapSound.Attach(element);
         element.UnregisterCallback<ClickEvent>(OnLinkClicked);
         element.RegisterCallback<ClickEvent>(OnLinkClicked);
+    }
+
+    // Google's privacy options form, for players whose region needs consent. Not a URL, so it has its
+    // own handler rather than going through LinkFor.
+    private void BindConsentRow()
+    {
+        VisualElement element = root.Q<VisualElement>("link-consent");
+        if (element == null) return;
+
+        TapSound.Attach(element);
+        element.UnregisterCallback<ClickEvent>(OnConsentClicked);
+        element.RegisterCallback<ClickEvent>(OnConsentClicked);
+    }
+
+    private static void OnConsentClicked(ClickEvent evt)
+    {
+        if (PromoManager.Instance != null)
+        {
+            PromoManager.Instance.ShowPrivacyOptions();
+        }
+    }
+
+    private static bool ConsentRowVisible()
+    {
+        PromoManager manager = PromoManager.Instance;
+        return manager != null && manager.Consent.PrivacyOptionsRequired;
     }
 
     private static string LinkFor(string elementName)
@@ -169,6 +198,7 @@ public class OptionsScreenController : MonoBehaviour
         SetRowVisible(root.Q<VisualElement>("link-rate"), GameConfigParser.LinkRowVisible(config, "rate_us"));
         SetRowVisible(root.Q<VisualElement>("link-privacy"), GameConfigParser.LinkRowVisible(config, "privacy"));
         SetRowVisible(root.Q<VisualElement>("link-terms"), GameConfigParser.LinkRowVisible(config, "terms"));
+        SetRowVisible(root.Q<VisualElement>("link-consent"), ConsentRowVisible());
 
         VisualElement card = root.Q<VisualElement>("settings-card");
         if (card == null) return;
