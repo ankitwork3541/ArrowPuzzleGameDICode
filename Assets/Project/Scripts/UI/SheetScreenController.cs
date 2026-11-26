@@ -163,12 +163,9 @@ public class SheetScreenController : MonoBehaviour
 
         // No height is predicted here. The box only needs a resolved RECT so the overlay can be
         // placed at its top-left; the height arrives later, measured off the rendered template, and
-        // grows the box then. That works because the scroll content is top-aligned: growing the last
-        // element does not move its own top edge, so the position handed to the plugin stays correct
-        // with nothing to correct afterwards. Guessing a height here instead (which a since-reverted
-        // change tried) re-centres the whole card+ad group once the guess is corrected — shifting the
-        // CARD, not just the ad box — which is what let the ad's top edge end up underneath the
-        // card's bottom border on the session's first render.
+        // grows the box then. The sheet is bottom-aligned, so the box ends at the bottom of the screen
+        // at any height, which is exactly where a bottom-anchored ad sits (PlacementFor). The rect is
+        // used for a position only when the sheet is taller than the screen and scrolls.
         //
         // The sliver is what gives the box a laid-out rect to read. Zero height would still resolve,
         // but a 1px box is also what the skeleton needs to be measurable.
@@ -203,12 +200,13 @@ public class SheetScreenController : MonoBehaviour
         Debug.Log("[NativeAd] Result card ad box laid out, ad at "
                   + topLeftDp.x + "," + topLeftDp.y + "dp"
                   + " (screen " + Screen.width + "x" + Screen.height
-                  + ", density " + PromoSpace.DisplayDensity + "). Height follows the measurement.");
+                  + ", density " + PromoSpace.DisplayDensity + "), "
+                  + (PlacementFor(topLeftDp).anchored ? "anchored to the bottom" : "placed by x,y")
+                  + ". Height follows the measurement.");
 
         // Consumes the ad preloaded when the level started, so the card does not wait on a network
         // round trip.
-        PromoManager.Instance.ShowLevelEndNative(SheetPlacement,
-                                                 PromoNativePlacement.At(topLeftDp.x, topLeftDp.y));
+        PromoManager.Instance.ShowLevelEndNative(SheetPlacement, PlacementFor(topLeftDp));
 
         placeRoutine = null;
     }
@@ -255,6 +253,23 @@ public class SheetScreenController : MonoBehaviour
         NudgeAdToBox();
     }
 
+    private PromoNativePlacement PlacementFor(Vector2Int topLeftDp)
+    {
+        ScrollView scroll = root != null ? root.Q<ScrollView>("sheet-scroll") : null;
+        float scrollRange = scroll != null ? ScrollRange(scroll) : 0f;
+
+        return PromoNativePlacement.ForSheet(scrollRange, topLeftDp.x, topLeftDp.y);
+    }
+
+    // How much taller the sheet's content is than the screen, from layout only. Not the scroller's
+    // highValue: that counts transforms, so while the card slides in (translate 100%) it reports the
+    // card's height as scrollable, and before the first layout it is int.MaxValue. NaN here means not
+    // laid out yet, which ForSheet treats as "fits".
+    public static float ScrollRange(ScrollView scroll)
+    {
+        return scroll.contentContainer.layout.height - scroll.contentViewport.layout.height;
+    }
+
     private void NudgeAdToBox()
     {
         if (!adRequested || PromoManager.Instance == null)
@@ -264,7 +279,7 @@ public class SheetScreenController : MonoBehaviour
 
         if (PromoSpace.TryTopLeftDp(AdSpace, out Vector2Int topLeftDp))
         {
-            PromoManager.Instance.MoveNativeAd(topLeftDp.x, topLeftDp.y);
+            PromoManager.Instance.MoveNativeAd(PlacementFor(topLeftDp));
         }
     }
 
@@ -306,7 +321,7 @@ public class SheetScreenController : MonoBehaviour
 
             if (PromoSpace.TryTopLeftDp(AdSpace, out Vector2Int topLeftDp))
             {
-                PromoManager.Instance.MoveNativeAd(topLeftDp.x, topLeftDp.y);
+                PromoManager.Instance.MoveNativeAd(PlacementFor(topLeftDp));
             }
         }
 

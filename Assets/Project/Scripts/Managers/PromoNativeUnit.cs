@@ -34,6 +34,18 @@ public struct PromoNativePlacement
         return new PromoNativePlacement { anchored = false, x = xDp, y = yDp };
     }
 
+    // The result sheet's ad. The plugin gives an x,y template WRAP_CONTENT height with y as its top
+    // margin, so Android caps it at the room left below y. The sheet's ad box ends at the bottom of
+    // the screen, which makes that cap exactly the height already reserved: the ad can never measure
+    // taller than the estimate, its content spills out of the ad view, and AdMob's validator reports
+    // "Advertiser assets outside native ad view" (seen on device 2026-11-25: view 600px, content
+    // 625px). Anchored to the bottom it has no top margin, measures its real height, and lands on the
+    // same spot. x,y is kept only for a sheet that scrolls, where the ad has to follow its box.
+    public static PromoNativePlacement ForSheet(float scrollRange, int xDp, int yDp)
+    {
+        return scrollRange > 0.5f ? At(xDp, yDp) : Bottom();
+    }
+
     // Compared field by field rather than with Equals(): this is a struct with no override, so the
     // default comparison boxes and reflects, which is not what a per-screen-change check wants.
     public static bool Same(PromoNativePlacement a, PromoNativePlacement b)
@@ -276,7 +288,7 @@ public class PromoNativeUnit : MonoBehaviour
                 FillCount++;
                 preloadedAd = ad;
                 preloadedAt = Time.realtimeSinceStartup;
-                WireEvents(ad);
+                WireEvents(ad, adUnitId);
                 Debug.Log("[NativeAd] Preloaded and waiting.");
             });
         });
@@ -414,7 +426,7 @@ public class PromoNativeUnit : MonoBehaviour
 
                 DestroyActive();
                 currentAd = ad;
-                WireEvents(ad);
+                WireEvents(ad, adUnitId);
                 StartPresent(ad, slot, placement, needsTemplate: true);
             });
         });
@@ -422,7 +434,7 @@ public class PromoNativeUnit : MonoBehaviour
 
     // Impression and click are the only honest measure of whether the requests are worth anything.
     // Wrapped in ExecuteInUpdate because the plugin raises these from the JNI thread.
-    void WireEvents(NativeOverlayAd ad)
+    void WireEvents(NativeOverlayAd ad, string adUnitId)
     {
         ad.OnAdImpressionRecorded += () => MobileAdsEventExecutor.ExecuteInUpdate(() =>
         {
@@ -436,13 +448,15 @@ public class PromoNativeUnit : MonoBehaviour
             LogCounters("click");
         });
 
-        // ad.OnAdPaid += value => MobileAdsEventExecutor.ExecuteInUpdate(() =>
-        // {
-        //     if (value != null)
-        //     {
-        //         RevenueMicros += value.Value;
-        //     }
-        // });
+        ad.OnAdPaid += value => MobileAdsEventExecutor.ExecuteInUpdate(() =>
+        {
+            if (value != null)
+            {
+                RevenueMicros += value.Value;
+            }
+
+            PlayerAnalytics.AdRevenue("native", adUnitId, value);
+        });
     }
 
     void LogCounters(string what)
@@ -468,24 +482,23 @@ public class PromoNativeUnit : MonoBehaviour
     // so this was a dozen redundant relayouts for nothing. Worth keeping on its own merits, but
     // confirmed (also via logcat) NOT to be what makes AdMob's validator flag the session's first
     // native ad — that still happens with this dedup in place, from a cause not yet identified.
-    int? lastMoveX;
-    int? lastMoveY;
-
-    public void MoveTo(int x, int y)
+    public void MoveTo(PromoNativePlacement placement)
     {
-        if (currentAd == null)
+        if (currentAd == null || PromoNativePlacement.Same(activePlacement, placement))
         {
             return;
         }
 
-        if (lastMoveX == x && lastMoveY == y)
-        {
-            return;
-        }
+        activePlacement = placement;
 
-        lastMoveX = x;
-        lastMoveY = y;
-        currentAd.SetTemplatePosition(x, y);
+        if (placement.anchored)
+        {
+            currentAd.SetTemplatePosition(placement.anchor);
+        }
+        else
+        {
+            currentAd.SetTemplatePosition(placement.x, placement.y);
+        }
     }
 
     void StartPresent(NativeOverlayAd ad, PromoSlotKind slot, PromoNativePlacement placement, bool needsTemplate)
@@ -844,8 +857,6 @@ public class PromoNativeUnit : MonoBehaviour
         currentAd.Hide();
         currentAd.Destroy();
         currentAd = null;
-        lastMoveX = null;
-        lastMoveY = null;
     }
 
     void DestroyPreloaded()

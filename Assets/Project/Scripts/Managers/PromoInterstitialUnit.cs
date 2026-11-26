@@ -241,8 +241,9 @@ public class PromoInterstitialUnit : MonoBehaviour
 
     private void RegisterEvents(InterstitialAd target)
     {
-        // target.OnAdPaid += value => MobileAdsEventExecutor.ExecuteInUpdate(() =>
-        //     Debug.Log("[Interstitial] Paid " + value.Value + " micro-" + value.CurrencyCode + "."));
+        string unitId = PromoManager.Instance != null ? PromoManager.Instance.Settings.InterstitialId : null;
+        target.OnAdPaid += value => MobileAdsEventExecutor.ExecuteInUpdate(() =>
+            PlayerAnalytics.AdRevenue("interstitial", unitId, value));
 
         target.OnAdImpressionRecorded += () => MobileAdsEventExecutor.ExecuteInUpdate(() =>
             Debug.Log("[Interstitial] Impression recorded."));

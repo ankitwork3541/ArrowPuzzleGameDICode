@@ -142,6 +142,9 @@ public class PromoRewardedUnit : MonoBehaviour
                 rewardedAd = loadedAd;
                 Debug.Log("[RewardedAd] Loaded. Presenting now.");
 
+                rewardedAd.OnAdPaid += value => MobileAdsEventExecutor.ExecuteInUpdate(() =>
+                    PlayerAnalytics.AdRevenue("rewarded", unitId, value));
+
                 rewardedAd.OnAdFullScreenContentOpened += () => MobileAdsEventExecutor.ExecuteInUpdate(() =>
                 {
                     ImpressionCount++;

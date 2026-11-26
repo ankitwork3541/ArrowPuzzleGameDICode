@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Retheme of the Google native ad templates to match neon cyberpunk / dark sci-fi aesthetic.
+  Light paper theme for the Google native ad templates. The names are Google's and must stay, even
+  where they read wrong now (gnt_dark_bg holds cream). This is half the theme: the text and button
+  colours are set at runtime by PromoNativeUnit.BuildStyle(). The card colour is needed here because
+  the plugin shares one background drawable between four views, so the runtime card colour only
+  paints behind the body text and this one shows through everywhere else.
 -->
 <resources>
     <!-- Marker -->
@@ -9,24 +13,24 @@
     <!-- White text and accents -->
     <color name="gnt_white">#FFFFFF</color>
 
-    <!-- Dark container outline -->
-    <color name="gnt_outline">#1B2A4A</color>
+    <!-- Container outline -->
+    <color name="gnt_outline">#E8DCC8</color>
 
-    <!-- Call to action button background & neon accents -->
-    <color name="gnt_blue">#00E5FF</color>
+    <!-- Call to action button background: lantern red -->
+    <color name="gnt_blue">#C43448</color>
 
-    <!-- Cool gray secondary text and rating stars -->
-    <color name="gnt_gray">#9FB0C7</color>
+    <!-- Muted ink secondary text -->
+    <color name="gnt_gray">#7D6B60</color>
 
-    <!-- "Ad" badge border and text color -->
-    <color name="gnt_ad_green">#00E5FF</color>
+    <!-- "Ad" badge border and text, rating stars: dark gold -->
+    <color name="gnt_ad_green">#965C00</color>
 
-    <!-- Theme card background -->
-    <color name="gnt_dark_bg">#0C122A</color>
+    <!-- Card background: cream, same as BuildStyle -->
+    <color name="gnt_dark_bg">#FFFCF4</color>
 
-    <!-- CTA button text color (high contrast dark navy on cyan) -->
-    <color name="gnt_cta_text">#050B18</color>
+    <!-- CTA button text: cream on red -->
+    <color name="gnt_cta_text">#FFF8EC</color>
 
-    <!-- Body description text color (bright readable cool blue-gray) -->
-    <color name="gnt_body_text">#C5D1E8</color>
+    <!-- Body description text: ink -->
+    <color name="gnt_body_text">#5A4234</color>
 </resources>

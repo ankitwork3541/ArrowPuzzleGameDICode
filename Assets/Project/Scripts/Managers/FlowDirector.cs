@@ -127,6 +127,7 @@ public class FlowDirector : MonoBehaviour
         {
             livesManager.ResetLives();
             levelLoader.LoadLevel();
+            PlayerAnalytics.LevelStart(levelLoader.CurrentLevelNumber());
 
             // A second chance at the result-card ad if the one requested at level start never arrived.
             // Preload no-ops when an ad is already in hand, so this costs nothing in the normal case.
@@ -194,6 +195,14 @@ public class FlowDirector : MonoBehaviour
         // so closing the game there reopened it on the level that had just been beaten.
         LastCompletedLevelNumber = levelLoader.CurrentLevelNumber();
 
+        // Read before AdvanceLevel() banks the win, or a first completion looks like a replay.
+        bool firstCompletion = LastCompletedLevelNumber > ProgressStore.Data.highestLevelCompleted;
+        PlayerAnalytics.LevelEnd(LastCompletedLevelNumber, success: true);
+        if (firstCompletion)
+        {
+            PlayerAnalytics.FirstCompletion(LastCompletedLevelNumber);
+        }
+
         // AdvanceLevel() banks the win only when it is a new completion; a replay from the map leaves
         // PLAY on the frontier (see FrontierRule).
         levelLoader.AdvanceLevel();
@@ -214,6 +223,7 @@ public class FlowDirector : MonoBehaviour
 
     public void ShowLose()
     {
+        PlayerAnalytics.LevelEnd(levelLoader.CurrentLevelNumber(), success: false);
         SoundDirector.Instance.PlayLevelFailed();
 
         BoardCamera.Instance.SuspendInput();
@@ -276,6 +286,7 @@ public class FlowDirector : MonoBehaviour
         gameplayRoot.SetActive(true);   // activate before loading, so the HUD is
         livesManager.ResetLives();      // subscribed when SetArrowCount fires
         levelLoader.LoadLevel();
+        PlayerAnalytics.LevelStart(levelLoader.CurrentLevelNumber());
 
         if (PromoManager.Instance != null)
         {

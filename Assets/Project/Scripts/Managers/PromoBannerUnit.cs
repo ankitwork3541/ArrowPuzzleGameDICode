@@ -235,13 +235,15 @@ public class PromoBannerUnit : MonoBehaviour
             LogCounters("click");
         });
 
-        // created.OnAdPaid += value => MobileAdsEventExecutor.ExecuteInUpdate(() =>
-        // {
-        //     if (value != null)
-        //     {
-        //         RevenueMicros += value.Value;
-        //     }
-        // });
+        created.OnAdPaid += value => MobileAdsEventExecutor.ExecuteInUpdate(() =>
+        {
+            if (value != null)
+            {
+                RevenueMicros += value.Value;
+            }
+
+            PlayerAnalytics.AdRevenue("banner", unitId, value);
+        });
 
         created.LoadAd(new AdRequest());
     }

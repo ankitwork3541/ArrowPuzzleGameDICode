@@ -34,6 +34,8 @@ public class PromoManager : MonoBehaviour
 
     PromoConfigFetcher fetcher;
 
+    const float AnalyticsStartTimeoutSeconds = 3f;
+
     void Awake()
     {
         Instance = this;
@@ -94,6 +96,17 @@ public class PromoManager : MonoBehaviour
         // With no config URL yet this returns on the same frame, so ads initialise as before. A
         // fresh payload raises GameConfigService.Changed, which OnConfigChanged answers below.
         yield return fetcher.Fetch(accepted => { });
+
+        // Firebase Analytics starts before Google's consent flow: UMP passes the player's answer to
+        // Analytics as consent mode only if Analytics is already running. Bounded, so a device without
+        // working Play services still reaches the ads.
+        PlayerAnalytics.Initialize();
+        float analyticsWait = 0f;
+        while (!PlayerAnalytics.IsSettled && analyticsWait < AnalyticsStartTimeoutSeconds)
+        {
+            analyticsWait += Time.unscaledDeltaTime;
+            yield return null;
+        }
 
         // Consent comes before the SDK starts, as Google requires. With ads off there is nothing to
         // consent to, so the form is not shown.
@@ -445,11 +458,11 @@ public class PromoManager : MonoBehaviour
     }
 
     // Called again after the ad's height has grown the card and shifted the reserved box.
-    public void MoveNativeAd(int x, int y)
+    public void MoveNativeAd(PromoNativePlacement placement)
     {
         if (Native != null)
         {
-            Native.MoveTo(x, y);
+            Native.MoveTo(placement);
         }
     }
 

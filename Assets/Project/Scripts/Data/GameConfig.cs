@@ -25,6 +25,7 @@ public class GameConfig
     public GameSection game = new GameSection();
     public UiSection ui = new UiSection();
     public MessageSection message = new MessageSection();
+    public AnalyticsSection analytics = new AnalyticsSection();
 
     // What the game runs on when there is no payload and no cached copy: ads off, no links, the
     // tuning the game shipped with.
@@ -43,6 +44,14 @@ public class GameConfigEnvelope
     public string version;
     public long timestamp;
     public GameConfig data;
+}
+
+// The same wrapper around another one: { "status": ..., "data": { "data": <config> } }. The live API
+// answers in this shape; JsonUtility has no dynamic lookup, so it needs its own type.
+[Serializable]
+public class NestedGameConfigEnvelope
+{
+    public GameConfigEnvelope data;
 }
 
 [Serializable]
@@ -151,6 +160,23 @@ public class InterstitialRules
     public int max_per_session;
 }
 
+// Google Analytics for Firebase (PlayerAnalytics). Missing from the payload means the defaults below.
+[Serializable]
+public class AnalyticsSection
+{
+    // Master switch for sending events.
+    public bool enabled = true;
+
+    // Also log ad_impression from the ads SDK's paid event. OFF by default: measured on a device
+    // (2026-11-26), the GMA Next-Gen SDK already logs ad_impression itself (origin "am") and AdMob adds
+    // the revenue once AdMob is linked to Firebase, so turning this on counts every impression twice.
+    // Only for an ad source that Firebase does not see on its own.
+    public bool log_ad_revenue;
+
+    // First-time completion of these levels logs level_<n>_complete, for use as Google Ads conversions.
+    public List<int> milestone_levels = new List<int> { 5, 10, 20, 50, 100 };
+}
+
 [Serializable]
 public class RewardedUse
 {
@@ -252,8 +278,10 @@ public static class GameConfigParser
         try
         {
             // The live API wraps the config: { "status": "success", ..., "data": { code, config_version, ... } }.
+            // or wraps it twice: { "status": "success", ..., "data": { "data": { code, config_version, ... } } }.
             // A bare config (the sample file, older caches) has no "data" block, so the envelope's data
-            // comes back null or empty and the payload is read as the config itself.
+            // comes back null or empty and the payload is read as the config itself. All three shapes are
+            // accepted, so a change on the server side does not switch the config off.
             GameConfigEnvelope envelope = JsonUtility.FromJson<GameConfigEnvelope>(json);
             if (envelope != null && !string.IsNullOrEmpty(envelope.status) && envelope.status != "success")
             {
@@ -261,9 +289,17 @@ public static class GameConfigParser
                 return false;
             }
 
-            parsed = envelope != null && envelope.data != null && envelope.data.config_version != 0
-                ? envelope.data
-                : JsonUtility.FromJson<GameConfig>(json);
+            parsed = envelope != null ? envelope.data : null;
+            if (parsed == null || parsed.config_version == 0)
+            {
+                NestedGameConfigEnvelope nested = JsonUtility.FromJson<NestedGameConfigEnvelope>(json);
+                parsed = nested != null && nested.data != null ? nested.data.data : null;
+            }
+
+            if (parsed == null || parsed.config_version == 0)
+            {
+                parsed = JsonUtility.FromJson<GameConfig>(json);
+            }
         }
         catch (Exception e)
         {

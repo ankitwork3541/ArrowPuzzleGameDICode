@@ -269,6 +269,40 @@ Keep this updated as work progresses — add an entry after each meaningful step
     `E:/UnityProjects/Keystores/ArrowDragonPuzzle/` (passwords in `PASSWORDS.txt` there); `Editor/ReleaseSigning.cs`
     applies it from the git-ignored `ReleaseSigning.local.json` on Editor load and before every Android build.
     Build output: `E:/UnityProjects/Builds/ArrowDragonPuzzle/` (AAB on).
+  - **Release AAB (2026-11-25)**: the live API now nests the config twice (`{ status, data: { data: {...} } }`), which the
+    parser rejected ("code is 0, expected 1"), so a fresh install ran on defaults with ads off. `GameConfigParser`
+    accepts bare, single and double wrapped payloads (`NestedGameConfigEnvelope`); EditMode 278 of 278. Signed AAB
+    `E:/UnityProjects/Builds/ArrowDragonPuzzle/ArrowDragonPuzzle-1.0-1.aab` (code 1, name 1.0, min 26, target 36,
+    arm64, 16 KB aligned), built with the AdMob **test** App ID by the developer's choice. **Not launched on a device yet.**
+    Still the developer's: real App ID (needs a rebuild and a new version code), real ad units, privacy/terms/support
+    values in the API.
+  - **Native ad on the Win/Lose sheets (2026-11-25, NOT verified on a device yet)**: the Win sheet's medium ad was cut off
+    (view 600px, content 625px; validator "Advertiser assets outside native ad view"). Cause: an x,y template is capped at
+    the room below y, and the bottom sheet makes that exactly the 300dp estimate. Fix: `PromoNativePlacement.ForSheet`
+    anchors to the bottom unless the sheet really scrolls; `SheetScreenController.ScrollRange` uses layout heights, because
+    the scroller's `highValue` counts the slide-in transform (the first fix, `adfix`, failed on that: do not ship it).
+    Navy card background: the plugin shares one drawable between four views, so `AndroidResOverride` colours are now the
+    paper theme. EditMode 283 of 283. Next: install the `adfix2` APK and measure Win + Lose sheets.
+  - **Final release build 1.0 (code 2 after Play rejected code 1 as already used), 2026-11-26**: phone test passed on the signed release APK (Win sheet NativeBig
+    and Lose sheet NativeSmall anchored Bottom, fully visible, validator green, NEXT/HOME/RETRY uncovered, retry
+    interstitial closes back to the game, no crash). EditMode 283 of 283. Final files:
+    `E:/UnityProjects/Builds/ArrowDragonPuzzle/ArrowDragonPuzzle-1.0-2.aab` (Play upload, mapping inside) and
+    `ArrowDragonPuzzle-1.0-2.apk`, both upload-key signed. Evidence frames: `production/qa/evidence/release-1.0-1/`.
+    Built with the AdMob **test** App ID by the developer's choice; the live API still serves test ad units and
+    `example.com` privacy/terms/support values (developer to fix in the API; a real App ID needs a new build). Same day the developer asked for one more bump: version 1.0.1, code 3,
+    `ArrowDragonPuzzle-1.0.1-3.aab` (same code, verified signer/version); the next upload needs code 4.
+  - **Firebase Analytics (2026-11-26, version 1.0.2 code 4)**: for Google Ads App campaign reporting. Firebase Unity SDK
+    14.2.0 as local tgz packages in `Packages/` (`com.google.firebase.app`, `.analytics`) plus EDM4U 1.2.190 as a package;
+    the old `Assets/ExternalDependencyManager` (1.2.188) was removed because the two collide. `Assets/google-services.json`
+    (Firebase project `arrow-dragon-game`) generates `Plugins/Android/FirebaseApp.androidlib`. `PlayerAnalytics` (static)
+    starts Firebase in `PromoManager.Start` **before** UMP (UMP then feeds consent mode, no `SetConsent` call) and logs
+    `level_start`, `level_end` (success 1/0), `level_up` + `level_<n>_complete` on a first completion of
+    `analytics.milestone_levels` (default 5, 10, 20, 50, 100), `hint_used` (free/rewarded). Config section `analytics`
+    (`enabled`, `log_ad_revenue`, `milestone_levels`). Measured on the phone: the GMA Next-Gen SDK **already logs
+    `ad_impression` itself** (origin `am`), so the manual OnAdPaid `ad_impression` is OFF by default (on = double count).
+    Seen in logcat (`FA-SVC` verbose): first_open, session_start, level_start, hint_used, level_end success=0, automatic
+    ad_impression. Not seen yet: the win path events (code reviewed only). EditMode 288 of 288. Developer still to do:
+    link AdMob (impression-level ad revenue ON first) and Google Ads to Firebase, mark key events, Play Data safety form.
   - Still open: pearl tail marker is hard to see; animation feel, backdrop drift and Android look
     unverified.
   - (superseded) Open: screenshots for Story 008 evidence. `capture_game_view` with a size drops UI Toolkit, and

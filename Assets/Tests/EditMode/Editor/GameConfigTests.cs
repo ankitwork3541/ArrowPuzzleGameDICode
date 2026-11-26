@@ -269,6 +269,39 @@ public class GameConfigTests
         Assert.AreEqual("https://example.com/p", c.links.privacy);
     }
 
+    // The live API wraps its body twice: { status, data: { data: <config> } } (seen 2026-11-25).
+    [Test]
+    public void Parse_ApiDoubleEnvelope_UnwrapsInnerData()
+    {
+        GameConfig c = Parse(@"{ ""status"": ""success"", ""version"": ""1.0.3"", ""timestamp"": 1795610290,
+            ""data"": { ""data"": { ""code"": 1, ""msg"": ""ok"", ""config_version"": 2,
+                        ""game"": { ""lives"": { ""max"": 4 } },
+                        ""ads"": { ""enabled"": true, ""units"": { ""banner"": ""/123/banner"" } },
+                        ""links"": { ""privacy"": ""https://example.com/p"" } } } }");
+
+        Assert.AreEqual(4, c.game.lives.max);
+        Assert.AreEqual("https://example.com/p", c.links.privacy);
+        Assert.IsTrue(c.ads.enabled);
+        Assert.AreEqual("/123/banner", c.ads.units.banner);
+    }
+
+    [Test]
+    public void Parse_ApiDoubleEnvelopeWithErrorStatus_IsIgnored()
+    {
+        Assert.IsFalse(GameConfigParser.TryParse(
+            @"{ ""status"": ""error"", ""data"": { ""data"": { ""code"": 1, ""config_version"": 2 } } }",
+            out GameConfig c, out string reason));
+        Assert.IsNull(c);
+        StringAssert.Contains("status", reason);
+    }
+
+    [Test]
+    public void Parse_ApiDoubleEnvelopeWithBadInnerVersion_IsIgnored()
+    {
+        Assert.IsFalse(GameConfigParser.TryParse(
+            @"{ ""status"": ""success"", ""data"": { ""data"": { ""code"": 1, ""config_version"": 3 } } }", out _, out _));
+    }
+
     [Test]
     public void Parse_ApiEnvelopeWithErrorStatus_IsIgnored()
     {

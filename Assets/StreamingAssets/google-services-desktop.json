@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "521814779746",
+    "project_id": "arrow-dragon-game",
+    "storage_bucket": "arrow-dragon-game.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:521814779746:android:523a9df07b651dda54ee3b",
+        "android_client_info": {
+          "package_name": "in.dicodeinfotech.arrowdragonpuzzle"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBrr3tuqqbv2zjkNzv2r3IQDXmyrS-udwo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

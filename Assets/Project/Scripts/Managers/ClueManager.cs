@@ -163,6 +163,7 @@ public class ClueManager : MonoBehaviour
             RemainingHints = Mathf.Max(0, RemainingHints - 1);
             SaveHints();
             Debug.Log("[ClueManager] Used 1 free hint. Remaining: " + RemainingHints);
+            PlayerAnalytics.HintUsed(rewarded: false);
             onHintUnlocked?.Invoke();
             return;
         }
@@ -189,6 +190,7 @@ public class ClueManager : MonoBehaviour
             {
                 requestInFlight = false;
                 Debug.Log("[ClueManager] Rewarded ad completed. Unlocking hint.");
+                PlayerAnalytics.HintUsed(rewarded: true);
                 onHintUnlocked?.Invoke();
             },
             onClosedOrFailed: () =>

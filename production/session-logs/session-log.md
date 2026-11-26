@@ -5673,3 +5673,221 @@ production/session-logs/.session-end.hash
 production/session-logs/session-log.md
 ---
 
+## Session End: 20261031_140936
+### Commits
+24093f1 feat: accept AdX ad unit ids, UMP consent, Android release signing
+---
+
+## Session End: 20261031_150648
+### Commits
+24093f1 feat: accept AdX ad unit ids, UMP consent, Android release signing
+### Uncommitted Changes
+production/session-logs/.session-end.hash
+production/session-logs/session-log.md
+---
+
+## Session End: 20261125_184605
+### Uncommitted Changes
+Assets/Project/Scripts/Data/GameConfig.cs
+Assets/Tests/EditMode/Editor/GameConfigTests.cs
+ProjectSettings/ProjectSettings.asset
+production/session-logs/.session-end.hash
+production/session-logs/session-log.md
+---
+
+## Session End: 20261125_190735
+### Uncommitted Changes
+Assets/Project/Scripts/Data/GameConfig.cs
+Assets/Tests/EditMode/Editor/GameConfigTests.cs
+CLAUDE.md
+ProjectSettings/ProjectSettings.asset
+production/session-logs/.session-end.hash
+production/session-logs/session-log.md
+---
+
+## Session End: 20261125_191637
+### Uncommitted Changes
+AndroidResOverride/drawable/gnt_outline_shape.xml
+AndroidResOverride/drawable/gnt_rounded_corners_shape.xml
+AndroidResOverride/values/colors.xml
+ArrowPuzzleGameDICode.slnx
+Assets/Project/Scripts/Data/GameConfig.cs
+Assets/Project/Scripts/Managers/PromoManager.cs
+Assets/Project/Scripts/Managers/PromoNativeUnit.cs
+Assets/Project/Scripts/UI/SheetScreenController.cs
+Assets/Tests/EditMode/Editor/GameConfigTests.cs
+CLAUDE.md
+ProjectSettings/ProjectSettings.asset
+production/session-logs/.session-end.hash
+production/session-logs/session-log.md
+---
+
+## Session End: 20261126_102504
+### Uncommitted Changes
+AndroidResOverride/drawable/gnt_outline_shape.xml
+AndroidResOverride/drawable/gnt_rounded_corners_shape.xml
+AndroidResOverride/values/colors.xml
+ArrowPuzzleGameDICode.slnx
+Assets/Project/Scripts/Data/GameConfig.cs
+Assets/Project/Scripts/Managers/PromoManager.cs
+Assets/Project/Scripts/Managers/PromoNativeUnit.cs
+Assets/Project/Scripts/UI/SheetScreenController.cs
+"Assets/Settings/Build Profiles/Android\342\204\242.asset"
+Assets/Tests/EditMode/Editor/GameConfigTests.cs
+CLAUDE.md
+ProjectSettings/ProjectSettings.asset
+production/session-logs/.session-end.hash
+production/session-logs/session-log.md
+---
+
+## Session End: 20261126_104001
+### Uncommitted Changes
+AndroidResOverride/drawable/gnt_outline_shape.xml
+AndroidResOverride/drawable/gnt_rounded_corners_shape.xml
+AndroidResOverride/values/colors.xml
+ArrowPuzzleGameDICode.slnx
+Assets/Project/Scripts/Data/GameConfig.cs
+Assets/Project/Scripts/Managers/PromoManager.cs
+Assets/Project/Scripts/Managers/PromoNativeUnit.cs
+Assets/Project/Scripts/UI/SheetScreenController.cs
+Assets/Tests/EditMode/Editor/GameConfigTests.cs
+CLAUDE.md
+ProjectSettings/ProjectSettings.asset
+production/session-logs/.session-end.hash
+production/session-logs/session-log.md
+---
+
+## Session End: 20261126_105608
+### Uncommitted Changes
+AndroidResOverride/drawable/gnt_outline_shape.xml
+AndroidResOverride/drawable/gnt_rounded_corners_shape.xml
+AndroidResOverride/values/colors.xml
+ArrowPuzzleGameDICode.slnx
+Assets/Project/Scripts/Data/GameConfig.cs
+Assets/Project/Scripts/Managers/PromoManager.cs
+Assets/Project/Scripts/Managers/PromoNativeUnit.cs
+Assets/Project/Scripts/UI/SheetScreenController.cs
+"Assets/Settings/Build Profiles/Android\342\204\242.asset"
+Assets/Tests/EditMode/Editor/GameConfigTests.cs
+CLAUDE.md
+ProjectSettings/ProjectSettings.asset
+production/session-logs/.session-end.hash
+production/session-logs/session-log.md
+---
+
+## Session End: 20261126_111523
+### Uncommitted Changes
+AndroidResOverride/drawable/gnt_outline_shape.xml
+AndroidResOverride/drawable/gnt_rounded_corners_shape.xml
+AndroidResOverride/values/colors.xml
+ArrowPuzzleGameDICode.slnx
+Assets/Project/Scripts/Data/GameConfig.cs
+Assets/Project/Scripts/Managers/PromoManager.cs
+Assets/Project/Scripts/Managers/PromoNativeUnit.cs
+Assets/Project/Scripts/UI/SheetScreenController.cs
+Assets/Tests/EditMode/Editor/GameConfigTests.cs
+CLAUDE.md
+ProjectSettings/ProjectSettings.asset
+production/session-logs/.session-end.hash
+production/session-logs/session-log.md
+---
+
+## Session End: 20261126_133633
+### Uncommitted Changes
+AndroidResOverride/drawable/gnt_outline_shape.xml
+AndroidResOverride/drawable/gnt_rounded_corners_shape.xml
+AndroidResOverride/values/colors.xml
+ArrowPuzzleGameDICode.slnx
+Assets/ExternalDependencyManager.meta
+Assets/ExternalDependencyManager/Editor.meta
+Assets/ExternalDependencyManager/Editor/1.2.188.meta
+Assets/ExternalDependencyManager/Editor/1.2.188/Google.IOSResolver.dll
+Assets/ExternalDependencyManager/Editor/1.2.188/Google.IOSResolver.dll.meta
+Assets/ExternalDependencyManager/Editor/1.2.188/Google.JarResolver.dll
+Assets/ExternalDependencyManager/Editor/1.2.188/Google.JarResolver.dll.meta
+Assets/ExternalDependencyManager/Editor/1.2.188/Google.PackageManagerResolver.dll
+Assets/ExternalDependencyManager/Editor/1.2.188/Google.PackageManagerResolver.dll.meta
+Assets/ExternalDependencyManager/Editor/1.2.188/Google.VersionHandlerImpl.dll
+Assets/ExternalDependencyManager/Editor/1.2.188/Google.VersionHandlerImpl.dll.meta
+Assets/ExternalDependencyManager/Editor/CHANGELOG.md
+Assets/ExternalDependencyManager/Editor/CHANGELOG.md.meta
+Assets/ExternalDependencyManager/Editor/Google.VersionHandler.dll
+Assets/ExternalDependencyManager/Editor/Google.VersionHandler.dll.meta
+Assets/ExternalDependencyManager/Editor/LICENSE
+Assets/ExternalDependencyManager/Editor/LICENSE.meta
+Assets/ExternalDependencyManager/Editor/README.md
+Assets/ExternalDependencyManager/Editor/README.md.meta
+Assets/ExternalDependencyManager/Editor/external-dependency-manager_version-1.2.188_manifest.txt
+Assets/ExternalDependencyManager/Editor/external-dependency-manager_version-1.2.188_manifest.txt.meta
+Assets/Plugins/Android/mainTemplate.gradle
+Assets/Plugins/Android/settingsTemplate.gradle
+Assets/Project/Scripts/Data/GameConfig.cs
+Assets/Project/Scripts/Managers/ClueManager.cs
+Assets/Project/Scripts/Managers/FlowDirector.cs
+Assets/Project/Scripts/Managers/PromoBannerUnit.cs
+Assets/Project/Scripts/Managers/PromoInterstitialUnit.cs
+Assets/Project/Scripts/Managers/PromoManager.cs
+Assets/Project/Scripts/Managers/PromoNativeUnit.cs
+Assets/Project/Scripts/Managers/PromoRewardedUnit.cs
+Assets/Project/Scripts/UI/SheetScreenController.cs
+"Assets/Settings/Build Profiles/Android\342\204\242.asset"
+Assets/Tests/EditMode/Editor/GameConfigTests.cs
+CLAUDE.md
+Packages/manifest.json
+Packages/packages-lock.json
+ProjectSettings/AndroidResolverDependencies.xml
+ProjectSettings/GvhProjectSettings.xml
+ProjectSettings/ProjectSettings.asset
+production/session-logs/.session-end.hash
+production/session-logs/session-log.md
+---
+
+## Session End: 20261126_135759
+### Uncommitted Changes
+AndroidResOverride/drawable/gnt_outline_shape.xml
+AndroidResOverride/drawable/gnt_rounded_corners_shape.xml
+AndroidResOverride/values/colors.xml
+ArrowPuzzleGameDICode.slnx
+Assets/ExternalDependencyManager.meta
+Assets/ExternalDependencyManager/Editor.meta
+Assets/ExternalDependencyManager/Editor/1.2.188.meta
+Assets/ExternalDependencyManager/Editor/1.2.188/Google.IOSResolver.dll
+Assets/ExternalDependencyManager/Editor/1.2.188/Google.IOSResolver.dll.meta
+Assets/ExternalDependencyManager/Editor/1.2.188/Google.JarResolver.dll
+Assets/ExternalDependencyManager/Editor/1.2.188/Google.JarResolver.dll.meta
+Assets/ExternalDependencyManager/Editor/1.2.188/Google.PackageManagerResolver.dll
+Assets/ExternalDependencyManager/Editor/1.2.188/Google.PackageManagerResolver.dll.meta
+Assets/ExternalDependencyManager/Editor/1.2.188/Google.VersionHandlerImpl.dll
+Assets/ExternalDependencyManager/Editor/1.2.188/Google.VersionHandlerImpl.dll.meta
+Assets/ExternalDependencyManager/Editor/CHANGELOG.md
+Assets/ExternalDependencyManager/Editor/CHANGELOG.md.meta
+Assets/ExternalDependencyManager/Editor/Google.VersionHandler.dll
+Assets/ExternalDependencyManager/Editor/Google.VersionHandler.dll.meta
+Assets/ExternalDependencyManager/Editor/LICENSE
+Assets/ExternalDependencyManager/Editor/LICENSE.meta
+Assets/ExternalDependencyManager/Editor/README.md
+Assets/ExternalDependencyManager/Editor/README.md.meta
+Assets/ExternalDependencyManager/Editor/external-dependency-manager_version-1.2.188_manifest.txt
+Assets/ExternalDependencyManager/Editor/external-dependency-manager_version-1.2.188_manifest.txt.meta
+Assets/Plugins/Android/mainTemplate.gradle
+Assets/Plugins/Android/settingsTemplate.gradle
+Assets/Project/Scripts/Data/GameConfig.cs
+Assets/Project/Scripts/Managers/ClueManager.cs
+Assets/Project/Scripts/Managers/FlowDirector.cs
+Assets/Project/Scripts/Managers/PromoBannerUnit.cs
+Assets/Project/Scripts/Managers/PromoInterstitialUnit.cs
+Assets/Project/Scripts/Managers/PromoManager.cs
+Assets/Project/Scripts/Managers/PromoNativeUnit.cs
+Assets/Project/Scripts/Managers/PromoRewardedUnit.cs
+Assets/Project/Scripts/UI/SheetScreenController.cs
+Assets/Tests/EditMode/Editor/GameConfigTests.cs
+CLAUDE.md
+Packages/manifest.json
+Packages/packages-lock.json
+ProjectSettings/AndroidResolverDependencies.xml
+ProjectSettings/GvhProjectSettings.xml
+ProjectSettings/ProjectSettings.asset
+production/session-logs/.session-end.hash
+production/session-logs/session-log.md
+---
+
